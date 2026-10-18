@@ -88,17 +88,14 @@ export type StorefrontCart = {
     formattedSubtotal: string;
 };
 
-export type StorefrontAddress = {
-    id: number;
-    type: string;
-    receiver_name: string;
-    phone: string;
+export type StorefrontSavedAddress = {
+    name: string;
+    mobile: string;
     address: string;
     city: string | null;
     postal_code: string | null;
     latitude: string | null;
     longitude: string | null;
-    is_default: boolean;
 };
 
 export type StorefrontTimeSlot = {

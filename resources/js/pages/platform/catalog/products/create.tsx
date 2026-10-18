@@ -30,6 +30,7 @@ export default function PlatformProductsCreate({
                     categoryOptions={categoryOptions}
                     showBranchNotice
                     enableSuggestions
+                    wholesaleFields
                     returnTo={returnTo}
                     cancelHref={ProductController.index.url()}
                 />

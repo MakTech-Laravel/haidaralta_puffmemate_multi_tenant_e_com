@@ -3,61 +3,13 @@
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
-use App\Enums\PaymentStatus;
 use App\Enums\UserType;
-use App\Models\Order;
-use App\Models\OrderFulfillment;
-use App\Models\OrderItem;
-use App\Models\Payment;
-use App\Models\Product;
+use App\Models\Message;
 use App\Models\User;
 use App\Services\Conversation\ConversationService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Sms\FakeSmsSender;
 use Inertia\Testing\AssertableInertia as Assert;
-
-function driverPortalOrder(User $driver, array $fulfillment = [], array $order = []): Order
-{
-    $orderModel = Order::factory()->create(array_merge([
-        'shipping_address_snapshot' => [
-            'name' => 'Elena Vargas',
-            'phone' => '+61410123456',
-            'address' => '418 Crown St, Surry Hills',
-            'city' => 'Surry Hills',
-            'postal_code' => '2010',
-        ],
-        'total_amount' => 40,
-        'payment_method' => 'cod',
-        'time_slot' => 'Anytime',
-    ], $order));
-
-    $fulfillmentModel = OrderFulfillment::factory()->forOrder($orderModel)->create(array_merge([
-        'driver_id' => $driver->id,
-        'status' => FulfillmentStatus::Assigned,
-    ], $fulfillment));
-
-    $product = Product::factory()->create(['name' => 'Test Stick']);
-    OrderItem::query()->create([
-        'order_id' => $orderModel->id,
-        'fulfillment_id' => $fulfillmentModel->id,
-        'product_id' => $product->id,
-        'variant_id' => null,
-        'product_name_snapshot' => $product->name,
-        'sku_snapshot' => $product->sku,
-        'product_snapshot' => ['name' => $product->name],
-        'quantity' => 1,
-        'unit_price' => 40,
-        'subtotal' => 40,
-    ]);
-    Payment::factory()->create([
-        'order_id' => $orderModel->id,
-        'status' => PaymentStatus::PendingCollection,
-        'gateway' => 'cod',
-        'amount' => 40,
-    ]);
-
-    return $orderModel->refresh();
-}
 
 test('guests are redirected from driver orders', function () {
     $this->get(route('driver.orders.index'))
@@ -135,7 +87,28 @@ test('drivers can open chat once the order is on the way', function () {
             ->where('order.customerName', 'Elena Vargas')
             ->where('viewerId', $driver->id)
             ->where('canSend', true)
+            ->where('channel', $order->fresh()->conversation->channelName())
             ->has('messages'));
+});
+
+test('drivers can message the customer once the order is on the way', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::OutForDelivery]);
+    app(ConversationService::class)->openForOrder($order->fresh('fulfillment'));
+
+    $this->actingAs($driver, 'driver')
+        ->from(route('driver.orders.chat', $order))
+        ->post(route('driver.orders.messages.store', $order), ['body' => 'Five minutes away.'])
+        ->assertRedirect(route('driver.orders.chat', $order));
+
+    expect(Message::query()
+        ->where('conversation_id', $order->fresh()->conversation->id)
+        ->where('sender_id', $driver->id)
+        ->where('body', 'Five minutes away.')
+        ->exists())->toBeTrue();
 });
 
 test('unknown driver order chats return 404', function () {

@@ -2,8 +2,7 @@
 
 namespace App\Services\Customer;
 
-use App\Enums\CustomerAddressType;
-use App\Models\CustomerAddress;
+use App\Models\Address;
 use App\Models\User;
 use App\Services\Media\MediaUploadService;
 use Illuminate\Http\UploadedFile;
@@ -14,7 +13,7 @@ class CustomerAccountService
     public function __construct(private MediaUploadService $media) {}
 
     /**
-     * @param  array{name: string, phone: string, email?: string|null, region?: string|null, city?: string|null, zip?: string|null, address?: string|null, remove_avatar?: bool}  $data
+     * @param  array{name: string, phone: string, email?: string|null, remove_avatar?: bool}  $data
      */
     public function updateProfile(User $user, array $data, ?UploadedFile $avatar = null): User
     {
@@ -42,19 +41,6 @@ class CustomerAccountService
                 (bool) ($data['remove_avatar'] ?? false),
             );
 
-            CustomerAddress::query()->updateOrCreate(
-                [
-                    'user_id' => $user->id,
-                    'type' => CustomerAddressType::Shipping,
-                ],
-                [
-                    'region' => $data['region'] ?? null,
-                    'city' => $data['city'] ?? null,
-                    'zip' => $data['zip'] ?? null,
-                    'address' => $data['address'] ?? null,
-                ],
-            );
-
             return $user->refresh();
         });
     }
@@ -67,24 +53,51 @@ class CustomerAccountService
     }
 
     /**
-     * @param  array{name: string, address: string, region: string, city: string, zip: string, email?: string|null, phone: string}  $data
+     * @return array{name: string, mobile: string, address: string, city: string|null, postal_code: string|null, latitude: string|null, longitude: string|null}|null
      */
-    public function updateBillingAddress(User $user, array $data): CustomerAddress
+    public function deliveryAddress(User $user): ?array
     {
-        return CustomerAddress::query()->updateOrCreate(
+        $address = $user->savedAddress;
+
+        if (! $address instanceof Address) {
+            return null;
+        }
+
+        return [
+            'name' => $address->receiver_name,
+            'mobile' => $address->phone,
+            'address' => $address->address,
+            'city' => $address->city,
+            'postal_code' => $address->postal_code,
+            'latitude' => $address->latitude === null ? null : (string) $address->latitude,
+            'longitude' => $address->longitude === null ? null : (string) $address->longitude,
+        ];
+    }
+
+    /**
+     * A customer keeps at most one saved delivery address; saving replaces it.
+     *
+     * @param  array{name: string, mobile: string, address: string, city?: string|null, postal_code?: string|null, latitude?: float|string|null, longitude?: float|string|null}  $data
+     */
+    public function saveDeliveryAddress(User $user, array $data): Address
+    {
+        return Address::query()->updateOrCreate(
+            ['user_id' => $user->id],
             [
-                'user_id' => $user->id,
-                'type' => CustomerAddressType::Billing,
-            ],
-            [
-                'name' => $data['name'],
+                'type' => 'home',
+                'receiver_name' => trim($data['name']),
+                'phone' => $data['mobile'],
                 'address' => $data['address'],
-                'region' => $data['region'],
-                'city' => $data['city'],
-                'zip' => $data['zip'],
-                'email' => $data['email'] ?? null,
-                'phone' => $data['phone'],
+                'city' => $data['city'] ?? null,
+                'postal_code' => $data['postal_code'] ?? null,
+                'latitude' => $data['latitude'] ?? null,
+                'longitude' => $data['longitude'] ?? null,
             ],
         );
+    }
+
+    public function removeDeliveryAddress(User $user): void
+    {
+        Address::query()->where('user_id', $user->id)->delete();
     }
 }

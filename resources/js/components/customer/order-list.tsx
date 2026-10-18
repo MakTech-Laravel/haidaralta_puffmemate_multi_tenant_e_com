@@ -1,17 +1,11 @@
 import { Link } from '@inertiajs/react';
-import { ClipboardList } from 'lucide-react';
+import { ClipboardList, MessageCircle } from 'lucide-react';
+import { AccountListPagination } from '@/components/customer/account-list-pagination';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Button } from '@/components/ui/button';
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination';
 import { cn } from '@/lib/utils';
 import { shop } from '@/routes';
-import { show as orderShow } from '@/routes/customer/orders';
+import { chat as orderChat, show as orderShow } from '@/routes/customer/orders';
 
 import type {
     CustomerOrderStatus,
@@ -27,7 +21,10 @@ export type CustomerOrder = {
     status: CustomerOrderStatus;
     statusLabel: string;
     isActive: boolean;
+    canChat?: boolean;
     paymentStatus: CustomerPaymentStatus;
+    source?: string;
+    sourceLabel?: string;
     date: string;
 };
 
@@ -48,8 +45,6 @@ export function OrderList({
     onPageChange,
     className,
 }: OrderListProps) {
-    const showPagination = lastPage > 1;
-
     if (orders.length === 0) {
         return (
             <div
@@ -92,113 +87,89 @@ export function OrderList({
                     const detailsUrl = orderShow.url(order.orderNumber);
 
                     return (
-                        <li key={order.orderNumber}>
-                            <Link
-                                href={detailsUrl}
-                                prefetch
-                                aria-label={`View order ${order.orderNumber}`}
-                                className="bg-accent relative flex flex-col gap-3 rounded-xl p-3 sm:p-5"
-                            >
-                                <div className="flex min-w-0 flex-1 flex-col gap-3">
-                                    <div className="min-w-0 space-y-2">
-                                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                                            <p className="text-muted-foreground min-w-0 text-xs font-medium">
-                                                Order ID: {order.orderNumber} ·{' '}
-                                                {order.date}
-                                            </p>
+                        <li
+                            key={order.orderNumber}
+                            className="bg-accent rounded-xl p-3 sm:p-5"
+                        >
+                            <div className="flex items-start justify-between gap-2">
+                                <Link
+                                    href={detailsUrl}
+                                    prefetch
+                                    aria-label={`View order ${order.orderNumber}`}
+                                    className="min-w-0 flex-1 space-y-2"
+                                >
+                                    <p className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-2 text-xs font-medium">
+                                        <span>
+                                            Order ID: {order.orderNumber} ·{' '}
+                                            {order.date}
+                                        </span>
+                                        {order.source === 'wholesale' &&
+                                        order.sourceLabel ? (
+                                            <OrderSourceBadge
+                                                source={order.source}
+                                                label={order.sourceLabel}
+                                            />
+                                        ) : null}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {visibleProducts.map((product) => (
                                             <span
-                                                className={cn(
-                                                    'inline-flex shrink-0 rounded-full px-2.5 py-1 text-sm font-normal',
-                                                    order.isActive
-                                                        ? 'bg-primary/10 text-primary'
-                                                        : 'bg-muted-foreground/15 text-foreground',
-                                                )}
+                                                key={product}
+                                                className="bg-muted-foreground/15 text-muted-foreground rounded-md px-2.5 py-1 text-sm"
                                             >
-                                                {order.statusLabel}
+                                                {product}
                                             </span>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {visibleProducts.map((product) => (
-                                                <span
-                                                    key={product}
-                                                    className="bg-muted-foreground/15 text-muted-foreground rounded-md px-2.5 py-1 text-sm"
-                                                >
-                                                    {product}
-                                                </span>
-                                            ))}
-                                            {hasMoreProducts ? (
-                                                <span className="bg-foreground text-background rounded-md px-2.5 py-1 text-sm font-medium">
-                                                    More
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                        <p className="text-foreground text-base font-bold">
-                                            {order.priceLabel}
-                                        </p>
+                                        ))}
+                                        {hasMoreProducts ? (
+                                            <span className="bg-foreground text-background rounded-md px-2.5 py-1 text-sm font-medium">
+                                                More
+                                            </span>
+                                        ) : null}
                                     </div>
+                                    <p className="text-foreground text-base font-bold">
+                                        {order.priceLabel}
+                                    </p>
+                                </Link>
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <span
+                                        className={cn(
+                                            'inline-flex rounded-full px-2.5 py-1 text-sm font-normal',
+                                            order.isActive
+                                                ? 'bg-primary/10 text-primary'
+                                                : 'bg-muted-foreground/15 text-foreground',
+                                        )}
+                                    >
+                                        {order.statusLabel}
+                                    </span>
+                                    {order.canChat ? (
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={orderChat.url(
+                                                    order.orderNumber,
+                                                )}
+                                                prefetch
+                                                aria-label={`Chat with driver about order ${order.orderNumber}`}
+                                            >
+                                                <MessageCircle />
+                                            </Link>
+                                        </Button>
+                                    ) : null}
                                 </div>
-                            </Link>
+                            </div>
                         </li>
                     );
                 })}
             </ul>
 
-            {showPagination ? (
-                <Pagination>
-                    <PaginationContent>
-                        <PaginationItem>
-                            <PaginationPrevious
-                                href="#"
-                                aria-disabled={currentPage <= 1}
-                                className={cn(
-                                    currentPage <= 1 &&
-                                        'pointer-events-none opacity-50',
-                                )}
-                                onClick={(event) => {
-                                    event.preventDefault();
-                                    if (currentPage > 1) {
-                                        onPageChange(currentPage - 1);
-                                    }
-                                }}
-                            />
-                        </PaginationItem>
-                        {Array.from({ length: lastPage }, (_, index) => {
-                            const pageNumber = index + 1;
-
-                            return (
-                                <PaginationItem key={pageNumber}>
-                                    <PaginationLink
-                                        href="#"
-                                        isActive={pageNumber === currentPage}
-                                        onClick={(event) => {
-                                            event.preventDefault();
-                                            onPageChange(pageNumber);
-                                        }}
-                                    >
-                                        {pageNumber}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            );
-                        })}
-                        <PaginationItem>
-                            <PaginationNext
-                                href="#"
-                                aria-disabled={currentPage >= lastPage}
-                                className={cn(
-                                    currentPage >= lastPage &&
-                                        'pointer-events-none opacity-50',
-                                )}
-                                onClick={(event) => {
-                                    event.preventDefault();
-                                    if (currentPage < lastPage) {
-                                        onPageChange(currentPage + 1);
-                                    }
-                                }}
-                            />
-                        </PaginationItem>
-                    </PaginationContent>
-                </Pagination>
-            ) : null}
+            <AccountListPagination
+                currentPage={currentPage}
+                lastPage={lastPage}
+                onPageChange={onPageChange}
+            />
         </div>
     );
 }

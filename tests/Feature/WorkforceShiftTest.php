@@ -770,14 +770,15 @@ test('branch shift options page active stores twenty at a time', function () {
         'status' => false,
     ]);
     Branch::factory()->count(18)->create();
+    $activeBranchCount = Branch::query()->where('status', true)->count();
 
     $this->actingAs($admin, 'platform')
         ->getJson(route('platform.branch-shift-templates.branch-options'))
         ->assertOk()
         ->assertJsonCount(20, 'data')
         ->assertJsonPath('meta.per_page', 20)
-        ->assertJsonPath('meta.last_page', 2)
-        ->assertJsonPath('meta.total', 21)
+        ->assertJsonPath('meta.last_page', (int) ceil($activeBranchCount / 20))
+        ->assertJsonPath('meta.total', $activeBranchCount)
         ->assertJsonMissing(['name' => 'Closed Store']);
 
     $this->actingAs($admin, 'platform')
@@ -793,7 +794,7 @@ test('branch shift options page active stores twenty at a time', function () {
             'page' => 2,
         ]))
         ->assertOk()
-        ->assertJsonCount(1, 'data')
+        ->assertJsonCount(min(20, $activeBranchCount - 20), 'data')
         ->assertJsonPath('meta.current_page', 2);
 });
 
@@ -835,6 +836,11 @@ test('platform shift people options paginate active staff for the selected branc
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
+    $seededSydneyStaffCount = User::query()
+        ->where('user_type', UserType::BRANCH)
+        ->where('branch_id', $sydney->id)
+        ->where('is_active', true)
+        ->count();
 
     foreach (range(1, 9) as $index) {
         User::factory()->create([
@@ -871,8 +877,8 @@ test('platform shift people options paginate active staff for the selected branc
         ->assertJsonCount(10, 'data')
         ->assertJsonPath('meta.current_page', 1)
         ->assertJsonPath('meta.per_page', 10)
-        ->assertJsonPath('meta.last_page', 2)
-        ->assertJsonPath('meta.total', 13)
+        ->assertJsonPath('meta.last_page', (int) ceil(($seededSydneyStaffCount + 10) / 10))
+        ->assertJsonPath('meta.total', $seededSydneyStaffCount + 10)
         ->assertJsonStructure([
             'data' => [['id', 'name', 'user_type', 'avatar_url']],
             'meta' => ['current_page', 'last_page', 'per_page', 'total'],

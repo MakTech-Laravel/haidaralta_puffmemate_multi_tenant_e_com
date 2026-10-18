@@ -18,9 +18,9 @@ import {
 import Heading from '@/components/heading';
 import { OrderListCustomer } from '@/components/orders/order-list-customer';
 import { OrderPlacedDateFilters } from '@/components/orders/order-placed-date-filters';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
 import {
-    orderSourceBadgeClass,
     orderStatusBadgeClass,
     paymentStatusBadgeClass,
 } from '@/lib/order-badges';
@@ -97,8 +97,8 @@ export default function PlatformOrdersIndex({
         value: string;
         label: string;
     }>;
-    const paymentStatusOptions = (tablePayload.filterOptions
-        ?.payment_status ?? []) as Array<{ value: string; label: string }>;
+    const paymentStatusOptions = (tablePayload.filterOptions?.payment_status ??
+        []) as Array<{ value: string; label: string }>;
     const sourceOptions = (tablePayload.filterOptions?.source ?? []) as Array<{
         value: string;
         label: string;
@@ -119,18 +119,24 @@ export default function PlatformOrdersIndex({
                         onSort={query.toggleSort}
                     />
                 ),
+                cell: ({ row }) => (
+                    <Link
+                        href={OrderController.show.url(row.original.id)}
+                        className="hover:text-primary font-medium"
+                    >
+                        {row.original.order_number}
+                    </Link>
+                ),
             },
             {
                 accessorKey: 'source_label',
                 header: 'Source',
                 meta: { label: 'Source' },
                 cell: ({ row }) => (
-                    <Badge
-                        variant="outline"
-                        className={orderSourceBadgeClass(row.original.source)}
-                    >
-                        {row.original.source_label}
-                    </Badge>
+                    <OrderSourceBadge
+                        source={row.original.source}
+                        label={row.original.source_label}
+                    />
                 ),
             },
             {
@@ -246,9 +252,7 @@ export default function PlatformOrdersIndex({
                             {
                                 label: 'View',
                                 icon: Eye,
-                                href: OrderController.show.url(
-                                    row.original.id,
-                                ),
+                                href: OrderController.show.url(row.original.id),
                             },
                             {
                                 label:
@@ -313,9 +317,7 @@ export default function PlatformOrdersIndex({
                                         onValueChange={(value) =>
                                             query.setFilter(
                                                 'status',
-                                                value === 'all'
-                                                    ? null
-                                                    : value,
+                                                value === 'all' ? null : value,
                                             )
                                         }
                                     >
@@ -344,9 +346,7 @@ export default function PlatformOrdersIndex({
                                         onValueChange={(value) =>
                                             query.setFilter(
                                                 'payment_status',
-                                                value === 'all'
-                                                    ? null
-                                                    : value,
+                                                value === 'all' ? null : value,
                                             )
                                         }
                                     >
@@ -376,9 +376,7 @@ export default function PlatformOrdersIndex({
                                         onValueChange={(value) =>
                                             query.setFilter(
                                                 'source',
-                                                value === 'all'
-                                                    ? null
-                                                    : value,
+                                                value === 'all' ? null : value,
                                             )
                                         }
                                     >

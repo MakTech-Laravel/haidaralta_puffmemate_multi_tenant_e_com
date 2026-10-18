@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::create('addresses', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('user_id')->unique()->constrained()->cascadeOnDelete();
             $table->string('type', 32)->default('home');
             $table->string('receiver_name');
             $table->string('phone');
@@ -19,10 +19,7 @@ return new class extends Migration
             $table->string('postal_code')->nullable();
             $table->decimal('latitude', 10, 7)->nullable();
             $table->decimal('longitude', 10, 7)->nullable();
-            $table->boolean('is_default')->default(false);
             $table->timestamps();
-
-            $table->index(['user_id', 'is_default']);
         });
     }
 

@@ -1,5 +1,6 @@
 import { Minus, Plus, Search, Trash2 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
+import InputError from '@/components/input-error';
 import type {
     WholesalePlaceOrderLine,
     WholesalePlaceOrderProduct,
@@ -17,7 +18,13 @@ type PlaceOrderProductsSectionProps = {
     onAdd: (product: WholesalePlaceOrderProduct) => void;
     onQuantityChange: (key: string, quantity: number) => void;
     onRemove: (key: string) => void;
+    /** When set, each line gets an editable unit price. */
+    onPriceChange?: (key: string, price: number) => void;
+    /** Server errors keyed by line key. */
+    lineErrors?: Record<string, string | undefined>;
     disabled?: boolean;
+    /** When false (no branch picked yet), line quantities are not capped by stock. */
+    enforceStock?: boolean;
 };
 
 function formatMoney(amount: number): string {
@@ -30,14 +37,17 @@ export function PlaceOrderProductsSection({
     onAdd,
     onQuantityChange,
     onRemove,
+    onPriceChange,
+    lineErrors = {},
     disabled = false,
+    enforceStock = true,
 }: PlaceOrderProductsSectionProps) {
     const [productQuery, setProductQuery] = useState('');
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
     const selectedProductIds = useMemo(
-        () => new Set(lines.map((line) => line.productId)),
+        () => new Set(lines.map((line) => line.key)),
         [lines],
     );
 
@@ -117,10 +127,12 @@ export function PlaceOrderProductsSection({
     const hasMoreProducts = visibleCount < filteredProducts.length;
 
     return (
-        <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,1fr)_65rem] lg:items-start">
+        <div className="grid min-w-0 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] xl:items-start">
             <section className="border-border bg-card w-full min-w-0 space-y-4 rounded-2xl border p-4 shadow-sm">
                 <div className="space-y-1.5">
-                    <Label htmlFor="wholesale-product-search">Add products</Label>
+                    <Label htmlFor="wholesale-product-search">
+                        Add products
+                    </Label>
                     <div className="relative">
                         <Search
                             className="text-muted-foreground pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2"
@@ -175,6 +187,12 @@ export function PlaceOrderProductsSection({
                                                     : ''}
                                                 {product.stock} available ·{' '}
                                                 {formatMoney(product.price)}
+                                                {product.is_wholesale_price
+                                                    ? ' wholesale'
+                                                    : ''}
+                                                {product.min_quantity
+                                                    ? ` · min ${product.min_quantity}`
+                                                    : ''}
                                             </p>
                                         </div>
                                         <Button
@@ -201,7 +219,7 @@ export function PlaceOrderProductsSection({
                 </div>
             </section>
 
-            <aside className="border-border bg-card flex min-w-0 flex-col gap-4 rounded-2xl border p-4 shadow-sm lg:sticky lg:top-4">
+            <aside className="border-border bg-card flex min-w-0 flex-col gap-4 rounded-2xl border p-4 shadow-sm xl:sticky xl:top-4">
                 <div className="min-w-0 space-y-2">
                     <p className="text-foreground text-xs font-bold tracking-wide uppercase">
                         To order
@@ -216,7 +234,12 @@ export function PlaceOrderProductsSection({
                         <ul className="max-h-96 space-y-2 overflow-y-auto overscroll-contain">
                             {lines.map((line) => {
                                 const lineTotal = line.price * line.quantity;
-                                const short = line.quantity > line.stock;
+                                const short =
+                                    enforceStock && line.quantity > line.stock;
+                                const belowMinimum =
+                                    line.minQuantity != null &&
+                                    line.quantity < line.minQuantity;
+                                const lineError = lineErrors[line.key];
 
                                 return (
                                     <li
@@ -227,13 +250,55 @@ export function PlaceOrderProductsSection({
                                             <p className="text-foreground truncate text-sm font-semibold">
                                                 {line.name}
                                             </p>
-                                            <p className="text-muted-foreground truncate text-xs">
+                                            <p
+                                                className={cn(
+                                                    'truncate text-xs',
+                                                    short
+                                                        ? 'text-destructive'
+                                                        : 'text-muted-foreground',
+                                                )}
+                                            >
                                                 {line.sku
                                                     ? `${line.sku} · `
                                                     : ''}
-                                                {line.stock} available
+                                                {!enforceStock
+                                                    ? 'Select a branch to check stock'
+                                                    : line.stock > 0
+                                                      ? `${line.stock} available`
+                                                      : 'Not stocked at this branch'}
                                             </p>
+                                            {belowMinimum ? (
+                                                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                                                    Below wholesale minimum of{' '}
+                                                    {line.minQuantity}
+                                                </p>
+                                            ) : null}
                                         </div>
+                                        {onPriceChange ? (
+                                            <div className="relative w-28 shrink-0">
+                                                <span className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 -translate-y-1/2 text-xs">
+                                                    $
+                                                </span>
+                                                <Input
+                                                    type="number"
+                                                    inputMode="decimal"
+                                                    step="0.01"
+                                                    min={0}
+                                                    aria-label={`${line.name} unit price`}
+                                                    value={line.price}
+                                                    onChange={(event) =>
+                                                        onPriceChange(
+                                                            line.key,
+                                                            Number(
+                                                                event.target
+                                                                    .value,
+                                                            ),
+                                                        )
+                                                    }
+                                                    className="h-9 rounded-xl pl-5 text-right tabular-nums"
+                                                />
+                                            </div>
+                                        ) : null}
                                         <div className="bg-muted/70 inline-flex shrink-0 items-center gap-1 rounded-full p-1">
                                             <Button
                                                 type="button"
@@ -250,15 +315,37 @@ export function PlaceOrderProductsSection({
                                             >
                                                 <Minus className="size-3.5" />
                                             </Button>
-                                            <span className="text-foreground w-8 text-center text-sm font-bold tabular-nums">
-                                                {line.quantity}
-                                            </span>
+                                            <input
+                                                type="number"
+                                                inputMode="numeric"
+                                                min={1}
+                                                max={
+                                                    enforceStock
+                                                        ? Math.max(
+                                                              1,
+                                                              line.stock,
+                                                          )
+                                                        : undefined
+                                                }
+                                                aria-label={`${line.name} quantity`}
+                                                value={line.quantity}
+                                                onChange={(event) =>
+                                                    onQuantityChange(
+                                                        line.key,
+                                                        Number(
+                                                            event.target.value,
+                                                        ) || 1,
+                                                    )
+                                                }
+                                                className="text-foreground w-12 [appearance:textfield] bg-transparent text-center text-sm font-bold tabular-nums outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                            />
                                             <Button
                                                 type="button"
                                                 size="icon"
                                                 variant="ghost"
                                                 className="bg-background size-8 rounded-full shadow-sm"
                                                 disabled={
+                                                    enforceStock &&
                                                     line.quantity >= line.stock
                                                 }
                                                 onClick={() =>
@@ -294,6 +381,10 @@ export function PlaceOrderProductsSection({
                                                 <Trash2 className="size-4" />
                                             </Button>
                                         </div>
+                                        <InputError
+                                            className="basis-full"
+                                            message={lineError}
+                                        />
                                     </li>
                                 );
                             })}

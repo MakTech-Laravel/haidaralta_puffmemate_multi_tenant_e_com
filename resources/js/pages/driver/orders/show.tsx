@@ -18,6 +18,7 @@ import {
 } from '@/components/driver/driver-order-types';
 import { DriverOrderUnavailableSheet } from '@/components/driver/driver-order-unavailable-sheet';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
@@ -81,16 +82,29 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                         <h1 className="text-foreground truncate text-xl font-bold tracking-tight sm:text-2xl md:text-3xl">
                             {order.customerName}
                         </h1>
-                        <Badge
-                            className={cn(
-                                'rounded-sm px-2 py-0.5 text-sm font-medium',
-                                orderStatusBadgeClass(order.status),
-                            )}
-                            data-test="driver-order-status"
-                        >
-                            {order.statusLabel ??
-                                driverOrderStatusLabel[order.status]}
-                        </Badge>
+                        {order.company ? (
+                            <p className="text-foreground text-sm font-medium">
+                                {order.company}
+                            </p>
+                        ) : null}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Badge
+                                className={cn(
+                                    'rounded-sm px-2 py-0.5 text-sm font-medium',
+                                    orderStatusBadgeClass(order.status),
+                                )}
+                                data-test="driver-order-status"
+                            >
+                                {order.statusLabel ??
+                                    driverOrderStatusLabel[order.status]}
+                            </Badge>
+                            {order.source && order.sourceLabel ? (
+                                <OrderSourceBadge
+                                    source={order.source}
+                                    label={order.sourceLabel}
+                                />
+                            ) : null}
+                        </div>
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
                         {order.phone && !isDelivered ? (

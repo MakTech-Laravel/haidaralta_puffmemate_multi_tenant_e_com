@@ -1,6 +1,6 @@
 import { Camera } from "lucide-react";
 import { Form, usePage } from "@inertiajs/react";
-import { useEffect, useState, type ChangeEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import AccountController from "@/actions/App/Http/Controllers/Customer/AccountController";
 import {
     accountButtonClass,
@@ -8,10 +8,6 @@ import {
     accountLabelClass,
     accountSectionTitleClass,
 } from "@/components/customer/account-field-styles";
-import {
-    AccountRegionSelect,
-    type AccountRegionOption,
-} from "@/components/customer/account-region-select";
 import InputError from "@/components/input-error";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,18 +16,7 @@ import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import type { Auth } from "@/types";
 
-const DEFAULT_AVATAR = "/images/customer/profile.png";
-
-export type CustomerShippingAddress = {
-    region: string | null;
-    city: string | null;
-    zip: string | null;
-    address: string | null;
-};
-
 type AccountSettingSectionProps = {
-    shippingAddress?: CustomerShippingAddress | null;
-    regions?: readonly AccountRegionOption[];
     className?: string;
 };
 
@@ -49,22 +34,24 @@ function initialsFromName(fullName: string): string {
     return `${parts[0].charAt(0)}${parts[1].charAt(0)}`.toUpperCase();
 }
 
-export function AccountSettingSection({
-    shippingAddress = null,
-    regions,
-    className,
-}: AccountSettingSectionProps) {
+export function AccountSettingSection({ className }: AccountSettingSectionProps) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const user = auth.user;
+    const avatarInput = useRef<HTMLInputElement>(null);
     const [fullName, setFullName] = useState(user?.name ?? "");
-    const [region, setRegion] = useState(shippingAddress?.region ?? "");
-    const [previewUrl, setPreviewUrl] = useState(
-        user?.avatar || DEFAULT_AVATAR,
+    const [previewUrl, setPreviewUrl] = useState<string | null>(
+        user?.avatar || null,
     );
+    const [removeAvatar, setRemoveAvatar] = useState(false);
+
+    useEffect(() => {
+        setPreviewUrl(user?.avatar || null);
+        setRemoveAvatar(false);
+    }, [user?.avatar]);
 
     useEffect(() => {
         return () => {
-            if (previewUrl.startsWith("blob:")) {
+            if (previewUrl?.startsWith("blob:")) {
                 URL.revokeObjectURL(previewUrl);
             }
         };
@@ -84,14 +71,17 @@ export function AccountSettingSection({
             return;
         }
 
-        const nextUrl = URL.createObjectURL(file);
-        setPreviewUrl((current) => {
-            if (current.startsWith("blob:")) {
-                URL.revokeObjectURL(current);
-            }
+        setRemoveAvatar(false);
+        setPreviewUrl(URL.createObjectURL(file));
+    };
 
-            return nextUrl;
-        });
+    const onRemoveAvatar = () => {
+        if (avatarInput.current) {
+            avatarInput.current.value = "";
+        }
+
+        setRemoveAvatar(true);
+        setPreviewUrl(null);
     };
 
     return (
@@ -112,11 +102,16 @@ export function AccountSettingSection({
                 {({ processing, errors }) => (
                     <>
                         <div className="flex flex-col gap-6 sm:flex-row sm:items-start sm:gap-10">
-                            <div className="shrink-0">
+                            <div className="flex shrink-0 flex-col items-start gap-2">
                                 <div className="relative w-fit">
                                     <Avatar className="size-24">
-                                        <AvatarImage src={previewUrl} alt="" />
-                                        <AvatarFallback className="text-lg font-semibold">
+                                        {previewUrl ? (
+                                            <AvatarImage
+                                                src={previewUrl}
+                                                alt=""
+                                            />
+                                        ) : null}
+                                        <AvatarFallback className="bg-primary/10 text-primary text-2xl font-semibold">
                                             {initials}
                                         </AvatarFallback>
                                     </Avatar>
@@ -127,6 +122,7 @@ export function AccountSettingSection({
                                         <Camera className="size-4" />
                                     </span>
                                     <input
+                                        ref={avatarInput}
                                         type="file"
                                         name="avatar"
                                         accept="image/*"
@@ -135,6 +131,22 @@ export function AccountSettingSection({
                                         onChange={onAvatarChange}
                                     />
                                 </div>
+                                {removeAvatar ? (
+                                    <input
+                                        type="hidden"
+                                        name="remove_avatar"
+                                        value="1"
+                                    />
+                                ) : null}
+                                {previewUrl ? (
+                                    <button
+                                        type="button"
+                                        onClick={onRemoveAvatar}
+                                        className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
+                                    >
+                                        Remove photo
+                                    </button>
+                                ) : null}
                                 <InputError message={errors.avatar} />
                             </div>
 
@@ -201,71 +213,6 @@ export function AccountSettingSection({
                                     </div>
                                 </div>
 
-                                <div className="grid gap-4 sm:grid-cols-3">
-                                    <AccountRegionSelect
-                                        id="account-region"
-                                        name="region"
-                                        value={region}
-                                        onValueChange={setRegion}
-                                        error={errors.region}
-                                        regions={regions}
-                                    />
-                                    <div className="grid gap-2">
-                                        <Label
-                                            htmlFor="account-city"
-                                            className={accountLabelClass}
-                                        >
-                                            City
-                                        </Label>
-                                        <Input
-                                            id="account-city"
-                                            name="city"
-                                            placeholder="City"
-                                            defaultValue={
-                                                shippingAddress?.city ?? ""
-                                            }
-                                            className={accountInputClass}
-                                        />
-                                        <InputError message={errors.city} />
-                                    </div>
-                                    <div className="grid gap-2">
-                                        <Label
-                                            htmlFor="account-zip"
-                                            className={accountLabelClass}
-                                        >
-                                            Zip Code
-                                        </Label>
-                                        <Input
-                                            id="account-zip"
-                                            name="zip"
-                                            placeholder="Zip Code"
-                                            defaultValue={
-                                                shippingAddress?.zip ?? ""
-                                            }
-                                            className={accountInputClass}
-                                        />
-                                        <InputError message={errors.zip} />
-                                    </div>
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <Label
-                                        htmlFor="account-address"
-                                        className={accountLabelClass}
-                                    >
-                                        Address
-                                    </Label>
-                                    <Input
-                                        id="account-address"
-                                        name="address"
-                                        placeholder="Address"
-                                        defaultValue={
-                                            shippingAddress?.address ?? ""
-                                        }
-                                        className={accountInputClass}
-                                    />
-                                    <InputError message={errors.address} />
-                                </div>
                                 <div className="mt-4">
                                     <Button
                                         type="submit"

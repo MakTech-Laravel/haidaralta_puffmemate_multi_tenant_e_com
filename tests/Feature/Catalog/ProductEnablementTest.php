@@ -71,7 +71,6 @@ test('inventory service adjusts quantity and writes a ledger row', function () {
     expect($reduced->quantity)->toBe(6)
         ->and($reduced->getAttributes())->not->toHaveKeys([
             'available_quantity',
-            'reserved_quantity',
             'minimum_stock',
         ]);
 });

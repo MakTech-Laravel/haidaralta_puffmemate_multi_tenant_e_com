@@ -57,5 +57,8 @@ Route::get('/wholesale', fn () => app(CmsPageController::class)('wholesale'))->n
 Route::post('/wholesale', [WholesaleInquiryController::class, 'store'])
     ->middleware('throttle:10,1')
     ->name('wholesale.store');
+Route::get('/wholesale/products', [WholesaleInquiryController::class, 'products'])
+    ->middleware('throttle:60,1')
+    ->name('wholesale.products');
 Route::get('/privacy', fn () => app(CmsPageController::class)('privacy'))->name('privacy');
 Route::get('/terms', fn () => app(CmsPageController::class)('terms'))->name('terms');

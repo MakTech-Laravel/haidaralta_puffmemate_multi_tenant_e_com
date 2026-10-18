@@ -6,6 +6,7 @@ import {
     isDriverWorkloadOrder,
     type DriverAssignedOrder,
 } from '@/components/driver/driver-order-types';
+import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { orderStatusBadgeClass } from '@/lib/order-badges';
@@ -72,7 +73,19 @@ export function DriverOrderCard({
                             {order.statusLabel ??
                                 driverOrderStatusLabel[order.status]}
                         </Badge>
+                        {order.source === 'wholesale' && order.sourceLabel ? (
+                            <OrderSourceBadge
+                                source={order.source}
+                                label={order.sourceLabel}
+                                className="shrink-0 rounded-sm px-1.5 py-0 text-[11px]"
+                            />
+                        ) : null}
                     </div>
+                    {order.company ? (
+                        <p className="text-foreground truncate text-xs font-medium">
+                            {order.company}
+                        </p>
+                    ) : null}
                     <p className="text-muted-foreground truncate text-sm">
                         {addressLine}
                     </p>

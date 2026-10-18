@@ -72,23 +72,25 @@ const CONTACT_PLACEHOLDER_FIELDS: FieldDef[] = [
 ];
 
 const WHOLESALE_LABEL_FIELDS: FieldDef[] = [
-    { key: 'firstName', label: 'First name' },
-    { key: 'lastName', label: 'Last name' },
+    { key: 'fullName', label: 'Full name' },
     { key: 'phone', label: 'Phone' },
     { key: 'email', label: 'Email' },
     { key: 'company', label: 'Company' },
     { key: 'address', label: 'Address' },
+    { key: 'products', label: 'Products' },
+    { key: 'productsHelp', label: 'Products help text' },
     { key: 'message', label: 'Message' },
+    { key: 'myRequests', label: 'My requests link' },
     { key: 'submitLabel', label: 'Submit button' },
 ];
 
 const WHOLESALE_PLACEHOLDER_FIELDS: FieldDef[] = [
-    { key: 'firstNamePlaceholder', label: 'First name placeholder' },
-    { key: 'lastNamePlaceholder', label: 'Last name placeholder' },
+    { key: 'fullNamePlaceholder', label: 'Full name placeholder' },
     { key: 'phonePlaceholder', label: 'Phone placeholder' },
     { key: 'emailPlaceholder', label: 'Email placeholder' },
     { key: 'companyPlaceholder', label: 'Company placeholder' },
     { key: 'addressPlaceholder', label: 'Address placeholder' },
+    { key: 'productsPlaceholder', label: 'Product search placeholder' },
     { key: 'messagePlaceholder', label: 'Message placeholder' },
 ];
 

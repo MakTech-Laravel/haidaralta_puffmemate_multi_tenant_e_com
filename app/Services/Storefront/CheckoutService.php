@@ -3,7 +3,6 @@
 namespace App\Services\Storefront;
 
 use App\Actions\Order\PlaceOrderAction;
-use App\Models\Address;
 use App\Models\DeliveryMethod;
 use App\Models\DeliveryTimeSlot;
 use App\Models\Order;
@@ -31,31 +30,6 @@ class CheckoutService
         private readonly ShippingCalculator $shipping,
         private readonly PlaceOrderAction $placeOrder,
     ) {}
-
-    /**
-     * @return list<array{id: int, type: string, receiver_name: string, phone: string, address: string, city: string|null, postal_code: string|null, latitude: string|null, longitude: string|null, is_default: bool}>
-     */
-    public function addressesFor(User $user): array
-    {
-        return Address::query()
-            ->where('user_id', $user->id)
-            ->orderByDesc('is_default')
-            ->orderByDesc('id')
-            ->get()
-            ->map(fn (Address $address): array => [
-                'id' => $address->id,
-                'type' => $address->type,
-                'receiver_name' => $address->receiver_name,
-                'phone' => $address->phone,
-                'address' => $address->address,
-                'city' => $address->city,
-                'postal_code' => $address->postal_code,
-                'latitude' => $address->latitude === null ? null : (string) $address->latitude,
-                'longitude' => $address->longitude === null ? null : (string) $address->longitude,
-                'is_default' => $address->is_default,
-            ])
-            ->all();
-    }
 
     /**
      * @return list<array{id: string, label: string, description: string, requiresSlot: bool, timeSlots: list<array{id: string, label: string}>}>
@@ -217,7 +191,6 @@ class CheckoutService
      *     postal_code?: string|null,
      *     latitude: float|string,
      *     longitude: float|string,
-     *     address_id?: int|null,
      *     save_as_default?: bool,
      *     delivery_method: string,
      *     delivery_date?: string|null,

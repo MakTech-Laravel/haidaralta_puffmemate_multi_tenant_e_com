@@ -206,6 +206,8 @@ class ProductController extends Controller
             'color_code' => $product->color_code,
             'selling_price' => $product->selling_price,
             'regular_price' => $product->regular_price,
+            'wholesale_price' => $product->wholesale_price,
+            'min_wholesale_qty' => $product->min_wholesale_qty,
             'status' => (bool) $product->status,
             'created_at' => $product->created_at?->toIso8601String(),
             'updated_at' => $product->updated_at?->toIso8601String(),

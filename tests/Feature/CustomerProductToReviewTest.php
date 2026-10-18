@@ -1,8 +1,10 @@
 <?php
 
+use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Models\Order;
+use App\Models\OrderFulfillment;
 use App\Models\OrderItem;
 use App\Models\Product;
 use App\Models\ProductReview;
@@ -12,16 +14,17 @@ use Inertia\Testing\AssertableInertia as Assert;
 function deliveredOrderItem(User $customer, string $name = 'Marlboro Gold'): OrderItem
 {
     $order = Order::factory()->for($customer, 'customer')->delivered()->create([
-        'payment_status' => PaymentStatus::Paid,
+        'payment_status' => PaymentStatus::Verified,
         'subtotal' => 30,
         'total_amount' => 30,
     ]);
 
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->delivered()->create();
     $product = Product::factory()->create(['name' => $name]);
 
     return OrderItem::query()->create([
         'order_id' => $order->id,
-        'fulfillment_id' => null,
+        'fulfillment_id' => $fulfillment->id,
         'product_id' => $product->id,
         'variant_id' => null,
         'product_name_snapshot' => $product->name,
@@ -64,12 +67,12 @@ test('customers do not see pending cancelled or other customers delivered produc
 
     $pendingOrder = Order::factory()->for($customer, 'customer')->create([
         'status' => OrderStatus::Pending,
-        'payment_status' => PaymentStatus::Unpaid,
+        'payment_status' => PaymentStatus::PendingCollection,
     ]);
     $pendingProduct = Product::factory()->create(['name' => 'Pending Stick']);
     OrderItem::query()->create([
         'order_id' => $pendingOrder->id,
-        'fulfillment_id' => null,
+        'fulfillment_id' => OrderFulfillment::factory()->forOrder($pendingOrder)->create()->id,
         'product_id' => $pendingProduct->id,
         'variant_id' => null,
         'product_name_snapshot' => $pendingProduct->name,
@@ -81,12 +84,16 @@ test('customers do not see pending cancelled or other customers delivered produc
     ]);
 
     $cancelledOrder = Order::factory()->for($customer, 'customer')->cancelled()->create([
-        'payment_status' => PaymentStatus::Unpaid,
+        'payment_status' => PaymentStatus::PendingCollection,
     ]);
     $cancelledProduct = Product::factory()->create(['name' => 'Cancelled Stick']);
     OrderItem::query()->create([
         'order_id' => $cancelledOrder->id,
-        'fulfillment_id' => null,
+        'fulfillment_id' => OrderFulfillment::factory()
+            ->forOrder($cancelledOrder)
+            ->status(FulfillmentStatus::Cancelled)
+            ->create()
+            ->id,
         'product_id' => $cancelledProduct->id,
         'variant_id' => null,
         'product_name_snapshot' => $cancelledProduct->name,
@@ -145,12 +152,12 @@ test('customers receive not found for unknown or ineligible products to review',
 
     $pendingOrder = Order::factory()->for($customer, 'customer')->create([
         'status' => OrderStatus::Pending,
-        'payment_status' => PaymentStatus::Unpaid,
+        'payment_status' => PaymentStatus::PendingCollection,
     ]);
     $pendingProduct = Product::factory()->create(['name' => 'Pending Stick']);
     $pendingItem = OrderItem::query()->create([
         'order_id' => $pendingOrder->id,
-        'fulfillment_id' => null,
+        'fulfillment_id' => OrderFulfillment::factory()->forOrder($pendingOrder)->create()->id,
         'product_id' => $pendingProduct->id,
         'variant_id' => null,
         'product_name_snapshot' => $pendingProduct->name,
@@ -247,7 +254,7 @@ test('a second line of the same product on the same order cannot be reviewed aga
     $first = deliveredOrderItem($customer);
     $second = OrderItem::query()->create([
         'order_id' => $first->order_id,
-        'fulfillment_id' => null,
+        'fulfillment_id' => $first->fulfillment_id,
         'product_id' => $first->product_id,
         'variant_id' => null,
         'product_name_snapshot' => $first->product_name_snapshot,
@@ -287,13 +294,13 @@ test('customers can review the same product on a different delivered order', fun
     $customer = User::factory()->create();
     $first = deliveredOrderItem($customer);
     $secondOrder = Order::factory()->for($customer, 'customer')->delivered()->create([
-        'payment_status' => PaymentStatus::Paid,
+        'payment_status' => PaymentStatus::Verified,
         'subtotal' => 30,
         'total_amount' => 30,
     ]);
     $second = OrderItem::query()->create([
         'order_id' => $secondOrder->id,
-        'fulfillment_id' => null,
+        'fulfillment_id' => OrderFulfillment::factory()->forOrder($secondOrder)->delivered()->create()->id,
         'product_id' => $first->product_id,
         'variant_id' => null,
         'product_name_snapshot' => $first->product_name_snapshot,

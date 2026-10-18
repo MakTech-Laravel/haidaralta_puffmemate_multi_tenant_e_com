@@ -48,6 +48,7 @@ use Spatie\Permission\Traits\HasRoles;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Branch|null $branch
+ * @property-read Address|null $savedAddress
  * @property-read CustomerAddress|null $shippingAddress
  * @property-read CustomerAddress|null $billingAddress
  */
@@ -82,6 +83,16 @@ class User extends Authenticatable implements HasMedia, PasskeyUser, ScoutSearch
     public function driverProfile(): HasOne
     {
         return $this->hasOne(DriverProfile::class);
+    }
+
+    /**
+     * The single delivery address checkout pre-fills, including its map pin.
+     *
+     * @return HasOne<Address, $this>
+     */
+    public function savedAddress(): HasOne
+    {
+        return $this->hasOne(Address::class);
     }
 
     /**

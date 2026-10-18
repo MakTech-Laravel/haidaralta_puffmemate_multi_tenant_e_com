@@ -26,7 +26,6 @@ class AddressFactory extends Factory
             'postal_code' => '2000',
             'latitude' => -33.8688,
             'longitude' => 151.2093,
-            'is_default' => false,
         ];
     }
 }

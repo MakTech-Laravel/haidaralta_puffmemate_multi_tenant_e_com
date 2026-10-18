@@ -4,17 +4,24 @@ namespace App\Http\Controllers\Customer;
 
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderReturnType;
+use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Http\Controllers\Controller;
+use App\Models\Conversation;
 use App\Models\Order;
+use App\Models\User;
+use App\Models\WholesaleInquiry;
+use App\Services\Conversation\ConversationService;
 use App\Services\Order\FulfillmentStatusService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
+use App\Support\ConversationPayload;
 use App\Support\MediaUrl;
 use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -24,6 +31,7 @@ class OrderController extends Controller
         private FulfillmentStatusService $statuses,
         private OrderPlacementNotifier $placements,
         private OrderReturnService $returns,
+        private ConversationService $conversations,
     ) {}
 
     /**
@@ -36,7 +44,7 @@ class OrderController extends Controller
     {
         $orders = Order::query()
             ->where('customer_id', $request->user()->id)
-            ->with('items')
+            ->with(['items', 'fulfillment', 'conversation'])
             ->orderByDesc('created_at')
             ->paginate(12)
             ->withQueryString();
@@ -110,7 +118,78 @@ class OrderController extends Controller
     }
 
     /**
-     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, statusLabel: string, isActive: bool, paymentStatus: string, date: string}
+     * Order-scoped chat with the driver, available once the order is on the way.
+     */
+    public function chat(Request $request, Order $order): Response
+    {
+        $conversation = $this->chatConversation($request, $order);
+        $customer = $request->user();
+
+        $this->conversations->markRead($conversation, $customer);
+
+        return Inertia::render('customer/orders/chat', [
+            'order' => [
+                'orderNumber' => $order->order_number,
+                'status' => $order->status->value,
+                'statusLabel' => $order->status->customerLabel(),
+                'driverName' => $order->fulfillment?->driver?->name,
+            ],
+            'messages' => ConversationPayload::messages(
+                $conversation->messages()->with(['sender:id,name', 'sender.media', 'attachments'])->orderBy('id')->get(),
+            ),
+            'viewerId' => (int) $customer->id,
+            'canSend' => $this->canSendChat($customer, $order, $conversation),
+            'channel' => $conversation->channelName(),
+        ]);
+    }
+
+    public function storeMessage(Request $request, Order $order): RedirectResponse
+    {
+        $conversation = $this->chatConversation($request, $order);
+        abort_unless($this->canSendChat($request->user(), $order, $conversation), 404);
+
+        $validated = $request->validate([
+            'body' => ['required', 'string', 'max:5000'],
+        ]);
+
+        $this->conversations->sendMessage($conversation, $request->user(), $validated['body']);
+
+        return back();
+    }
+
+    /**
+     * The customer's own order thread, or 404 while chat is unavailable.
+     */
+    private function chatConversation(Request $request, Order $order): Conversation
+    {
+        abort_unless($order->customer_id === $request->user()->id, 404);
+
+        $conversation = $order->conversation;
+
+        abort_if(
+            $conversation === null
+                || ! $order->fulfillment?->status->allowsOrderChat()
+                || Gate::forUser($request->user())->denies('view', $conversation),
+            404,
+        );
+
+        return $conversation;
+    }
+
+    private function canChat(Order $order): bool
+    {
+        return $order->conversation !== null
+            && $order->fulfillment?->status->allowsOrderChat() === true;
+    }
+
+    private function canSendChat(User $customer, Order $order, Conversation $conversation): bool
+    {
+        return Gate::forUser($customer)->allows('send', $conversation)
+            && ! $order->fulfillment->status->isTerminal();
+    }
+
+    /**
+     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, statusLabel: string, isActive: bool, canChat: bool, paymentStatus: string, source: string, sourceLabel: string, date: string}
      */
     private function summarize(Order $order): array
     {
@@ -121,9 +200,26 @@ class OrderController extends Controller
             'status' => $order->status->value,
             'statusLabel' => $order->status->customerLabel(),
             'isActive' => ! $order->status->isTerminal(),
+            'canChat' => $this->canChat($order),
             'paymentStatus' => $order->payment_status->value,
+            'source' => $order->source->value,
+            'sourceLabel' => $order->source->label(),
             'date' => $order->created_at->format('d M Y'),
         ];
+    }
+
+    private function wholesaleRequestId(Order $order): ?int
+    {
+        if ($order->source !== OrderSource::Wholesale) {
+            return null;
+        }
+
+        $id = WholesaleInquiry::query()
+            ->where('order_id', $order->id)
+            ->where('customer_id', $order->customer_id)
+            ->value('id');
+
+        return $id === null ? null : (int) $id;
     }
 
     /**
@@ -137,11 +233,15 @@ class OrderController extends Controller
             'statusLabel' => $order->status->customerLabel(),
             'paymentStatus' => $order->payment_status->value,
             'paymentStatusLabel' => $order->payment_status->customerLabel(),
+            'source' => $order->source->value,
+            'sourceLabel' => $order->source->label(),
+            'wholesaleRequestId' => $this->wholesaleRequestId($order),
             'deliveryCode' => $order->status->allowsPlacementCode()
                 ? $this->placements->currentCode($order)
                 : null,
             'canResendCode' => $order->status->allowsPlacementCode(),
             'canCancel' => $order->status->allowsCustomerCancel(),
+            'canChat' => $this->canChat($order),
             'canRequestReturn' => in_array($order->status, [OrderStatus::Arrived, OrderStatus::Delivered], true)
                 && $order->returns()->where('status', 'requested')->doesntExist(),
             'returnRequest' => $this->returns->payload($order),

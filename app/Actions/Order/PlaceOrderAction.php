@@ -21,6 +21,7 @@ use App\Models\Payment;
 use App\Models\PaymentTransaction;
 use App\Models\Product;
 use App\Models\User;
+use App\Services\Customer\CustomerAccountService;
 use App\Services\Inventory\InventoryReservationService;
 use App\Services\Notifications\NotificationService;
 use App\Services\Order\AllocationDecisionRecorder;
@@ -29,6 +30,7 @@ use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\StockTransferService;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
+use App\Support\Order\OrderNumber;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -42,6 +44,7 @@ class PlaceOrderAction
         private NotificationService $notifications,
         private AllocationDecisionRecorder $decisions,
         private OrderPlacementNotifier $placements,
+        private CustomerAccountService $accounts,
     ) {}
 
     /**
@@ -53,7 +56,6 @@ class PlaceOrderAction
      *     postal_code?: string|null,
      *     latitude: float|string,
      *     longitude: float|string,
-     *     address_id?: int|null,
      *     save_as_default?: bool,
      *     delivery_method: string,
      *     delivery_date?: string|null,
@@ -102,17 +104,17 @@ class PlaceOrderAction
             $inventoryMap = $this->loadInventoryMap($plan);
             $locked = $this->lockPlan($plan, $inventoryMap);
 
-            $address = $this->persistAddress($user, $data);
+            $address = $this->saveDefaultAddress($user, $data);
             $deliveryFee = $plan['shipping_cost'];
             $total = round(max($subtotal - $discount + $deliveryFee, 0), 2);
             $opening = $this->openingStatus($user);
 
             $order = Order::query()->create([
-                'order_number' => $this->nextOrderNumber(),
+                'order_number' => OrderNumber::next(),
                 'customer_id' => $user->id,
                 'placed_by' => null,
                 'source' => OrderSource::CustomerCheckout,
-                'address_id' => $address->id,
+                'address_id' => $address?->id,
                 'coupon_id' => $coupon?->id,
                 'coupon_code' => $coupon?->code,
                 'status' => OrderStatus::from($opening->value),
@@ -380,62 +382,17 @@ class PlaceOrderAction
     }
 
     /**
+     * A customer keeps at most one saved address. Ticking "save as default"
+     * replaces it; otherwise the order relies on its shipping snapshot alone.
+     *
      * @param  array<string, mixed>  $data
      */
-    private function persistAddress(User $user, array $data): Address
+    private function saveDefaultAddress(User $user, array $data): ?Address
     {
-        $saveDefault = (bool) ($data['save_as_default'] ?? false);
-        $addressId = isset($data['address_id']) ? (int) $data['address_id'] : null;
-
-        $attributes = [
-            'type' => 'home',
-            'receiver_name' => trim($data['name']),
-            'phone' => $data['mobile'],
-            'address' => $data['address'],
-            'city' => $data['city'] ?? null,
-            'postal_code' => $data['postal_code'] ?? null,
-            'latitude' => $data['latitude'] ?? null,
-            'longitude' => $data['longitude'] ?? null,
-            'is_default' => $saveDefault,
-        ];
-
-        if ($saveDefault) {
-            Address::query()->where('user_id', $user->id)->update(['is_default' => false]);
+        if (! (bool) ($data['save_as_default'] ?? false)) {
+            return null;
         }
 
-        if ($addressId) {
-            $address = Address::query()
-                ->where('user_id', $user->id)
-                ->where('id', $addressId)
-                ->first();
-
-            if ($address !== null) {
-                $address->fill($attributes)->save();
-
-                return $address->refresh();
-            }
-        }
-
-        return Address::query()->create([
-            ...$attributes,
-            'user_id' => $user->id,
-        ]);
-    }
-
-    private function nextOrderNumber(): string
-    {
-        $prefix = 'PMM-'.now()->format('Y');
-        $latest = Order::query()
-            ->where('order_number', 'like', $prefix.'-%')
-            ->orderByDesc('id')
-            ->value('order_number');
-
-        $sequence = 1;
-
-        if (is_string($latest) && preg_match('/(\d+)$/', $latest, $matches) === 1) {
-            $sequence = ((int) $matches[1]) + 1;
-        }
-
-        return $prefix.'-'.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
+        return $this->accounts->saveDeliveryAddress($user, $data);
     }
 }

@@ -27,6 +27,7 @@ enum PermissionEnum: string
     case VIEW_TRANSFERS = 'view-transfers';
     case MANAGE_CONVERSATIONS = 'manage-conversations';
     case MANAGE_ORDERS = 'manage-orders';
+    case MANAGE_WHOLESALE = 'manage-wholesale';
     case COMPLETE_ORDERS_WITHOUT_CODE = 'complete-orders-without-code';
 
     case VIEW_BRANCH_DASHBOARD = 'view-branch-dashboard';
@@ -70,6 +71,7 @@ enum PermissionEnum: string
             self::VIEW_TRANSFERS,
             self::MANAGE_CONVERSATIONS,
             self::MANAGE_ORDERS,
+            self::MANAGE_WHOLESALE,
             self::COMPLETE_ORDERS_WITHOUT_CODE => 'platform',
 
             self::VIEW_BRANCH_DASHBOARD,
@@ -113,6 +115,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_INVENTORIES => 'Products',
             self::MANAGE_BRANCH_ORDERS,
             self::MANAGE_ORDERS,
+            self::MANAGE_WHOLESALE,
             self::COMPLETE_ORDERS_WITHOUT_CODE,
             self::COMPLETE_BRANCH_ORDERS_WITHOUT_CODE => 'Orders',
             self::MANAGE_REPORTS => 'Reports',
@@ -163,6 +166,7 @@ enum PermissionEnum: string
             self::VIEW_TRANSFERS => 'View transfer history',
             self::MANAGE_CONVERSATIONS => 'Manage conversations',
             self::MANAGE_ORDERS => 'Manage orders',
+            self::MANAGE_WHOLESALE => 'Manage wholesale',
             self::COMPLETE_ORDERS_WITHOUT_CODE => 'Complete orders without delivery code',
             self::COMPLETE_BRANCH_ORDERS_WITHOUT_CODE => 'Complete branch orders without delivery code',
             self::VIEW_BRANCH_DASHBOARD => 'View branch dashboard',

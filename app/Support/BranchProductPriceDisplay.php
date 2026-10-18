@@ -354,6 +354,85 @@ class BranchProductPriceDisplay
         };
     }
 
+    /**
+     * Wholesale unit price and minimum quantity for a product at a branch.
+     *
+     * Resolution: branch wholesale price, then catalog wholesale price, then the
+     * retail effective price. Branch rows only apply when branch pricing is on.
+     *
+     * @return array{amount: float|null, min_qty: int|null, is_wholesale: bool}
+     */
+    public static function wholesaleForProductContext(Product $product, ?BranchProductPrice $branchPrice): array
+    {
+        $branchPrice = self::usesBranchPricing() ? $branchPrice : null;
+        $minQty = $branchPrice?->min_wholesale_qty ?? $product->min_wholesale_qty;
+
+        if ($branchPrice?->wholesale_price !== null) {
+            return [
+                'amount' => round((float) $branchPrice->wholesale_price, 2),
+                'min_qty' => $minQty,
+                'is_wholesale' => true,
+            ];
+        }
+
+        if ($product->wholesale_price !== null) {
+            return [
+                'amount' => round((float) $product->wholesale_price, 2),
+                'min_qty' => $minQty,
+                'is_wholesale' => true,
+            ];
+        }
+
+        $retail = match (true) {
+            $branchPrice !== null => self::effectiveAmount($branchPrice),
+            self::usesBranchPricing() => null,
+            $product->selling_price !== null => self::catalogEffectiveAmount($product),
+            default => null,
+        };
+
+        return [
+            'amount' => $retail === null ? null : round($retail, 2),
+            'min_qty' => $minQty,
+            'is_wholesale' => false,
+        ];
+    }
+
+    /**
+     * @return array{amount: float|null, min_qty: int|null, is_wholesale: bool}
+     */
+    public static function wholesaleForBranchProduct(Branch $branch, Product $product, ?int $variantId = null): array
+    {
+        $branchPrice = self::usesBranchPricing()
+            ? self::activeBranchPrice($branch->id, $product->id, $variantId)
+            : null;
+
+        return self::wholesaleForProductContext($product, $branchPrice);
+    }
+
+    public static function wholesaleAmount(Branch $branch, Product $product, ?int $variantId = null): ?float
+    {
+        return self::wholesaleForBranchProduct($branch, $product, $variantId)['amount'];
+    }
+
+    public static function minWholesaleQty(Branch $branch, Product $product, ?int $variantId = null): ?int
+    {
+        return self::wholesaleForBranchProduct($branch, $product, $variantId)['min_qty'];
+    }
+
+    public static function activeBranchPrice(int $branchId, int $productId, ?int $variantId = null): ?BranchProductPrice
+    {
+        return BranchProductPrice::query()
+            ->where('branch_id', $branchId)
+            ->where('product_id', $productId)
+            ->when(
+                $variantId === null,
+                fn ($query) => $query->whereNull('variant_id'),
+                fn ($query) => $query->where('variant_id', $variantId),
+            )
+            ->where('status', true)
+            ->first();
+    }
+
     public static function usesBranchPricing(): bool
     {
         return (bool) config('catalog.show_branch_pricing');

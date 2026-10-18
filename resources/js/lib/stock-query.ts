@@ -124,6 +124,7 @@ export type StockOptionPage = {
         name: string;
         slug?: string;
         sku?: string | null;
+        [key: string]: unknown;
     }>;
     meta: {
         current_page: number;

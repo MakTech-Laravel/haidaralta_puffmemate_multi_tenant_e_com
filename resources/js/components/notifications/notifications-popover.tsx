@@ -62,8 +62,10 @@ export function NotificationsPopover({
                 align="end"
                 side="bottom"
                 sideOffset={8}
+                collisionPadding={2}
                 className={cn(
                     'w-[min(100vw-1.5rem,24rem)] max-w-[calc(100vw-1.5rem)] p-0',
+                    'max-sm:w-[calc(100vw-4px)] max-sm:max-w-none',
                     className,
                 )}
             >

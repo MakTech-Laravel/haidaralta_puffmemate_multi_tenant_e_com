@@ -56,6 +56,8 @@ export type BranchPriceSnapshot = {
     start_date: string | null;
     end_date: string | null;
     status?: boolean;
+    wholesale_price?: string | number | null;
+    min_wholesale_qty?: number | null;
 };
 
 export type BranchProductVariantRow = {
@@ -308,6 +310,8 @@ export function ProductInventoryPanel({
         discount_price: scopedPrice?.discount_price ?? '',
         start_date: scopedPrice?.start_date ?? '',
         end_date: scopedPrice?.end_date ?? '',
+        wholesale_price: String(scopedPrice?.wholesale_price ?? ''),
+        min_wholesale_qty: String(scopedPrice?.min_wholesale_qty ?? ''),
         variant_id: variantId as number | null,
     });
 
@@ -335,6 +339,8 @@ export function ProductInventoryPanel({
             discount_price: nextPrice?.discount_price ?? '',
             start_date: nextPrice?.start_date ?? '',
             end_date: nextPrice?.end_date ?? '',
+            wholesale_price: String(nextPrice?.wholesale_price ?? ''),
+            min_wholesale_qty: String(nextPrice?.min_wholesale_qty ?? ''),
             variant_id: nextVariantId,
         });
         // Only re-sync when scope or server snapshots change.
@@ -450,6 +456,14 @@ export function ProductInventoryPanel({
                     data.buying_price === '' ? null : data.buying_price,
                 regular_price:
                     data.regular_price === '' ? null : data.regular_price,
+                wholesale_price:
+                    data.wholesale_price.trim() === ''
+                        ? null
+                        : data.wholesale_price,
+                min_wholesale_qty:
+                    data.min_wholesale_qty.trim() === ''
+                        ? null
+                        : data.min_wholesale_qty,
                 start_date: none
                     ? null
                     : data.start_date === ''
@@ -935,140 +949,19 @@ export function ProductInventoryPanel({
                         </form>
 
                         {showBranchPricing ? (
-                        <form
-                            className="grid h-full min-w-0 content-start gap-4 p-5"
-                            onSubmit={submitPrice}
-                        >
-                            <div className="flex items-center justify-between gap-3">
-                                <div className="min-w-0">
-                                    <h3 className="text-sm font-semibold">
-                                        Price
-                                    </h3>
-                                    <p className="text-muted-foreground text-xs">
-                                        Buying, regular, and selling price
-                                    </p>
-                                </div>
-                                <Button
-                                    type="submit"
-                                    size="sm"
-                                    disabled={priceForm.processing}
-                                >
-                                    Save
-                                </Button>
-                            </div>
-
-                            <div className="grid min-w-0 items-start gap-4 sm:grid-cols-3">
-                                <div className="grid min-w-0 gap-2">
-                                    <Label htmlFor="price_buying_price">
-                                        Buying price{' '}
-                                        <span className="text-muted-foreground font-normal">
-                                            (AUD)
-                                        </span>
-                                    </Label>
-                                    <Input
-                                        id="price_buying_price"
-                                        type="number"
-                                        step="0.01"
-                                        min={0}
-                                        placeholder="e.g. 12.50"
-                                        value={priceForm.data.buying_price}
-                                        onChange={(event) =>
-                                            priceForm.setData(
-                                                'buying_price',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <p className="text-muted-foreground text-xs">
-                                        Last purchase cost. Internal only.
-                                    </p>
-                                    <InputError
-                                        message={priceForm.errors.buying_price}
-                                    />
-                                </div>
-                                <div className="grid min-w-0 gap-2">
-                                    <Label htmlFor="regular_price">
-                                        Regular price{' '}
-                                        <span className="text-muted-foreground font-normal">
-                                            (AUD)
-                                        </span>
-                                    </Label>
-                                    <Input
-                                        id="regular_price"
-                                        type="number"
-                                        step="0.01"
-                                        min={0}
-                                        placeholder="e.g. 19.99"
-                                        value={priceForm.data.regular_price}
-                                        onChange={(event) =>
-                                            priceForm.setData(
-                                                'regular_price',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <p className="text-muted-foreground text-xs">
-                                        Compare-at / was. Shown when higher than
-                                        selling.
-                                    </p>
-                                    <InputError
-                                        message={priceForm.errors.regular_price}
-                                    />
-                                </div>
-                                <div className="grid min-w-0 gap-2">
-                                    <Label htmlFor="selling_price">
-                                        Selling price{' '}
-                                        <span className="text-muted-foreground font-normal">
-                                            (AUD)
-                                        </span>
-                                    </Label>
-                                    <Input
-                                        id="selling_price"
-                                        type="number"
-                                        step="0.01"
-                                        min={0}
-                                        placeholder="e.g. 16.50"
-                                        value={priceForm.data.selling_price}
-                                        onChange={(event) =>
-                                            priceForm.setData(
-                                                'selling_price',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <p className="text-muted-foreground text-xs">
-                                        Ticket price before a catalog discount.
-                                    </p>
-                                    <InputError
-                                        message={priceForm.errors.selling_price}
-                                    />
-                                </div>
-                            </div>
-                        </form>
-                        ) : null}
-                    </div>
-
-                    {showBranchPricing ? (
-                    <form className="p-5" onSubmit={submitPrice}>
-                        <div className="bg-muted/40 grid min-w-0 gap-4 rounded-lg border p-4">
-                            <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                    <h4 className="text-sm font-medium">
-                                        Discount
-                                    </h4>
-                                    <p className="text-muted-foreground text-xs">
-                                        Applies to selling only. Empty dates
-                                        keep the offer always on.
-                                    </p>
-                                </div>
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <p className="text-muted-foreground text-xs tabular-nums">
-                                        Shoppers pay{' '}
-                                        <span className="text-foreground font-medium">
-                                            {liveEffectiveDisplay}
-                                        </span>{' '}
-                                        AUD
-                                    </p>
+                            <form
+                                className="grid h-full min-w-0 content-start gap-4 p-5"
+                                onSubmit={submitPrice}
+                            >
+                                <div className="flex items-center justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <h3 className="text-sm font-semibold">
+                                            Price
+                                        </h3>
+                                        <p className="text-muted-foreground text-xs">
+                                            Buying, regular, and selling price
+                                        </p>
+                                    </div>
                                     <Button
                                         type="submit"
                                         size="sm"
@@ -1077,165 +970,366 @@ export function ProductInventoryPanel({
                                         Save
                                     </Button>
                                 </div>
-                            </div>
 
-                            <div className="grid max-w-xl gap-2">
-                                <Label id="discount_type_label">Type</Label>
-                                <div
-                                    role="group"
-                                    aria-labelledby="discount_type_label"
-                                    className="grid grid-cols-3 gap-2"
-                                >
-                                    {discountTypes.map((type) => {
-                                        const Icon =
-                                            DISCOUNT_TYPE_ICONS[type.value] ??
-                                            Tag;
-                                        const selected =
-                                            priceForm.data.discount_type ===
-                                            type.value;
-
-                                        return (
-                                            <Button
-                                                key={type.value}
-                                                type="button"
-                                                variant={
-                                                    selected
-                                                        ? 'default'
-                                                        : 'outline'
-                                                }
-                                                className={cn(
-                                                    'h-auto min-h-9 flex-col gap-1 px-1 py-2 text-[11px] sm:h-9 sm:flex-row sm:gap-1.5 sm:px-2 sm:py-0 sm:text-xs',
-                                                    !selected &&
-                                                        'text-foreground',
-                                                )}
-                                                onClick={() =>
-                                                    selectDiscountType(
-                                                        type.value,
-                                                    )
-                                                }
-                                            >
-                                                <Icon className="size-3.5" />
-                                                {type.label}
-                                            </Button>
-                                        );
-                                    })}
-                                </div>
-                                <InputError
-                                    message={priceForm.errors.discount_type}
-                                />
-                            </div>
-
-                            {showDiscountFields ? (
-                                <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                <div className="grid min-w-0 items-start gap-4 sm:grid-cols-3">
                                     <div className="grid min-w-0 gap-2">
-                                        <Label htmlFor="discount_price">
-                                            Discount value{' '}
+                                        <Label htmlFor="price_buying_price">
+                                            Buying price{' '}
                                             <span className="text-muted-foreground font-normal">
-                                                {priceForm.data
-                                                    .discount_type === 'percent'
-                                                    ? '(%)'
-                                                    : '(AUD)'}
+                                                (AUD)
                                             </span>
                                         </Label>
                                         <Input
-                                            id="discount_price"
+                                            id="price_buying_price"
                                             type="number"
                                             step="0.01"
                                             min={0}
-                                            max={
-                                                priceForm.data.discount_type ===
-                                                'percent'
-                                                    ? 100
-                                                    : priceForm.data
-                                                          .selling_price ||
-                                                      undefined
-                                            }
-                                            placeholder={
-                                                priceForm.data.discount_type ===
-                                                'percent'
-                                                    ? 'e.g. 10'
-                                                    : 'e.g. 5.00'
-                                            }
-                                            value={
-                                                priceForm.data.discount_price
-                                            }
+                                            placeholder="e.g. 12.50"
+                                            value={priceForm.data.buying_price}
                                             onChange={(event) =>
                                                 priceForm.setData(
-                                                    'discount_price',
+                                                    'buying_price',
                                                     event.target.value,
                                                 )
                                             }
                                         />
                                         <p className="text-muted-foreground text-xs">
-                                            {priceForm.data.discount_type ===
-                                            'percent'
-                                                ? 'Off the selling price (0–100).'
-                                                : 'Amount off selling, ≤ selling.'}
+                                            Last purchase cost. Internal only.
                                         </p>
                                         <InputError
                                             message={
-                                                priceForm.errors.discount_price
+                                                priceForm.errors.buying_price
                                             }
                                         />
                                     </div>
                                     <div className="grid min-w-0 gap-2">
-                                        <Label htmlFor="start_date">
-                                            Start date
+                                        <Label htmlFor="regular_price">
+                                            Regular price{' '}
+                                            <span className="text-muted-foreground font-normal">
+                                                (AUD)
+                                            </span>
                                         </Label>
-                                        <DatePicker
-                                            id="start_date"
-                                            value={priceForm.data.start_date}
-                                            onChange={(next) =>
+                                        <Input
+                                            id="regular_price"
+                                            type="number"
+                                            step="0.01"
+                                            min={0}
+                                            placeholder="e.g. 19.99"
+                                            value={priceForm.data.regular_price}
+                                            onChange={(event) =>
                                                 priceForm.setData(
-                                                    'start_date',
-                                                    next,
+                                                    'regular_price',
+                                                    event.target.value,
                                                 )
                                             }
-                                            max={
-                                                priceForm.data.end_date ||
-                                                undefined
-                                            }
-                                            placeholder="Optional start"
-                                            aria-invalid={Boolean(
-                                                priceForm.errors.start_date,
-                                            )}
                                         />
+                                        <p className="text-muted-foreground text-xs">
+                                            Compare-at / was. Shown when higher
+                                            than selling.
+                                        </p>
                                         <InputError
                                             message={
-                                                priceForm.errors.start_date
+                                                priceForm.errors.regular_price
                                             }
                                         />
                                     </div>
                                     <div className="grid min-w-0 gap-2">
-                                        <Label htmlFor="end_date">
-                                            End date
+                                        <Label htmlFor="selling_price">
+                                            Selling price{' '}
+                                            <span className="text-muted-foreground font-normal">
+                                                (AUD)
+                                            </span>
                                         </Label>
-                                        <DatePicker
-                                            id="end_date"
-                                            value={priceForm.data.end_date}
-                                            onChange={(next) =>
+                                        <Input
+                                            id="selling_price"
+                                            type="number"
+                                            step="0.01"
+                                            min={0}
+                                            placeholder="e.g. 16.50"
+                                            value={priceForm.data.selling_price}
+                                            onChange={(event) =>
                                                 priceForm.setData(
-                                                    'end_date',
-                                                    next,
+                                                    'selling_price',
+                                                    event.target.value,
                                                 )
                                             }
-                                            min={
-                                                priceForm.data.start_date ||
-                                                undefined
-                                            }
-                                            placeholder="Optional end"
-                                            aria-invalid={Boolean(
-                                                priceForm.errors.end_date,
-                                            )}
                                         />
+                                        <p className="text-muted-foreground text-xs">
+                                            Ticket price before a catalog
+                                            discount.
+                                        </p>
                                         <InputError
-                                            message={priceForm.errors.end_date}
+                                            message={
+                                                priceForm.errors.selling_price
+                                            }
                                         />
                                     </div>
                                 </div>
-                            ) : null}
-                        </div>
-                    </form>
+
+                                <div className="grid min-w-0 items-start gap-4 sm:grid-cols-3">
+                                    <div className="grid min-w-0 gap-2">
+                                        <Label htmlFor="price_wholesale_price">
+                                            Wholesale price{' '}
+                                            <span className="text-muted-foreground font-normal">
+                                                (AUD)
+                                            </span>
+                                        </Label>
+                                        <Input
+                                            id="price_wholesale_price"
+                                            type="number"
+                                            step="0.01"
+                                            min={0}
+                                            placeholder="Catalog default"
+                                            value={
+                                                priceForm.data.wholesale_price
+                                            }
+                                            onChange={(event) =>
+                                                priceForm.setData(
+                                                    'wholesale_price',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <p className="text-muted-foreground text-xs">
+                                            Overrides the catalog wholesale
+                                            price at this branch.
+                                        </p>
+                                        <InputError
+                                            message={
+                                                priceForm.errors.wholesale_price
+                                            }
+                                        />
+                                    </div>
+                                    <div className="grid min-w-0 gap-2">
+                                        <Label htmlFor="price_min_wholesale_qty">
+                                            Wholesale min qty
+                                        </Label>
+                                        <Input
+                                            id="price_min_wholesale_qty"
+                                            type="number"
+                                            step="1"
+                                            min={1}
+                                            placeholder="Catalog default"
+                                            value={
+                                                priceForm.data.min_wholesale_qty
+                                            }
+                                            onChange={(event) =>
+                                                priceForm.setData(
+                                                    'min_wholesale_qty',
+                                                    event.target.value,
+                                                )
+                                            }
+                                        />
+                                        <InputError
+                                            message={
+                                                priceForm.errors
+                                                    .min_wholesale_qty
+                                            }
+                                        />
+                                    </div>
+                                </div>
+                            </form>
+                        ) : null}
+                    </div>
+
+                    {showBranchPricing ? (
+                        <form className="p-5" onSubmit={submitPrice}>
+                            <div className="bg-muted/40 grid min-w-0 gap-4 rounded-lg border p-4">
+                                <div className="flex flex-wrap items-start justify-between gap-3">
+                                    <div className="min-w-0">
+                                        <h4 className="text-sm font-medium">
+                                            Discount
+                                        </h4>
+                                        <p className="text-muted-foreground text-xs">
+                                            Applies to selling only. Empty dates
+                                            keep the offer always on.
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-3">
+                                        <p className="text-muted-foreground text-xs tabular-nums">
+                                            Shoppers pay{' '}
+                                            <span className="text-foreground font-medium">
+                                                {liveEffectiveDisplay}
+                                            </span>{' '}
+                                            AUD
+                                        </p>
+                                        <Button
+                                            type="submit"
+                                            size="sm"
+                                            disabled={priceForm.processing}
+                                        >
+                                            Save
+                                        </Button>
+                                    </div>
+                                </div>
+
+                                <div className="grid max-w-xl gap-2">
+                                    <Label id="discount_type_label">Type</Label>
+                                    <div
+                                        role="group"
+                                        aria-labelledby="discount_type_label"
+                                        className="grid grid-cols-3 gap-2"
+                                    >
+                                        {discountTypes.map((type) => {
+                                            const Icon =
+                                                DISCOUNT_TYPE_ICONS[
+                                                    type.value
+                                                ] ?? Tag;
+                                            const selected =
+                                                priceForm.data.discount_type ===
+                                                type.value;
+
+                                            return (
+                                                <Button
+                                                    key={type.value}
+                                                    type="button"
+                                                    variant={
+                                                        selected
+                                                            ? 'default'
+                                                            : 'outline'
+                                                    }
+                                                    className={cn(
+                                                        'h-auto min-h-9 flex-col gap-1 px-1 py-2 text-[11px] sm:h-9 sm:flex-row sm:gap-1.5 sm:px-2 sm:py-0 sm:text-xs',
+                                                        !selected &&
+                                                            'text-foreground',
+                                                    )}
+                                                    onClick={() =>
+                                                        selectDiscountType(
+                                                            type.value,
+                                                        )
+                                                    }
+                                                >
+                                                    <Icon className="size-3.5" />
+                                                    {type.label}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
+                                    <InputError
+                                        message={priceForm.errors.discount_type}
+                                    />
+                                </div>
+
+                                {showDiscountFields ? (
+                                    <div className="grid min-w-0 items-start gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                                        <div className="grid min-w-0 gap-2">
+                                            <Label htmlFor="discount_price">
+                                                Discount value{' '}
+                                                <span className="text-muted-foreground font-normal">
+                                                    {priceForm.data
+                                                        .discount_type ===
+                                                    'percent'
+                                                        ? '(%)'
+                                                        : '(AUD)'}
+                                                </span>
+                                            </Label>
+                                            <Input
+                                                id="discount_price"
+                                                type="number"
+                                                step="0.01"
+                                                min={0}
+                                                max={
+                                                    priceForm.data
+                                                        .discount_type ===
+                                                    'percent'
+                                                        ? 100
+                                                        : priceForm.data
+                                                              .selling_price ||
+                                                          undefined
+                                                }
+                                                placeholder={
+                                                    priceForm.data
+                                                        .discount_type ===
+                                                    'percent'
+                                                        ? 'e.g. 10'
+                                                        : 'e.g. 5.00'
+                                                }
+                                                value={
+                                                    priceForm.data
+                                                        .discount_price
+                                                }
+                                                onChange={(event) =>
+                                                    priceForm.setData(
+                                                        'discount_price',
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                            <p className="text-muted-foreground text-xs">
+                                                {priceForm.data
+                                                    .discount_type === 'percent'
+                                                    ? 'Off the selling price (0–100).'
+                                                    : 'Amount off selling, ≤ selling.'}
+                                            </p>
+                                            <InputError
+                                                message={
+                                                    priceForm.errors
+                                                        .discount_price
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid min-w-0 gap-2">
+                                            <Label htmlFor="start_date">
+                                                Start date
+                                            </Label>
+                                            <DatePicker
+                                                id="start_date"
+                                                value={
+                                                    priceForm.data.start_date
+                                                }
+                                                onChange={(next) =>
+                                                    priceForm.setData(
+                                                        'start_date',
+                                                        next,
+                                                    )
+                                                }
+                                                max={
+                                                    priceForm.data.end_date ||
+                                                    undefined
+                                                }
+                                                placeholder="Optional start"
+                                                aria-invalid={Boolean(
+                                                    priceForm.errors.start_date,
+                                                )}
+                                            />
+                                            <InputError
+                                                message={
+                                                    priceForm.errors.start_date
+                                                }
+                                            />
+                                        </div>
+                                        <div className="grid min-w-0 gap-2">
+                                            <Label htmlFor="end_date">
+                                                End date
+                                            </Label>
+                                            <DatePicker
+                                                id="end_date"
+                                                value={priceForm.data.end_date}
+                                                onChange={(next) =>
+                                                    priceForm.setData(
+                                                        'end_date',
+                                                        next,
+                                                    )
+                                                }
+                                                min={
+                                                    priceForm.data.start_date ||
+                                                    undefined
+                                                }
+                                                placeholder="Optional end"
+                                                aria-invalid={Boolean(
+                                                    priceForm.errors.end_date,
+                                                )}
+                                            />
+                                            <InputError
+                                                message={
+                                                    priceForm.errors.end_date
+                                                }
+                                            />
+                                        </div>
+                                    </div>
+                                ) : null}
+                            </div>
+                        </form>
                     ) : null}
                 </div>
             </Card>

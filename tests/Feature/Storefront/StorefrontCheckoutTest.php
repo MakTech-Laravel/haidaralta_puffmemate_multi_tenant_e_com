@@ -7,6 +7,7 @@ use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserType;
+use App\Models\Address;
 use App\Models\AllocationDecisionLog;
 use App\Models\Branch;
 use App\Models\Cart;
@@ -371,7 +372,7 @@ test('place order writes order payment and redemption then clears ordered lines'
         ->and($order->placed_by)->toBeNull()
         ->and($order->fulfillments)->toHaveCount(1)
         ->and($order->shipping_address_snapshot['name'])->toBe('Ada Lovelace')
-        ->and($order->address->receiver_name)->toBe('Ada Lovelace');
+        ->and($order->address_id)->toBeNull();
 
     $payment = Payment::query()->where('order_id', $order->id)->firstOrFail();
 
@@ -772,4 +773,87 @@ test('a first order waits for confirmation and a returning customer is placed im
     $second = Order::query()->where('customer_id', $user->id)->whereKeyNot($first->id)->firstOrFail();
 
     expect($second->status)->toBe(OrderStatus::Placed);
+});
+
+test('checkout pre-fills the single saved address and sends none when there is no saved address', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'saved-address-prefill']);
+    $withoutAddress = User::factory()->create();
+    $withAddress = User::factory()->create();
+    Address::factory()->for($withAddress)->create([
+        'receiver_name' => 'Grace Hopper',
+        'phone' => '0411222333',
+        'address' => '9 Saved Lane',
+        'city' => 'Sydney',
+        'postal_code' => '2000',
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+    ]);
+
+    foreach ([$withoutAddress, $withAddress] as $user) {
+        $this->actingAs($user, 'customer')
+            ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    }
+
+    $this->actingAs($withoutAddress, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('savedAddress', null)
+            ->missing('addresses')
+            ->missing('defaultAddressId'));
+
+    $this->actingAs($withAddress, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('savedAddress.name', 'Grace Hopper')
+            ->where('savedAddress.mobile', '0411222333')
+            ->where('savedAddress.address', '9 Saved Lane')
+            ->where('savedAddress.latitude', '-33.8688000')
+            ->where('savedAddress.longitude', '151.2093000'));
+});
+
+test('saving as default keeps one address per customer and updates it in place', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'save-default-address']);
+    storefrontCheckoutBranchWithStock($product, 20);
+
+    foreach (['1 First Street', '2 Second Street'] as $street) {
+        $this->actingAs($user, 'customer')
+            ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+        $this->actingAs($user, 'customer')
+            ->post(route('checkout.store'), checkoutPayload([
+                'address' => $street,
+                'save_as_default' => true,
+            ]))
+            ->assertRedirect();
+    }
+
+    $address = Address::query()->where('user_id', $user->id)->sole();
+
+    expect($address->address)->toBe('2 Second Street')
+        ->and(Order::query()->where('customer_id', $user->id)->pluck('address_id')->unique()->all())
+        ->toBe([$address->id]);
+});
+
+test('placing an order without saving as default leaves the saved address untouched', function () {
+    $user = User::factory()->create();
+    $saved = Address::factory()->for($user)->create(['address' => '9 Saved Lane']);
+    $product = storefrontCheckoutProduct(['slug' => 'no-save-default']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload(['address' => '5 One Off Road']))
+        ->assertRedirect();
+
+    $order = Order::query()->where('customer_id', $user->id)->firstOrFail();
+
+    expect(Address::query()->where('user_id', $user->id)->sole()->is($saved))->toBeTrue()
+        ->and($saved->refresh()->address)->toBe('9 Saved Lane')
+        ->and($order->address_id)->toBeNull()
+        ->and($order->shipping_address_snapshot['address'])->toBe('5 One Off Road');
 });

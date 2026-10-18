@@ -22,6 +22,7 @@ use App\Services\Driver\DriverInventorySaleService;
 use App\Services\Order\PaymentMarkingService;
 use App\Support\Driver\DriverSaleRules;
 use App\Support\MediaUrl;
+use App\Support\Order\OrderNumber;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -83,7 +84,7 @@ class PlaceDriverOrderAction
                 $subtotal = round(array_sum(array_column($lines, 'subtotal')), 2);
 
                 $order = Order::query()->create([
-                    'order_number' => $this->nextOrderNumber(),
+                    'order_number' => OrderNumber::next(),
                     'customer_id' => $customer->id,
                     'placed_by' => $driver->id,
                     'source' => OrderSource::DriverSale,
@@ -291,22 +292,5 @@ class PlaceDriverOrderAction
         }
 
         return [(int) $matches[1], isset($matches[2]) ? (int) $matches[2] : null];
-    }
-
-    private function nextOrderNumber(): string
-    {
-        $prefix = 'PMM-'.now()->format('Y');
-        $latest = Order::query()
-            ->where('order_number', 'like', $prefix.'-%')
-            ->orderByDesc('id')
-            ->value('order_number');
-
-        $sequence = 1;
-
-        if (is_string($latest) && preg_match('/(\d+)$/', $latest, $matches) === 1) {
-            $sequence = ((int) $matches[1]) + 1;
-        }
-
-        return $prefix.'-'.str_pad((string) $sequence, 4, '0', STR_PAD_LEFT);
     }
 }

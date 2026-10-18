@@ -70,7 +70,10 @@ test('platform product update changes catalog prices when branch pricing is hidd
 });
 
 test('branch product create writes catalog prices and stock without branch price rows when branch pricing is hidden', function () {
-    config(['catalog.show_branch_pricing' => false]);
+    config([
+        'catalog.show_branch_pricing' => false,
+        'catalog.branch_can_manage_catalog_pricing' => true,
+    ]);
 
     $staff = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();

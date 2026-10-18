@@ -7,12 +7,17 @@ use App\Enums\WholesaleInquiryStatus;
 use App\Models\Concerns\HasDataTableConfig;
 use App\Services\Storefront\WholesaleInquiryService;
 use Database\Factories\WholesaleInquiryFactory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
+ * @property int|null $customer_id
+ * @property int|null $order_id
  * @property string $full_name
  * @property string $phone
  * @property string|null $company
@@ -20,13 +25,21 @@ use Illuminate\Support\Carbon;
  * @property string $address
  * @property string|null $latitude
  * @property string|null $longitude
- * @property string $message
+ * @property string|null $message
+ * @property string|null $admin_note
+ * @property string|null $rejection_reason
  * @property WholesaleInquiryStatus $status
  * @property Carbon|null $read_at
+ * @property int|null $reviewed_by
+ * @property Carbon|null $reviewed_at
  * @property string|null $ip_address
  * @property string|null $user_agent
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read User|null $customer
+ * @property-read Order|null $order
+ * @property-read User|null $reviewer
+ * @property-read Collection<int, WholesaleInquiryItem> $items
  */
 class WholesaleInquiry extends Model implements DataTableConfigurable
 {
@@ -36,7 +49,7 @@ class WholesaleInquiry extends Model implements DataTableConfigurable
     /**
      * @var list<string>
      */
-    public static array $dataTableSearchable = ['full_name', 'email', 'phone'];
+    public static array $dataTableSearchable = ['full_name', 'company', 'email', 'phone'];
 
     /**
      * @var list<string>
@@ -52,6 +65,8 @@ class WholesaleInquiry extends Model implements DataTableConfigurable
      * @var list<string>
      */
     protected $fillable = [
+        'customer_id',
+        'order_id',
         'full_name',
         'phone',
         'company',
@@ -60,8 +75,12 @@ class WholesaleInquiry extends Model implements DataTableConfigurable
         'latitude',
         'longitude',
         'message',
+        'admin_note',
+        'rejection_reason',
         'status',
         'read_at',
+        'reviewed_by',
+        'reviewed_at',
         'ip_address',
         'user_agent',
     ];
@@ -74,7 +93,40 @@ class WholesaleInquiry extends Model implements DataTableConfigurable
         return [
             'status' => WholesaleInquiryStatus::class,
             'read_at' => 'datetime',
+            'reviewed_at' => 'datetime',
         ];
+    }
+
+    /**
+     * @return HasMany<WholesaleInquiryItem, $this>
+     */
+    public function items(): HasMany
+    {
+        return $this->hasMany(WholesaleInquiryItem::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'customer_id');
+    }
+
+    /**
+     * @return BelongsTo<Order, $this>
+     */
+    public function order(): BelongsTo
+    {
+        return $this->belongsTo(Order::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function reviewer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function markRead(): void

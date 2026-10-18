@@ -18,6 +18,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $buying_price
  * @property string|null $regular_price
  * @property string $selling_price
+ * @property string|null $wholesale_price
+ * @property int|null $min_wholesale_qty
  * @property DiscountType $discount_type
  * @property string|null $discount_price
  * @property Carbon|null $start_date
@@ -42,6 +44,8 @@ class BranchProductPrice extends Model
         'buying_price',
         'regular_price',
         'selling_price',
+        'wholesale_price',
+        'min_wholesale_qty',
         'discount_type',
         'discount_price',
         'start_date',
@@ -89,6 +93,8 @@ class BranchProductPrice extends Model
             'buying_price' => 'decimal:2',
             'regular_price' => 'decimal:2',
             'selling_price' => 'decimal:2',
+            'wholesale_price' => 'decimal:2',
+            'min_wholesale_qty' => 'integer',
             'discount_type' => DiscountType::class,
             'discount_price' => 'decimal:2',
             'start_date' => 'date',

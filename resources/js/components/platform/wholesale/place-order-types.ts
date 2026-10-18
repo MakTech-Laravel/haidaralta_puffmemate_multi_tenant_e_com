@@ -1,3 +1,15 @@
+export type WholesalePlaceOrderInquiryItem = {
+    id: number;
+    product_id: number;
+    variant_id: number | null;
+    name: string;
+    sku: string | null;
+    quantity: number;
+    /** Catalog wholesale price; branch prices replace it once a branch is picked. */
+    unit_price: number;
+    min_quantity: number | null;
+};
+
 export type WholesalePlaceOrderInquiry = {
     id: number;
     full_name: string;
@@ -12,13 +24,16 @@ export type WholesalePlaceOrderInquiry = {
         open_street_map: string;
         embed: string;
     } | null;
-    message: string;
+    message: string | null;
     status: string;
     status_label: string;
+    is_open: boolean;
     read_at: string | null;
     ip_address: string | null;
     user_agent: string | null;
     created_at: string | null;
+    customer: { id: number; name: string; phone: string | null } | null;
+    items: WholesalePlaceOrderInquiryItem[];
 };
 
 export type WholesalePlaceOrderBranch = {
@@ -28,23 +43,33 @@ export type WholesalePlaceOrderBranch = {
 };
 
 export type WholesalePlaceOrderProduct = {
+    /** `{product}` or `{product}:{variant}`; unique per branch stock row. */
     id: string;
+    product_id: number;
+    variant_id: number | null;
     branch_id: number;
     name: string;
     sku: string;
     price: number;
+    min_quantity: number | null;
+    is_wholesale_price: boolean;
     stock: number;
     image: string | null;
 };
 
 export type WholesalePlaceOrderLine = {
+    /** Matches `WholesalePlaceOrderProduct.id`. */
     key: string;
     productId: string;
+    variantId: number | null;
     name: string;
     sku: string;
     price: number;
     stock: number;
     quantity: number;
+    minQuantity?: number | null;
+    /** True once staff typed a unit price; branch switches keep it. */
+    priceEdited?: boolean;
 };
 
 export type WholesalePlaceOrderCustomerForm = {

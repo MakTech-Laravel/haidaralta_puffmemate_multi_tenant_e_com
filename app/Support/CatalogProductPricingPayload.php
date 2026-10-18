@@ -25,7 +25,9 @@ final class CatalogProductPricingPayload
      *         end_date: ?string,
      *         effective_price: ?string,
      *         has_discount: bool,
-     *         has_compare_at: bool
+     *         has_compare_at: bool,
+     *         wholesale_price: ?string,
+     *         min_wholesale_qty: ?int
      *     }
      * }
      */
@@ -53,6 +55,8 @@ final class CatalogProductPricingPayload
                 'effective_price' => $display['effective_price'],
                 'has_discount' => $display['has_discount'],
                 'has_compare_at' => $display['has_compare_at'],
+                'wholesale_price' => $product->wholesale_price,
+                'min_wholesale_qty' => $product->min_wholesale_qty,
             ],
         ];
     }

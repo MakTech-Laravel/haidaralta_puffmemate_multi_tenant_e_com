@@ -57,9 +57,13 @@ export type CustomerOrderDetail = {
     statusLabel?: string;
     paymentStatus: CustomerPaymentStatus;
     paymentStatusLabel?: string;
+    source?: string;
+    sourceLabel?: string;
+    wholesaleRequestId?: number | null;
     deliveryCode?: string | null;
     canResendCode?: boolean;
     canCancel?: boolean;
+    canChat?: boolean;
     canRequestReturn?: boolean;
     returnRequest?: {
         id: number;

@@ -180,6 +180,7 @@ class OrderController extends Controller
             'canSend' => $conversation !== null
                 && ! $conversation->isClosed()
                 && ! $fulfillment->status->isTerminal(),
+            'channel' => $conversation?->channelName(),
         ]);
     }
 
@@ -327,6 +328,9 @@ class OrderController extends Controller
             'canChat' => $fulfillment->status->allowsOrderChat(),
             'nextAction' => $fulfillment->status->driverNextAction(),
             'customerName' => $snapshot['name'] ?? ($order->customer?->name ?? 'Customer'),
+            'company' => $snapshot['company'] ?? null,
+            'source' => $order->source->value,
+            'sourceLabel' => $order->source->label(),
             'areaId' => '',
             'areaLabel' => $snapshot['city'] ?? 'Delivery',
             'addressSummary' => $snapshot['address'] ?? '',

@@ -1,12 +1,10 @@
 import { Head } from '@inertiajs/react';
-import { AccountAddressSection } from '@/components/customer/account-address-section';
-import type { CustomerBillingAddress } from '@/components/customer/account-address-section';
+import { AccountDeliveryAddressSection } from '@/components/customer/account-delivery-address-section';
 import { AccountPasswordSection } from '@/components/customer/account-password-section';
-import type { AccountRegionOption } from '@/components/customer/account-region-select';
 import { AccountSettingSection } from '@/components/customer/account-setting-section';
-import type { CustomerShippingAddress } from '@/components/customer/account-setting-section';
 import { AccountTwoFactorSection } from '@/components/customer/account-two-factor-section';
 import { index as accountIndex } from '@/routes/customer/account';
+import type { StorefrontSavedAddress } from '@/types/storefront';
 
 type CustomerAccountPageProps = {
     mustVerifyPhone: boolean;
@@ -14,9 +12,7 @@ type CustomerAccountPageProps = {
     canManageTwoFactor: boolean;
     twoFactorEnabled: boolean;
     requiresConfirmation: boolean;
-    shippingAddress: CustomerShippingAddress | null;
-    billingAddress: CustomerBillingAddress | null;
-    regions: AccountRegionOption[];
+    deliveryAddress: StorefrontSavedAddress | null;
 };
 
 export default function CustomerAccountIndex({
@@ -24,30 +20,23 @@ export default function CustomerAccountIndex({
     canManageTwoFactor,
     twoFactorEnabled,
     requiresConfirmation,
-    shippingAddress,
-    billingAddress,
-    regions,
+    deliveryAddress,
 }: CustomerAccountPageProps) {
     return (
         <>
             <Head title="Account" />
 
             <div className="flex min-w-0 flex-col gap-5">
-                <AccountSettingSection
-                    shippingAddress={shippingAddress}
-                    regions={regions}
+                <AccountSettingSection />
+                <AccountDeliveryAddressSection
+                    key={deliveryAddress ? 'saved' : 'empty'}
+                    deliveryAddress={deliveryAddress}
                 />
                 <AccountPasswordSection passwordRules={passwordRules} />
                 <AccountTwoFactorSection
                     canManageTwoFactor={canManageTwoFactor}
                     twoFactorEnabled={twoFactorEnabled}
                     requiresConfirmation={requiresConfirmation}
-                />
-                <AccountAddressSection
-                    title="Billing Address"
-                    idPrefix="billing"
-                    billingAddress={billingAddress}
-                    regions={regions}
                 />
             </div>
         </>

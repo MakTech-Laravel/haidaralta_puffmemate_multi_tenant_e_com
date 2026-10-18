@@ -19,7 +19,6 @@ use Illuminate\Support\Carbon;
  * @property string|null $postal_code
  * @property string|null $latitude
  * @property string|null $longitude
- * @property bool $is_default
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
@@ -41,7 +40,6 @@ class Address extends Model
         'postal_code',
         'latitude',
         'longitude',
-        'is_default',
     ];
 
     /**
@@ -50,7 +48,6 @@ class Address extends Model
     protected function casts(): array
     {
         return [
-            'is_default' => 'boolean',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
         ];
