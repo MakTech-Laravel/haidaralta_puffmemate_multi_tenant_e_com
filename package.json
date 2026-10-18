@@ -3,9 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node api.js && vp build",
+    "build": "vp build",
     "build:ssr": "vp build && vp build --ssr",
-    "dev": "node api.js && vp dev",
+    "dev": "vp dev",
     "check": "vp check",
     "check:fix": "vp check --fix",
     "types:check": "tsc --noEmit",
