@@ -1,15 +1,54 @@
-import { Head, Link } from '@inertiajs/react';
-import { Banknote, CircleDollarSign, Wallet } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import {
+    ArrowDownRight,
+    ArrowUpRight,
+    Banknote,
+    CircleDollarSign,
+    Minus,
+    Sparkles,
+    Wallet,
+} from 'lucide-react';
+import type { ReactNode } from 'react';
 import { DriverEmptyState } from '@/components/driver/driver-empty-state';
-import type { DriverEarnings } from '@/components/driver/driver-order-types';
+import type {
+    DriverEarnings,
+    DriverEarningsPeriod,
+} from '@/components/driver/driver-order-types';
 import { Badge } from '@/components/ui/badge';
+import {
+    ToggleGroup,
+    ToggleGroupItem,
+} from '@/components/ui/toggle-group';
 import { usePaymentGatewayLabel } from '@/lib/payment-gateway';
+import { cn } from '@/lib/utils';
 import { index as earningsIndex } from '@/routes/driver/earnings';
 import { show as orderShow } from '@/routes/driver/orders';
 
 type DriverEarningsIndexProps = {
     earnings: DriverEarnings;
+    filters: {
+        period: DriverEarningsPeriod;
+    };
 };
+
+const periodOptions: Array<{ value: DriverEarningsPeriod; label: string }> = [
+    { value: 'today', label: 'Today' },
+    { value: '7d', label: '7 days' },
+    { value: '30d', label: '30 days' },
+];
+
+function visitEarnings(period: DriverEarningsPeriod): void {
+    router.get(
+        earningsIndex.url(),
+        period === 'today' ? {} : { period },
+        {
+            only: ['earnings', 'filters'],
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        },
+    );
+}
 
 function EarningsEntryBadge({ paymentMethod }: { paymentMethod: string }) {
     const label = usePaymentGatewayLabel(paymentMethod, 'COD');
@@ -25,8 +64,64 @@ function EarningsEntryBadge({ paymentMethod }: { paymentMethod: string }) {
     );
 }
 
+function StatDelta({
+    performance,
+    mode,
+    newLabel,
+}: {
+    performance: DriverEarnings['performance'];
+    mode: 'money' | 'percent';
+    newLabel: string;
+}) {
+    const Icon =
+        performance.direction === 'up'
+            ? ArrowUpRight
+            : performance.direction === 'down'
+              ? ArrowDownRight
+              : performance.direction === 'new'
+                ? Sparkles
+                : Minus;
+
+    const tone =
+        performance.direction === 'up' || performance.direction === 'new'
+            ? 'text-emerald-600'
+            : performance.direction === 'down'
+              ? 'text-rose-600'
+              : 'text-muted-foreground';
+
+    const changeText =
+        performance.direction === 'new'
+            ? newLabel
+            : mode === 'money'
+              ? performance.changeAmountLabel
+              : performance.changePercent === null
+                ? '0%'
+                : `${performance.changePercent}%`;
+
+    return (
+        <p className={cn('flex items-center gap-0.5 text-xs font-medium', tone)}>
+            <Icon className="size-3 shrink-0" aria-hidden />
+            <span className="truncate">
+                {changeText}{' '}
+                <span className="text-muted-foreground font-normal">
+                    {performance.comparisonLabel}
+                </span>
+            </span>
+        </p>
+    );
+}
+
+function StatDeltaSlot({ children }: { children?: ReactNode }) {
+    return (
+        <div className="mt-1 min-h-5">
+            {children ?? <span className="invisible text-xs">—</span>}
+        </div>
+    );
+}
+
 export default function DriverEarningsIndex({
     earnings,
+    filters,
 }: DriverEarningsIndexProps) {
     const hasEntries = earnings.days.some((day) => day.entries.length > 0);
     const codHeldLabel = usePaymentGatewayLabel('cod', 'COD');
@@ -41,54 +136,96 @@ export default function DriverEarningsIndex({
                         Earnings
                     </h1>
                     <p className="text-muted-foreground text-sm">
-                        {earnings.dropsToday} completed today ·{' '}
-                        {earnings.dropsWeek} this week
+                        {earnings.deliveries} deliveries · {earnings.periodLabel}
                     </p>
                 </div>
 
+                <ToggleGroup
+                    type="single"
+                    value={filters.period}
+                    onValueChange={(value) => {
+                        if (
+                            value === 'today' ||
+                            value === '7d' ||
+                            value === '30d'
+                        ) {
+                            visitEarnings(value);
+                        }
+                    }}
+                    variant="outline"
+                    className="grid w-full grid-cols-3"
+                    aria-label="Earnings period"
+                >
+                    {periodOptions.map((option) => (
+                        <ToggleGroupItem
+                            key={option.value}
+                            value={option.value}
+                            className="data-[state=on]:bg-foreground data-[state=on]:text-background h-11 w-full text-sm font-semibold"
+                            data-test={`driver-earnings-period-${option.value}`}
+                        >
+                            {option.label}
+                        </ToggleGroupItem>
+                    ))}
+                </ToggleGroup>
+
                 <section className="bg-accent rounded-xl p-4">
                     <p className="text-muted-foreground text-sm font-medium">
-                        Today
+                        {earnings.periodLabel}
                     </p>
                     <p className="text-foreground mt-1 text-3xl font-bold tracking-tight">
-                        {earnings.todayLabel}
-                    </p>
-                    <p className="text-muted-foreground mt-1 text-sm">
-                        Payout {earnings.payoutStatus.toLowerCase()}
+                        {earnings.totalLabel}
                     </p>
                 </section>
 
-                <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-                    {[
-                        {
-                            label: 'This week',
-                            value: earnings.weekLabel,
-                        },
-                        {
-                            label: 'Tips',
-                            value: earnings.tipsLabel,
-                        },
-                        {
-                            label: 'Avg / stop',
-                            value: earnings.perStopLabel,
-                        },
-                        {
-                            label: `${codHeldLabel} held`,
-                            value: earnings.codHeldLabel,
-                        },
-                    ].map((stat) => (
-                        <div
-                            key={stat.label}
-                            className="bg-accent space-y-1 rounded-xl p-3"
-                        >
-                            <p className="text-muted-foreground text-xs font-medium">
-                                {stat.label}
-                            </p>
-                            <p className="text-foreground text-lg font-semibold tracking-tight">
-                                {stat.value}
-                            </p>
-                        </div>
-                    ))}
+                <div className="grid grid-cols-2 items-stretch gap-2.5 sm:grid-cols-4">
+                    <div className="bg-accent flex flex-col space-y-1 rounded-xl p-3">
+                        <p className="text-muted-foreground text-xs font-medium">
+                            Previous period
+                        </p>
+                        <p className="text-foreground text-lg font-semibold tracking-tight">
+                            {earnings.previousTotalLabel}
+                        </p>
+                        <StatDeltaSlot>
+                            <StatDelta
+                                performance={earnings.performance}
+                                mode="money"
+                                newLabel="New"
+                            />
+                        </StatDeltaSlot>
+                    </div>
+                    <div className="bg-accent flex flex-col space-y-1 rounded-xl p-3">
+                        <p className="text-muted-foreground text-xs font-medium">
+                            Avg / stop
+                        </p>
+                        <p className="text-foreground text-lg font-semibold tracking-tight">
+                            {earnings.perStopLabel}
+                        </p>
+                        <StatDeltaSlot />
+                    </div>
+                    <div className="bg-accent flex flex-col space-y-1 rounded-xl p-3">
+                        <p className="text-muted-foreground text-xs font-medium">
+                            {codHeldLabel} held
+                        </p>
+                        <p className="text-foreground text-lg font-semibold tracking-tight">
+                            {earnings.codHeldLabel}
+                        </p>
+                        <StatDeltaSlot />
+                    </div>
+                    <div className="bg-accent flex flex-col space-y-1 rounded-xl p-3">
+                        <p className="text-muted-foreground text-xs font-medium">
+                            Deliveries
+                        </p>
+                        <p className="text-foreground text-lg font-semibold tracking-tight">
+                            {earnings.deliveries}
+                        </p>
+                        <StatDeltaSlot>
+                            <StatDelta
+                                performance={earnings.deliveriesPerformance}
+                                mode="percent"
+                                newLabel="New"
+                            />
+                        </StatDeltaSlot>
+                    </div>
                 </div>
 
                 {hasEntries ? (
@@ -109,7 +246,7 @@ export default function DriverEarningsIndex({
                                     </div>
                                     <ul className="flex flex-col gap-2.5">
                                         {day.entries.map((entry) => (
-                                            <li key={entry.id}>
+                                            <li key={`${day.label}-${entry.id}`}>
                                                 <Link
                                                     href={orderShow.url(
                                                         entry.id,
@@ -163,7 +300,7 @@ export default function DriverEarningsIndex({
                     <DriverEmptyState
                         icon={Wallet}
                         title="No earnings yet"
-                        description="Completed drops from this shift will show up here."
+                        description="Completed drops from this period will show up here."
                     />
                 )}
             </div>

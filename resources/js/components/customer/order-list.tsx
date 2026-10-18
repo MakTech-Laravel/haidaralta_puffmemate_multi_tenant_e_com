@@ -87,80 +87,79 @@ export function OrderList({
                     const detailsUrl = orderShow.url(order.orderNumber);
 
                     return (
-                        <li key={order.orderNumber} className="relative">
-                            <Link
-                                href={detailsUrl}
-                                prefetch
-                                aria-label={`View order ${order.orderNumber}`}
-                                className="bg-accent relative flex flex-col gap-3 rounded-xl p-3 sm:p-5"
-                            >
-                                <div className="flex min-w-0 flex-1 flex-col gap-3">
-                                    <div className="min-w-0 space-y-2">
-                                        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                                            <p className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-2 text-xs font-medium">
-                                                <span>
-                                                    Order ID:{' '}
-                                                    {order.orderNumber} ·{' '}
-                                                    {order.date}
-                                                </span>
-                                                {order.source === 'wholesale' &&
-                                                order.sourceLabel ? (
-                                                    <OrderSourceBadge
-                                                        source={order.source}
-                                                        label={
-                                                            order.sourceLabel
-                                                        }
-                                                    />
-                                                ) : null}
-                                            </p>
-                                            <span
-                                                className={cn(
-                                                    'inline-flex shrink-0 rounded-full px-2.5 py-1 text-sm font-normal',
-                                                    order.isActive
-                                                        ? 'bg-primary/10 text-primary'
-                                                        : 'bg-muted-foreground/15 text-foreground',
-                                                )}
-                                            >
-                                                {order.statusLabel}
-                                            </span>
-                                        </div>
-                                        <div className="flex flex-wrap gap-2">
-                                            {visibleProducts.map((product) => (
-                                                <span
-                                                    key={product}
-                                                    className="bg-muted-foreground/15 text-muted-foreground rounded-md px-2.5 py-1 text-sm"
-                                                >
-                                                    {product}
-                                                </span>
-                                            ))}
-                                            {hasMoreProducts ? (
-                                                <span className="bg-foreground text-background rounded-md px-2.5 py-1 text-sm font-medium">
-                                                    More
-                                                </span>
-                                            ) : null}
-                                        </div>
-                                        <p className="text-foreground text-base font-bold">
-                                            {order.priceLabel}
-                                        </p>
-                                    </div>
-                                </div>
-                            </Link>
-                            {order.canChat ? (
-                                <Button
-                                    variant="outline"
-                                    size="icon"
-                                    className="absolute right-3 bottom-3 sm:right-5 sm:bottom-5"
-                                    asChild
+                        <li
+                            key={order.orderNumber}
+                            className="bg-accent rounded-xl p-3 sm:p-5"
+                        >
+                            <div className="flex items-start justify-between gap-2">
+                                <Link
+                                    href={detailsUrl}
+                                    prefetch
+                                    aria-label={`View order ${order.orderNumber}`}
+                                    className="min-w-0 flex-1 space-y-2"
                                 >
-                                    <Link
-                                        href={orderChat.url(order.orderNumber)}
-                                        prefetch
-                                        aria-label={`Chat with driver about order ${order.orderNumber}`}
+                                    <p className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-2 text-xs font-medium">
+                                        <span>
+                                            Order ID: {order.orderNumber} ·{' '}
+                                            {order.date}
+                                        </span>
+                                        {order.source === 'wholesale' &&
+                                        order.sourceLabel ? (
+                                            <OrderSourceBadge
+                                                source={order.source}
+                                                label={order.sourceLabel}
+                                            />
+                                        ) : null}
+                                    </p>
+                                    <div className="flex flex-wrap gap-2">
+                                        {visibleProducts.map((product) => (
+                                            <span
+                                                key={product}
+                                                className="bg-muted-foreground/15 text-muted-foreground rounded-md px-2.5 py-1 text-sm"
+                                            >
+                                                {product}
+                                            </span>
+                                        ))}
+                                        {hasMoreProducts ? (
+                                            <span className="bg-foreground text-background rounded-md px-2.5 py-1 text-sm font-medium">
+                                                More
+                                            </span>
+                                        ) : null}
+                                    </div>
+                                    <p className="text-foreground text-base font-bold">
+                                        {order.priceLabel}
+                                    </p>
+                                </Link>
+                                <div className="flex shrink-0 items-center gap-2">
+                                    <span
+                                        className={cn(
+                                            'inline-flex rounded-full px-2.5 py-1 text-sm font-normal',
+                                            order.isActive
+                                                ? 'bg-primary/10 text-primary'
+                                                : 'bg-muted-foreground/15 text-foreground',
+                                        )}
                                     >
-                                        <MessageCircle />
-                                    </Link>
-                                </Button>
-                            ) : null}
+                                        {order.statusLabel}
+                                    </span>
+                                    {order.canChat ? (
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            asChild
+                                        >
+                                            <Link
+                                                href={orderChat.url(
+                                                    order.orderNumber,
+                                                )}
+                                                prefetch
+                                                aria-label={`Chat with driver about order ${order.orderNumber}`}
+                                            >
+                                                <MessageCircle />
+                                            </Link>
+                                        </Button>
+                                    ) : null}
+                                </div>
+                            </div>
                         </li>
                     );
                 })}
