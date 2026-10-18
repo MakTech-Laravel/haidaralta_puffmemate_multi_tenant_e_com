@@ -50,7 +50,7 @@ enum FulfillmentStatus: string
             self::Assigned => 'Driver assigned',
             self::PickedUp => 'Order picked up',
             self::OutForDelivery => 'On the way',
-            self::Arrived => 'Driver arrived',
+            self::Arrived => 'Arrived',
             self::DeliveryFailed => 'Delivery unsuccessful',
             self::Returning => 'Returning your order',
             self::Returned => 'Returned to the branch',

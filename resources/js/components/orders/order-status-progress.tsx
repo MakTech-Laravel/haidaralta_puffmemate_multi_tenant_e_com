@@ -13,8 +13,10 @@ const PROBLEM_STATUSES = [
 
 export function OrderStatusProgress({
     steps,
+    showActivity = true,
 }: {
     steps: OrderStatusTrackStep[];
+    showActivity?: boolean;
 }) {
     if (steps.length === 0) {
         return null;
@@ -31,9 +33,9 @@ export function OrderStatusProgress({
             : currentIndex;
     const activeStep = steps[activeIndex];
     const isProblem = PROBLEM_STATUSES.includes(activeStep.key);
-    const events = steps
-        .filter((step) => step.state !== 'upcoming')
-        .reverse();
+    const events = showActivity
+        ? steps.filter((step) => step.state !== 'upcoming').reverse()
+        : [];
 
     return (
         <div className="space-y-6">
@@ -112,52 +114,54 @@ export function OrderStatusProgress({
                 </ol>
             </div>
 
-            <div className="space-y-3">
-                <h3 className="text-sm font-semibold">Activity</h3>
-                <ul className="space-y-2">
-                    {events.map((step) => (
-                        <li
-                            key={step.key}
-                            className="bg-muted/30 flex flex-wrap items-start justify-between gap-x-4 gap-y-1 rounded-lg border px-4 py-3"
-                        >
-                            <div className="min-w-0 space-y-1">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge
-                                        variant="outline"
-                                        className={orderStatusBadgeClass(
-                                            step.key,
-                                        )}
-                                    >
-                                        {step.label}
-                                    </Badge>
-                                    {step.actorName ? (
-                                        <span className="text-muted-foreground text-xs">
-                                            by{' '}
-                                            <span className="text-foreground font-medium">
-                                                {step.actorName}
+            {showActivity && events.length > 0 ? (
+                <div className="space-y-3">
+                    <h3 className="text-sm font-semibold">Activity</h3>
+                    <ul className="space-y-2">
+                        {events.map((step) => (
+                            <li
+                                key={step.key}
+                                className="bg-muted/30 flex flex-wrap items-start justify-between gap-x-4 gap-y-1 rounded-lg border px-4 py-3"
+                            >
+                                <div className="min-w-0 space-y-1">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <Badge
+                                            variant="outline"
+                                            className={orderStatusBadgeClass(
+                                                step.key,
+                                            )}
+                                        >
+                                            {step.label}
+                                        </Badge>
+                                        {step.actorName ? (
+                                            <span className="text-muted-foreground text-xs">
+                                                by{' '}
+                                                <span className="text-foreground font-medium">
+                                                    {step.actorName}
+                                                </span>
                                             </span>
-                                        </span>
+                                        ) : null}
+                                    </div>
+                                    {step.comment ? (
+                                        <p className="text-muted-foreground text-sm">
+                                            {step.comment}
+                                        </p>
                                     ) : null}
                                 </div>
-                                {step.comment ? (
-                                    <p className="text-muted-foreground text-sm">
-                                        {step.comment}
-                                    </p>
+                                {step.detail ? (
+                                    <span className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs tabular-nums">
+                                        <Clock3
+                                            className="size-3.5"
+                                            aria-hidden
+                                        />
+                                        {step.detail}
+                                    </span>
                                 ) : null}
-                            </div>
-                            {step.detail ? (
-                                <span className="text-muted-foreground flex shrink-0 items-center gap-1.5 text-xs tabular-nums">
-                                    <Clock3
-                                        className="size-3.5"
-                                        aria-hidden
-                                    />
-                                    {step.detail}
-                                </span>
-                            ) : null}
-                        </li>
-                    ))}
-                </ul>
-            </div>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            ) : null}
         </div>
     );
 }
