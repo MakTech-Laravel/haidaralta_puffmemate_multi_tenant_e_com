@@ -126,6 +126,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Services/Driver/**,app/Http/Controllers/Branch/DriverProductAssignController.php,resources/js/pages/branch/drivers/assign-products.tsx | .ai/rules/pages-branch-drivers.md |
 | resources/js/pages/driver/** | .ai/rules/pages-driver.md |
 | resources/js/pages/platform/branch-staff/** | .ai/rules/pages-platform-branch-staff.md |
+| app/Http/Controllers/Branch/CustomerController.php,app/DataTables/BranchCustomerDataTable.php,resources/js/pages/branch/customers/**,resources/js/components/branch/nav.ts | .ai/rules/pages-branch-customers.md |
 | app/Http/Controllers/Branch/OrderController.php,resources/js/pages/branch/orders/show.tsx | .ai/rules/pages-branch-orders.md |
 | app/Http/Controllers/Platform/OrderController.php,resources/js/pages/platform/orders/show.tsx | .ai/rules/pages-platform-orders.md |
 | app/Http/Controllers/Platform/WholesaleInquiryController.php,resources/js/pages/platform/wholesale-inquiries/**,routes/platform.php | .ai/rules/pages-platform-wholesale-inquiries.md |
