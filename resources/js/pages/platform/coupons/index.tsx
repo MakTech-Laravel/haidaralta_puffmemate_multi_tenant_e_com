@@ -34,7 +34,7 @@ export default function PlatformCouponsIndex({
                 <div className="flex flex-wrap items-start justify-between gap-3">
                     <Heading
                         title="Coupons"
-                        description="Platform-managed discount codes for storefront checkout."
+                        description="Marketing coupons for storefront checkout. Discount applies to cart product total only."
                     />
                     <Button asChild>
                         <Link href="/platform/coupons/create">

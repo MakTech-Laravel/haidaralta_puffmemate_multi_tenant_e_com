@@ -255,12 +255,6 @@ export function buildPlatformNav(
                         permissions: ['manage-catalog'],
                     }),
                     navLink({
-                        title: 'Coupons',
-                        href: '/platform/coupons',
-                        icon: BadgePercent,
-                        permissions: ['manage-catalog'],
-                    }),
-                    navLink({
                         title: 'Delivery settings',
                         href: '/platform/delivery-settings',
                         icon: Truck,
@@ -359,12 +353,13 @@ export function buildPlatformNav(
             navGroup({
                 title: 'Marketing',
                 icon: Megaphone,
-                permissions: ['manage-reports', 'manage-pages'],
+                permissions: ['manage-reports', 'manage-pages', 'manage-catalog'],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'Coupons',
+                        href: '/platform/coupons',
                         icon: BadgePercent,
-                        permissions: ['manage-reports'],
+                        permissions: ['manage-catalog'],
                     }),
                     navSoon({
                         title: 'Deals',

@@ -1,5 +1,5 @@
 import { Head, Link, useForm } from '@inertiajs/react';
-import type { FormEvent } from 'react';
+import type { FormEvent, ReactNode } from 'react';
 import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -33,6 +33,32 @@ type CouponForm = {
     usage_limit_per_customer: number | null;
     status: boolean;
 };
+
+function Section({
+    title,
+    description,
+    children,
+}: {
+    title: string;
+    description?: string;
+    children: ReactNode;
+}) {
+    return (
+        <section className={settingsCardClass}>
+            <div className="mb-5 space-y-1">
+                <h2 className="text-foreground text-base font-semibold tracking-tight">
+                    {title}
+                </h2>
+                {description ? (
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                        {description}
+                    </p>
+                ) : null}
+            </div>
+            <div className="flex flex-col gap-5">{children}</div>
+        </section>
+    );
+}
 
 export default function PlatformCouponForm({
     coupon,
@@ -74,205 +100,215 @@ export default function PlatformCouponForm({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={isEdit ? 'Edit coupon' : 'Add coupon'}
-                    description="Fixed or percent discounts with optional minimums and usage caps."
+                    description="Platform-only. Discount applies to the cart product total, not delivery."
                 />
 
                 <form className="space-y-6" onSubmit={submit}>
-                    <section className={settingsCardClass}>
-                        <div className="flex flex-col gap-5">
-                            <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
-                                <div>
-                                    <Label htmlFor="status">Active</Label>
-                                    <p className="text-muted-foreground text-sm">
-                                        Inactive codes are rejected at checkout.
-                                    </p>
-                                </div>
-                                <Switch
-                                    id="status"
-                                    checked={form.data.status}
-                                    onCheckedChange={(checked) =>
-                                        form.setData('status', checked)
+                    <Section title="Basics">
+                        <div className="flex items-center justify-between gap-4 rounded-xl border p-4">
+                            <div>
+                                <Label htmlFor="status">Active</Label>
+                                <p className="text-muted-foreground text-sm">
+                                    Inactive codes are rejected at checkout.
+                                </p>
+                            </div>
+                            <Switch
+                                id="status"
+                                checked={form.data.status}
+                                onCheckedChange={(checked) =>
+                                    form.setData('status', checked)
+                                }
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="code">Code</Label>
+                            <Input
+                                id="code"
+                                value={form.data.code}
+                                onChange={(event) =>
+                                    form.setData('code', event.target.value)
+                                }
+                                placeholder="WELCOME10"
+                            />
+                            <InputError message={form.errors.code} />
+                        </div>
+                    </Section>
+
+                    <Section
+                        title="Discount rules"
+                        description="Applies to cart product total only — not delivery or other fees."
+                    >
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label>Type</Label>
+                                <Select
+                                    value={form.data.type}
+                                    onValueChange={(value) =>
+                                        form.setData('type', value)
                                     }
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="fixed">
+                                            Fixed amount
+                                        </SelectItem>
+                                        <SelectItem value="percent">
+                                            Percentage
+                                        </SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <InputError message={form.errors.type} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="value">Value</Label>
+                                <Input
+                                    id="value"
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={form.data.value}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'value',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError message={form.errors.value} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="min_subtotal">
+                                    Min product subtotal
+                                </Label>
+                                <Input
+                                    id="min_subtotal"
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={form.data.min_subtotal}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'min_subtotal',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={form.errors.min_subtotal}
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="code">Code</Label>
+                                <Label htmlFor="max_discount">
+                                    Max discount
+                                </Label>
                                 <Input
-                                    id="code"
-                                    value={form.data.code}
+                                    id="max_discount"
+                                    type="number"
+                                    min={0}
+                                    step="0.01"
+                                    value={form.data.max_discount}
                                     onChange={(event) =>
-                                        form.setData('code', event.target.value)
+                                        form.setData(
+                                            'max_discount',
+                                            event.target.value,
+                                        )
                                     }
+                                    placeholder="Optional"
                                 />
-                                <InputError message={form.errors.code} />
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label>Type</Label>
-                                    <Select
-                                        value={form.data.type}
-                                        onValueChange={(value) =>
-                                            form.setData('type', value)
-                                        }
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="fixed">
-                                                Fixed amount
-                                            </SelectItem>
-                                            <SelectItem value="percent">
-                                                Percentage
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <InputError message={form.errors.type} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="value">Value</Label>
-                                    <Input
-                                        id="value"
-                                        type="number"
-                                        min={0}
-                                        step="0.01"
-                                        value={form.data.value}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'value',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError message={form.errors.value} />
-                                </div>
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label htmlFor="min_subtotal">
-                                        Minimum subtotal
-                                    </Label>
-                                    <Input
-                                        id="min_subtotal"
-                                        type="number"
-                                        min={0}
-                                        step="0.01"
-                                        value={form.data.min_subtotal}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'min_subtotal',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={form.errors.min_subtotal}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="max_discount">
-                                        Max discount
-                                    </Label>
-                                    <Input
-                                        id="max_discount"
-                                        type="number"
-                                        min={0}
-                                        step="0.01"
-                                        value={form.data.max_discount}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'max_discount',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={form.errors.max_discount}
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label htmlFor="starts_at">Starts</Label>
-                                    <Input
-                                        id="starts_at"
-                                        type="date"
-                                        value={form.data.starts_at}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'starts_at',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={form.errors.starts_at}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="ends_at">Ends</Label>
-                                    <Input
-                                        id="ends_at"
-                                        type="date"
-                                        value={form.data.ends_at}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'ends_at',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError message={form.errors.ends_at} />
-                                </div>
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2">
-                                <div className="space-y-2">
-                                    <Label htmlFor="usage_limit">
-                                        Usage limit
-                                    </Label>
-                                    <Input
-                                        id="usage_limit"
-                                        type="number"
-                                        min={1}
-                                        value={form.data.usage_limit}
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'usage_limit',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={form.errors.usage_limit}
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="usage_limit_per_customer">
-                                        Per customer
-                                    </Label>
-                                    <Input
-                                        id="usage_limit_per_customer"
-                                        type="number"
-                                        min={1}
-                                        value={
-                                            form.data.usage_limit_per_customer
-                                        }
-                                        onChange={(event) =>
-                                            form.setData(
-                                                'usage_limit_per_customer',
-                                                event.target.value,
-                                            )
-                                        }
-                                    />
-                                    <InputError
-                                        message={
-                                            form.errors.usage_limit_per_customer
-                                        }
-                                    />
-                                </div>
+                                <InputError
+                                    message={form.errors.max_discount}
+                                />
                             </div>
                         </div>
-                    </section>
+                    </Section>
+
+                    <Section title="Validity period">
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="starts_at">Starts</Label>
+                                <Input
+                                    id="starts_at"
+                                    type="date"
+                                    value={form.data.starts_at}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'starts_at',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError message={form.errors.starts_at} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="ends_at">Ends</Label>
+                                <Input
+                                    id="ends_at"
+                                    type="date"
+                                    value={form.data.ends_at}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'ends_at',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError message={form.errors.ends_at} />
+                            </div>
+                        </div>
+                    </Section>
+
+                    <Section
+                        title="Audience & usage limits"
+                        description="Leave blank for unlimited redemptions."
+                    >
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="usage_limit">
+                                    Total redemptions
+                                </Label>
+                                <Input
+                                    id="usage_limit"
+                                    type="number"
+                                    min={1}
+                                    value={form.data.usage_limit}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'usage_limit',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={form.errors.usage_limit}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="usage_limit_per_customer">
+                                    Per customer
+                                </Label>
+                                <Input
+                                    id="usage_limit_per_customer"
+                                    type="number"
+                                    min={1}
+                                    value={form.data.usage_limit_per_customer}
+                                    onChange={(event) =>
+                                        form.setData(
+                                            'usage_limit_per_customer',
+                                            event.target.value,
+                                        )
+                                    }
+                                />
+                                <InputError
+                                    message={
+                                        form.errors.usage_limit_per_customer
+                                    }
+                                />
+                            </div>
+                        </div>
+                    </Section>
+
                     <div className="flex flex-wrap gap-3">
                         <Button type="submit" disabled={form.processing}>
                             {isEdit ? 'Save coupon' : 'Create coupon'}

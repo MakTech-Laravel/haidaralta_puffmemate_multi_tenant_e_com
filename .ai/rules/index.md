@@ -145,7 +145,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/admin/shift-*-empty-state.tsx,resources/js/pages/platform/shifts/assign.tsx | .ai/rules/platform-shifts.md |
 | app/Http/Controllers/**/WholesaleInquiryController.php,app/Http/Requests/Storefront/StoreWholesaleInquiryRequest.php,resources/js/components/storefront/wholesale/**,resources/js/pages/platform/wholesale-inquiries/** | .ai/rules/platform-wholesale-inquiries.md |
 | resources/js/pages/platform/wholesale-inquiries/place-order.tsx,resources/js/components/platform/wholesale/** | .ai/rules/platform-wholesale.md |
-| resources/js/components/platform/product-form.tsx, resources/js/components/platform/category-form.tsx, resources/js/components/platform/{category,product}-form.tsx, resources/js/components/platform/category-profile.tsx, resources/js/components/platform/nav.ts | .ai/rules/platform.md |
+| resources/js/components/platform/product-form.tsx, resources/js/components/platform/category-form.tsx, resources/js/components/platform/{category,product}-form.tsx, resources/js/components/platform/category-profile.tsx, resources/js/components/platform/nav.ts, resources/js/pages/platform/coupons/** | .ai/rules/platform.md |
 | resources/js/components/{platform,admin}/*-form.tsx | .ai/rules/platformadmin.md |
 | resources/js/pages/{platform,branch}/catalog/products/show.tsx | .ai/rules/platformbranch-catalog-products.md |
 | resources/js/lib/order-badges.ts,resources/js/pages/{platform,branch}/orders/index.tsx | .ai/rules/platformbranch-orders.md |
