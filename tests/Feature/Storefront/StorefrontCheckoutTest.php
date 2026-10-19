@@ -489,6 +489,76 @@ test('invalid expired and min-not-met coupons are rejected', function () {
         ->assertSessionHasErrors('coupon');
 });
 
+test('applying a coupon shares appliedCoupon on the checkout page', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'apply-coupon-inertia', 'selling_price' => 60]);
+    Coupon::factory()->create([
+        'code' => 'SAVE10',
+        'type' => CouponType::Fixed,
+        'value' => 10,
+        'min_subtotal' => 50,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.coupon'), ['coupon' => 'SAVE10'])
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHas('storefront.checkout_coupon');
+
+    $this->actingAs($user, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->where('appliedCoupon.code', 'SAVE10')
+            ->where('appliedCoupon.discount', 10));
+});
+
+test('checkout clears a session coupon when the cart no longer meets the minimum', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'coupon-requote-item', 'selling_price' => 60]);
+    Coupon::factory()->create([
+        'code' => 'MIN100',
+        'type' => CouponType::Fixed,
+        'value' => 10,
+        'min_subtotal' => 100,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 2,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.coupon'), ['coupon' => 'MIN100'])
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHas('storefront.checkout_coupon');
+
+    $item = CartItem::query()->sole();
+
+    $this->actingAs($user, 'customer')
+        ->patch(route('cart.update', $item), ['quantity' => 1])
+        ->assertRedirect();
+
+    $this->actingAs($user, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->where('appliedCoupon', null))
+        ->assertSessionMissing('storefront.checkout_coupon');
+});
+
 test('an applied coupon can be removed from checkout', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'remove-coupon-item']);

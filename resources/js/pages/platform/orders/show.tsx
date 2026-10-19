@@ -13,7 +13,6 @@ import {
     Truck,
     UserRound,
 } from 'lucide-react';
-import type { ReactNode } from 'react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import CustomerController from '@/actions/App/Http/Controllers/Platform/CustomerController';
@@ -22,6 +21,11 @@ import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Platfor
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Platform/StockTransferController';
 import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
+import {
+    HeaderFact,
+    SectionCard,
+    SummaryRow,
+} from '@/components/orders/order-detail-section';
 import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
@@ -29,7 +33,7 @@ import { OrderStatusProgress } from '@/components/orders/order-status-progress';
 import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Spinner } from '@/components/ui/spinner';
 import { formatAppDateTime } from '@/lib/datetime';
@@ -37,6 +41,7 @@ import {
     orderStatusBadgeClass,
     paymentStatusBadgeClass,
 } from '@/lib/order-badges';
+import { paymentMethodLabel } from '@/lib/payment-method-label';
 
 type FulfillmentSummary = {
     id: number;
@@ -133,97 +138,6 @@ type OrderDetail = {
         comment: string | null;
     }[];
 };
-
-function paymentMethodLabel(method: string | null): string {
-    switch (method) {
-        case null:
-        case '':
-            return 'Not set';
-        case 'cod':
-            return 'Cash on delivery';
-        case 'pos':
-            return 'Card / POS';
-        default:
-            return method
-                .replaceAll('_', ' ')
-                .replace(/^\w/, (letter) => letter.toUpperCase());
-    }
-}
-
-function SectionCard({
-    icon: Icon,
-    title,
-    action,
-    children,
-    className,
-}: {
-    icon: typeof Package;
-    title: string;
-    action?: ReactNode;
-    children: ReactNode;
-    className?: string;
-}) {
-    return (
-        <Card className={`border-border/70 gap-4 py-5 ${className ?? ''}`}>
-            <CardHeader className="flex flex-row items-center justify-between gap-3 px-5">
-                <CardTitle className="flex items-center gap-2 text-base">
-                    <Icon
-                        className="text-muted-foreground size-4 shrink-0"
-                        aria-hidden
-                    />
-                    {title}
-                </CardTitle>
-                {action}
-            </CardHeader>
-            <CardContent className="px-5">{children}</CardContent>
-        </Card>
-    );
-}
-
-function SummaryRow({
-    label,
-    children,
-}: {
-    label: ReactNode;
-    children: ReactNode;
-}) {
-    return (
-        <div className="flex items-center justify-between gap-3 text-sm">
-            <span className="text-muted-foreground min-w-0 truncate">
-                {label}
-            </span>
-            <span className="shrink-0 text-right font-medium tabular-nums">
-                {children}
-            </span>
-        </div>
-    );
-}
-
-function HeaderFact({
-    icon: Icon,
-    label,
-    children,
-}: {
-    icon: typeof Package;
-    label: string;
-    children: ReactNode;
-}) {
-    return (
-        <div className="flex min-w-0 items-start gap-3">
-            <span className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-lg">
-                <Icon className="size-4" aria-hidden />
-            </span>
-            <div className="min-w-0">
-                <p className="text-muted-foreground text-xs font-medium">
-                    {label}
-                </p>
-                <div className="text-foreground truncate text-sm font-semibold">
-                    {children}
-                </div>
-            </div>
-        </div>
-    );
-}
 
 function FulfillmentCard({
     orderId,

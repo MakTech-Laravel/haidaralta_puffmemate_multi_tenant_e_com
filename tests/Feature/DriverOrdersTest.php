@@ -59,6 +59,31 @@ test('drivers can view an assigned order detail', function () {
             ->has('order.shippingAddress'));
 });
 
+test('driver order detail exposes coupon discount labels', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Assigned], [
+        'subtotal' => 50,
+        'discount' => 10,
+        'coupon_code' => 'SAVE10',
+        'delivery_fee' => 5,
+        'total_amount' => 45,
+    ]);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('driver/orders/show')
+            ->where('order.subtotalLabel', '$50.00')
+            ->where('order.discountLabel', '$10.00')
+            ->where('order.couponCode', 'SAVE10')
+            ->where('order.deliveryFeeLabel', '$5.00')
+            ->where('order.totalLabel', '$45.00'));
+});
+
 test('guests are redirected from driver order chat', function () {
     $driver = User::factory()->create([
         'user_type' => UserType::DRIVER,
