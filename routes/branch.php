@@ -5,6 +5,7 @@ use App\Http\Controllers\Branch\AreaController as BranchAreaController;
 use App\Http\Controllers\Branch\CatalogPricingController as BranchCatalogPricingController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
+use App\Http\Controllers\Branch\CustomerController as BranchCustomerController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
@@ -123,6 +124,11 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     });
 
     Route::middleware(['permission:manage-branch-orders'])->group(function () {
+        Route::get('customers', [BranchCustomerController::class, 'index'])->name('branch.customers.index');
+        Route::get('customers/{user}', [BranchCustomerController::class, 'show'])
+            ->whereNumber('user')
+            ->name('branch.customers.show');
+
         Route::get('orders', [BranchOrderController::class, 'index'])->name('branch.orders.index');
         Route::get('orders/{fulfillment}', [BranchOrderController::class, 'show'])->name('branch.orders.show');
         Route::put('orders/{fulfillment}/status', [BranchOrderController::class, 'updateStatus'])
