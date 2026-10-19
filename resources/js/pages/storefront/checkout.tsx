@@ -302,7 +302,11 @@ export default function StorefrontCheckout({
 
                             form.transform((data) => ({
                                 ...data,
-                                coupon: couponCode,
+                                coupon:
+                                    appliedCoupon?.code ??
+                                    (couponCode.trim() !== ''
+                                        ? couponCode.trim()
+                                        : null),
                             }));
                             form.post(storeCheckout.url(), {
                                 preserveScroll: true,
@@ -350,10 +354,12 @@ export default function StorefrontCheckout({
                                 )
                             }
                             onRemoveCoupon={() => {
-                                setCouponCode('');
-                                form.setData('coupon', '');
                                 router.delete(removeCoupon.url(), {
                                     preserveScroll: true,
+                                    onSuccess: () => {
+                                        setCouponCode('');
+                                        form.setData('coupon', '');
+                                    },
                                 });
                             }}
                             onTermsChange={(accepted) =>

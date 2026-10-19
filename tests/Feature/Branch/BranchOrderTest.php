@@ -349,6 +349,28 @@ test('branch staff must provide a reason when reassigning a driver', function ()
         ->and($history->reason)->toBe('Original driver unavailable');
 });
 
+test('branch order show exposes detail labels for the ops layout', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+
+    $fulfillment = branchOrderFulfillment($sydney, [
+        'status' => FulfillmentStatus::Assigned,
+        'driver_id' => $driver->id,
+    ]);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.show', [$sydney, $fulfillment]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('branch/orders/show')
+            ->where('fulfillment.statusLabel', $fulfillment->status->label())
+            ->where('fulfillment.driverName', $driver->name)
+            ->has('fulfillment.order.totalLabel')
+            ->has('fulfillment.order.placedAt')
+            ->has('fulfillment.order.subtotalLabel'));
+});
+
 test('branch order show links to driver assign history report', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();

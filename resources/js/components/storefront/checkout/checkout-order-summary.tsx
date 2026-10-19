@@ -137,6 +137,17 @@ export function CheckoutOrderSummary({
                                 onChange={(event) =>
                                     onCouponChange(event.target.value)
                                 }
+                                onKeyDown={(event) => {
+                                    if (event.key !== 'Enter') {
+                                        return;
+                                    }
+
+                                    event.preventDefault();
+
+                                    if (coupon.trim() !== '') {
+                                        onApplyCoupon();
+                                    }
+                                }}
                                 placeholder="Enter coupon code"
                                 autoComplete="off"
                                 className="bg-background h-11 rounded-none border-none"
@@ -144,6 +155,7 @@ export function CheckoutOrderSummary({
                             <Button
                                 type="button"
                                 variant="outline"
+                                disabled={coupon.trim() === ''}
                                 onClick={onApplyCoupon}
                             >
                                 Apply

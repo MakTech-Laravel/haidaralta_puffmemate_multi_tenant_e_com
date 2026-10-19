@@ -400,6 +400,12 @@ class OrderController extends Controller
                 'quantityLabel' => (string) $item->quantity,
                 'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
             ])->all(),
+            'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
+            'discountLabel' => (float) $order->discount > 0
+                ? '$'.number_format((float) $order->discount, 2)
+                : null,
+            'couponCode' => $order->coupon_code,
+            'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
         ];
     }
 
