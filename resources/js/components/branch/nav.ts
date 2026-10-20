@@ -147,8 +147,9 @@ export function buildBranchNav(
                 icon: Users,
                 permissions: ['manage-branch-orders'],
                 items: [
-                    navSoon({
+                    navLink({
                         title: 'Customers',
+                        href: `/branch/${slug}/customers`,
                         icon: Users,
                         permissions: ['manage-branch-orders'],
                     }),

@@ -129,6 +129,30 @@ type FulfillmentDetail = {
         detail: string | null;
         comment: string | null;
     }[];
+    timelinePrevious: {
+        key: string;
+        label: string;
+        state: 'completed' | 'current' | 'upcoming';
+        actorName: string | null;
+        detail: string | null;
+        comment: string | null;
+    }[];
+    timelineActivity: {
+        current: {
+            key: string;
+            label: string;
+            actorName: string | null;
+            detail: string | null;
+            comment: string | null;
+        }[];
+        previous: {
+            key: string;
+            label: string;
+            actorName: string | null;
+            detail: string | null;
+            comment: string | null;
+        }[];
+    };
     transfers: {
         id: number;
         status: string;
@@ -371,14 +395,13 @@ export default function BranchOrderShow({
                                     <Badge
                                         variant="outline"
                                         className={paymentStatusBadgeClass(
-                                            fulfillment.isPaid
-                                                ? 'collected'
-                                                : 'pending_collection',
+                                            fulfillment.order.paymentStatus,
                                         )}
                                     >
-                                        {fulfillment.isPaid
-                                            ? 'Collected'
-                                            : 'Pending collection'}
+                                        {
+                                            fulfillment.order
+                                                .paymentStatusLabel
+                                        }
                                     </Badge>
                                 </div>
                             </div>
@@ -867,7 +890,11 @@ export default function BranchOrderShow({
                         />
 
                         <SectionCard icon={History} title="Order progress">
-                            <OrderStatusProgress steps={fulfillment.timeline} />
+                            <OrderStatusProgress
+                                steps={fulfillment.timeline}
+                                previousSteps={fulfillment.timelinePrevious}
+                                activity={fulfillment.timelineActivity}
+                            />
                         </SectionCard>
                     </div>
 

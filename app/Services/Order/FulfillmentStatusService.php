@@ -23,6 +23,7 @@ class FulfillmentStatusService
         private OrderConversationCloser $conversations,
         private DriverInventorySaleService $driverSales,
         private OrderPlacementNotifier $placements,
+        private PaymentMarkingService $payments,
     ) {}
 
     public function transition(
@@ -93,6 +94,7 @@ class FulfillmentStatusService
 
             if ($order !== null) {
                 $this->driverSales->reverse($order, $actor);
+                $this->payments->cancel($order);
             }
 
             if ($fulfillment->driver_id !== null) {
