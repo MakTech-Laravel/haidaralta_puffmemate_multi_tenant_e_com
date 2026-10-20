@@ -327,7 +327,7 @@ class OrderController extends Controller
                 ])->all(),
             ])->all(),
             'timeline' => OrderStatusTimeline::steps(FulfillmentStatus::from($order->status->value), $order->statusHistories),
-            'timelinePrevious' => OrderStatusTimeline::previousAttemptSteps($order->statusHistories),
+            'timelinePrevious' => OrderStatusTimeline::previousAttemptRails($order->statusHistories),
             'timelineActivity' => OrderStatusTimeline::activitySections($order->statusHistories),
         ];
     }
