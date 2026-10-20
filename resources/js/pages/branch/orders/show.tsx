@@ -136,7 +136,7 @@ type FulfillmentDetail = {
         actorName: string | null;
         detail: string | null;
         comment: string | null;
-    }[];
+    }[][];
     timelineActivity: {
         current: {
             key: string;
@@ -151,7 +151,7 @@ type FulfillmentDetail = {
             actorName: string | null;
             detail: string | null;
             comment: string | null;
-        }[];
+        }[][];
     };
     transfers: {
         id: number;
@@ -892,7 +892,7 @@ export default function BranchOrderShow({
                         <SectionCard icon={History} title="Order progress">
                             <OrderStatusProgress
                                 steps={fulfillment.timeline}
-                                previousSteps={fulfillment.timelinePrevious}
+                                previousAttempts={fulfillment.timelinePrevious}
                                 activity={fulfillment.timelineActivity}
                             />
                         </SectionCard>

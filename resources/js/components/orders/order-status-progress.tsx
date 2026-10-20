@@ -21,7 +21,8 @@ export type OrderStatusActivityItem = {
 
 export type OrderStatusActivitySections = {
     current: OrderStatusActivityItem[];
-    previous: OrderStatusActivityItem[];
+    /** Newest closed attempt first; one activity list per previous rail. */
+    previous: OrderStatusActivityItem[][];
 };
 
 function ActivityList({ items }: { items: OrderStatusActivityItem[] }) {
@@ -160,14 +161,22 @@ function resolveActiveIndex(steps: OrderStatusTrackStep[]): number {
     );
 }
 
+function previousAttemptLabel(index: number, total: number): string {
+    if (total === 1) {
+        return 'Previous attempt';
+    }
+
+    return `Previous attempt ${index + 1}`;
+}
+
 export function OrderStatusProgress({
     steps,
-    previousSteps = [],
+    previousAttempts = [],
     activity,
     showActivity = true,
 }: {
     steps: OrderStatusTrackStep[];
-    previousSteps?: OrderStatusTrackStep[];
+    previousAttempts?: OrderStatusTrackStep[][];
     activity?: OrderStatusActivitySections;
     showActivity?: boolean;
 }) {
@@ -178,7 +187,7 @@ export function OrderStatusProgress({
     const activeIndex = resolveActiveIndex(steps);
     const activeStep = steps[activeIndex];
     const isProblem = PROBLEM_STATUSES.includes(activeStep.key);
-    const hasPreviousRail = previousSteps.length > 0;
+    const hasPreviousRails = previousAttempts.length > 0;
     const hasSplit =
         activity !== undefined && activity.previous.length > 0;
     const fallbackEvents = showActivity
@@ -241,18 +250,27 @@ export function OrderStatusProgress({
                 ) : null}
             </div>
 
-            {hasPreviousRail ? (
-                <div className="space-y-3">
-                    <h3 className="text-sm font-semibold">Previous attempt</h3>
-                    <ProgressRail
-                        steps={previousSteps}
-                        activeIndex={previousSteps.length}
-                    />
-                    {showActivity && hasSplit ? (
-                        <ActivityList items={activity.previous} />
-                    ) : null}
-                </div>
-            ) : null}
+            {hasPreviousRails
+                ? previousAttempts.map((rail, index) => (
+                      <div key={`previous-attempt-${index}`} className="space-y-3">
+                          <h3 className="text-sm font-semibold">
+                              {previousAttemptLabel(
+                                  index,
+                                  previousAttempts.length,
+                              )}
+                          </h3>
+                          <ProgressRail
+                              steps={rail}
+                              activeIndex={rail.length}
+                          />
+                          {showActivity &&
+                          activity !== undefined &&
+                          activity.previous[index] !== undefined ? (
+                              <ActivityList items={activity.previous[index]} />
+                          ) : null}
+                      </div>
+                  ))
+                : null}
         </div>
     );
 }

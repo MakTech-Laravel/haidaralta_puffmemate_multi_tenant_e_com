@@ -145,7 +145,7 @@ type OrderDetail = {
         actorName: string | null;
         detail: string | null;
         comment: string | null;
-    }[];
+    }[][];
     timelineActivity: {
         current: {
             key: string;
@@ -160,7 +160,7 @@ type OrderDetail = {
             actorName: string | null;
             detail: string | null;
             comment: string | null;
-        }[];
+        }[][];
     };
 };
 
@@ -787,7 +787,7 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                         <SectionCard icon={History} title="Order progress">
                             <OrderStatusProgress
                                 steps={order.timeline}
-                                previousSteps={order.timelinePrevious}
+                                previousAttempts={order.timelinePrevious}
                                 activity={order.timelineActivity}
                             />
                         </SectionCard>
