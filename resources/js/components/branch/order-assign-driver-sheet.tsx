@@ -35,6 +35,7 @@ type CandidatesResponse = {
     data: OrderAssignDriverOption[];
     meta: CandidatesMeta;
     current_driver_id: number | null;
+    requires_reason?: boolean;
 };
 
 type OrderAssignDriverSheetProps = {
@@ -105,6 +106,7 @@ export function OrderAssignDriverSheet({
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [currentDriverId, setCurrentDriverId] = useState<number | null>(null);
     const [reason, setReason] = useState('');
+    const [requiresReason, setRequiresReason] = useState(false);
     const [meta, setMeta] = useState<CandidatesMeta | null>(null);
 
     const pageRef = useRef(1);
@@ -123,6 +125,7 @@ export function OrderAssignDriverSheet({
         setSelectedId(null);
         setCurrentDriverId(null);
         setReason('');
+        setRequiresReason(false);
         setError(null);
         setMeta(null);
         pageRef.current = 1;
@@ -215,6 +218,10 @@ export function OrderAssignDriverSheet({
             if (replace) {
                 setSelectedId(payload.current_driver_id);
                 setCurrentDriverId(payload.current_driver_id);
+                setRequiresReason(
+                    payload.requires_reason ??
+                        payload.current_driver_id !== null,
+                );
                 setReason('');
             }
         } catch (loadError) {
@@ -222,12 +229,13 @@ export function OrderAssignDriverSheet({
                 return;
             }
 
-                if (replace) {
-                    setDrivers([]);
-                    setMeta(null);
-                    setSelectedId(null);
-                    setCurrentDriverId(null);
-                }
+            if (replace) {
+                setDrivers([]);
+                setMeta(null);
+                setSelectedId(null);
+                setCurrentDriverId(null);
+                setRequiresReason(false);
+            }
 
             setError(
                 loadError instanceof Error
@@ -286,6 +294,7 @@ export function OrderAssignDriverSheet({
     };
 
     const isReassign = currentDriverId !== null;
+    const needsReason = requiresReason || isReassign;
     const sheetMode = mode === 'change' || isReassign ? 'change' : 'assign';
     const sheetTitle =
         sheetMode === 'change' ? 'Change driver' : 'Assign driver';
@@ -298,13 +307,19 @@ export function OrderAssignDriverSheet({
           : 'Choose an active driver from this branch.';
     const submitLabel =
         sheetMode === 'change' ? 'Change driver' : 'Assign driver';
+    const reasonLabel = isReassign
+        ? 'Reason for change'
+        : 'Reason for reassignment after return';
+    const reasonPlaceholder = isReassign
+        ? 'Why are you changing the driver?'
+        : 'Why are you assigning a driver after the return?';
 
     const submit = (advance?: 'picked_up' | 'out_for_delivery'): void => {
         if (fulfillmentId === null || selectedId === null) {
             return;
         }
 
-        if (isReassign && reason.trim() === '') {
+        if (needsReason && reason.trim() === '') {
             return;
         }
 
@@ -326,7 +341,7 @@ export function OrderAssignDriverSheet({
             actionUrl,
             {
                 driver_id: selectedId,
-                ...(isReassign ? { reason: reason.trim() } : {}),
+                ...(needsReason ? { reason: reason.trim() } : {}),
                 ...(advance ? { advance } : {}),
             },
             {
@@ -449,10 +464,10 @@ export function OrderAssignDriverSheet({
                         </p>
                     ) : null}
 
-                    {isReassign ? (
+                    {needsReason ? (
                         <div className="mt-4 space-y-2">
                             <Label htmlFor="sheet-assign-reason">
-                                Reason for change{' '}
+                                {reasonLabel}{' '}
                                 <span className="text-destructive">*</span>
                             </Label>
                             <Textarea
@@ -463,7 +478,7 @@ export function OrderAssignDriverSheet({
                                         event.target.value.slice(0, REASON_MAX),
                                     )
                                 }
-                                placeholder="Why are you changing the driver?"
+                                placeholder={reasonPlaceholder}
                                 rows={3}
                                 maxLength={REASON_MAX}
                                 required
@@ -508,7 +523,7 @@ export function OrderAssignDriverSheet({
                                     loading ||
                                     selectedId === null ||
                                     Boolean(error) ||
-                                    (isReassign && reason.trim() === '')
+                                    (needsReason && reason.trim() === '')
                                 }
                                 onClick={() => submit(action.advance)}
                             >

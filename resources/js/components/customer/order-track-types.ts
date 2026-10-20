@@ -84,4 +84,5 @@ export type CustomerOrderDetail = {
     shippingAddress: OrderTrackShippingAddress;
     driver?: OrderTrackDriver | null;
     timeline: OrderTimelineStep[];
+    timelinePrevious: OrderTimelineStep[];
 };
