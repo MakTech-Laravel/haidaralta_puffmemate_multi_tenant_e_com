@@ -153,8 +153,9 @@ export function buildBranchNav(
                         icon: Users,
                         permissions: ['manage-branch-orders'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Reviews',
+                        href: `/branch/${slug}/reviews`,
                         icon: Star,
                         permissions: ['manage-branch-orders'],
                     }),

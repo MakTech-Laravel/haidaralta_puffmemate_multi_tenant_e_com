@@ -165,7 +165,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Http/Requests/{Platform,Branch}/*Product*Request.php | .ai/rules/requests-platform-branch.md |
 | app/Http/Requests/Platform/*Category*Request.php | .ai/rules/requests-platform.md |
 | resources/js/components/storefront/wholesale/**,resources/js/lib/nominatim.ts,app/Http/Requests/Storefront/StoreWholesaleInquiryRequest.php | .ai/rules/requests-storefront.md |
-| app/Http/Controllers/Platform/ProductReviewController.php, resources/js/pages/platform/reviews/** | .ai/rules/reviews.md |
+| app/Http/Controllers/{Platform,Branch}/ProductReviewController.php, app/DataTables/BranchProductReviewDataTable.php, resources/js/pages/{platform,branch}/reviews/**, resources/js/components/branch/nav.ts | .ai/rules/reviews.md |
 | resources/js/components/admin/role-*.tsx, resources/js/pages/{platform,branch}/roles/** | .ai/rules/roles.md |
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/**,resources/js/components/driver/nav.ts | .ai/rules/route-js-components-driver.md |
 | app/Http/Controllers/Driver/RouteController.php,resources/js/pages/driver/route/** | .ai/rules/route.md |
