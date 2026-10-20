@@ -105,7 +105,7 @@ test('customer track marks processing as packed current', function () {
         ->and($steps[2]['state'])->toBe('upcoming');
 });
 
-test('cancelled track keeps prior steps after a return path', function () {
+test('cancelled after return stays on the same progress rail', function () {
     $histories = [];
 
     foreach ([
@@ -129,14 +129,16 @@ test('cancelled track keeps prior steps after a return path', function () {
 
     $steps = OrderStatusTimeline::steps(FulfillmentStatus::Cancelled, $histories);
     $keys = collect($steps)->pluck('key')->all();
+    $previous = OrderStatusTimeline::previousAttemptRails($histories);
 
-    expect($keys)->toContain('arrived')
+    expect($previous)->toBe([])
+        ->and($keys)->toContain('arrived')
         ->and($keys)->toContain('delivery_failed')
         ->and($keys)->toContain('returning')
         ->and($keys)->toContain('returned')
         ->and($keys[array_key_last($keys)])->toBe('cancelled')
-        ->and(collect($steps)->where('state', 'completed')->count())->toBeGreaterThan(3)
-        ->and(collect($steps)->last()['state'])->toBe('current');
+        ->and(collect($steps)->last()['state'])->toBe('current')
+        ->and(collect($steps)->where('state', 'completed')->count())->toBeGreaterThan(3);
 });
 
 test('cancelled track keeps ready when cancelled from ready', function () {
@@ -311,13 +313,14 @@ test('activity sections split at returned when a new attempt starts', function (
 
     $activity = OrderStatusTimeline::activitySections($histories);
 
-    expect(collect($activity['previous'])->pluck('key')->all())->toBe([
-        'returned',
-        'returning',
-        'delivery_failed',
-        'arrived',
-        'pending',
-    ])
+    expect($activity['previous'])->toHaveCount(1)
+        ->and(collect($activity['previous'][0])->pluck('key')->all())->toBe([
+            'returned',
+            'returning',
+            'delivery_failed',
+            'arrived',
+            'pending',
+        ])
         ->and(collect($activity['current'])->pluck('key')->all())->toBe([
             'assigned',
         ]);
@@ -349,7 +352,7 @@ test('activity sections stay unsplit while still returned', function () {
         ]);
 });
 
-test('previous attempt steps include the closed return path after reassign', function () {
+test('previous attempt rails include the closed return path after reassign', function () {
     $histories = [];
 
     foreach ([
@@ -371,14 +374,15 @@ test('previous attempt steps include the closed return path after reassign', fun
         $histories[] = $row;
     }
 
-    $previous = OrderStatusTimeline::previousAttemptSteps($histories);
+    $previous = OrderStatusTimeline::previousAttemptRails($histories);
     $current = OrderStatusTimeline::steps(FulfillmentStatus::Assigned, $histories);
-    $keys = collect($previous)->pluck('key')->all();
+    $keys = collect($previous[0])->pluck('key')->all();
 
-    expect($keys)->toContain('delivery_failed')
+    expect($previous)->toHaveCount(1)
+        ->and($keys)->toContain('delivery_failed')
         ->and($keys)->toContain('returning')
         ->and($keys)->toContain('returned')
-        ->and(collect($previous)->every(fn (array $step): bool => $step['state'] === 'completed'))->toBeTrue()
+        ->and(collect($previous[0])->every(fn (array $step): bool => $step['state'] === 'completed'))->toBeTrue()
         ->and(collect($current)->pluck('key')->all())->toBe([
             'assigned',
             'picked_up',
@@ -388,7 +392,7 @@ test('previous attempt steps include the closed return path after reassign', fun
         ]);
 });
 
-test('previous attempt steps are empty without a reattempt', function () {
+test('previous attempt rails are empty without a reattempt', function () {
     $histories = [];
 
     foreach ([
@@ -404,13 +408,13 @@ test('previous attempt steps are empty without a reattempt', function () {
         $histories[] = $row;
     }
 
-    expect(OrderStatusTimeline::previousAttemptSteps($histories))->toBe([])
-        ->and(OrderStatusTimeline::previousAttemptSteps([
+    expect(OrderStatusTimeline::previousAttemptRails($histories))->toBe([])
+        ->and(OrderStatusTimeline::previousAttemptRails([
             new OrderStatusHistory(['new_status' => FulfillmentStatus::Assigned->value]),
         ]))->toBe([]);
 });
 
-test('customer previous attempt steps use milestones and stay completed', function () {
+test('customer previous attempt rails use milestones and stay completed', function () {
     $histories = [];
 
     foreach ([
@@ -431,13 +435,57 @@ test('customer previous attempt steps use milestones and stay completed', functi
         $histories[] = $row;
     }
 
-    $previous = OrderStatusTimeline::previousAttemptSteps($histories, true);
-    $keys = collect($previous)->pluck('key')->all();
+    $previous = OrderStatusTimeline::previousAttemptRails($histories, true);
+    $keys = collect($previous[0])->pluck('key')->all();
 
-    expect($keys)->toContain('out_for_delivery')
+    expect($previous)->toHaveCount(1)
+        ->and($keys)->toContain('out_for_delivery')
         ->and($keys)->toContain('arrived')
         ->and($keys)->toContain('delivery_failed')
         ->and($keys)->toContain('returning')
         ->and($keys)->toContain('returned')
-        ->and(collect($previous)->every(fn (array $step): bool => $step['state'] === 'completed'))->toBeTrue();
+        ->and(collect($previous[0])->every(fn (array $step): bool => $step['state'] === 'completed'))->toBeTrue();
+});
+
+test('two return cycles produce two previous rails and a short current rail', function () {
+    $histories = [];
+
+    foreach ([
+        FulfillmentStatus::Pending,
+        FulfillmentStatus::Assigned,
+        FulfillmentStatus::Arrived,
+        FulfillmentStatus::DeliveryFailed,
+        FulfillmentStatus::Returning,
+        FulfillmentStatus::Returned,
+        FulfillmentStatus::Assigned,
+        FulfillmentStatus::Arrived,
+        FulfillmentStatus::DeliveryFailed,
+        FulfillmentStatus::Returning,
+        FulfillmentStatus::Returned,
+        FulfillmentStatus::Assigned,
+    ] as $status) {
+        $row = new OrderStatusHistory([
+            'new_status' => $status->value,
+            'comment' => $status->label(),
+        ]);
+        $row->created_at = now();
+        $histories[] = $row;
+    }
+
+    $previous = OrderStatusTimeline::previousAttemptRails($histories);
+    $current = OrderStatusTimeline::steps(FulfillmentStatus::Assigned, $histories);
+
+    expect($previous)->toHaveCount(2)
+        ->and(collect($previous[0])->pluck('key')->all())->toContain('returned')
+        ->and(collect($previous[0])->pluck('key')->all())->not->toContain('pending')
+        ->and(collect($previous[1])->pluck('key')->all())->toContain('pending')
+        ->and(collect($previous[1])->pluck('key')->all())->toContain('returned')
+        ->and(collect($current)->pluck('key')->all())->toBe([
+            'assigned',
+            'picked_up',
+            'out_for_delivery',
+            'arrived',
+            'delivered',
+        ])
+        ->and($current[0]['state'])->toBe('current');
 });

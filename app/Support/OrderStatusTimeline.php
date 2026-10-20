@@ -34,17 +34,17 @@ final class OrderStatusTimeline
     }
 
     /**
-     * Activity rows split at the last Returned when a new attempt has started.
+     * Activity split per attempt. Previous is newest-closed-first, one list per closed attempt.
      *
      * @param  iterable<int, OrderStatusHistory>  $histories
-     * @return array{current: list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>, previous: list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>}
+     * @return array{current: list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>, previous: list<list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>>}
      */
     public static function activitySections(iterable $histories): array
     {
         $list = Collection::make($histories)->values();
-        $splitAt = self::lastReturnedIndex($list);
+        [$closed, $current] = self::closedAndCurrentSegments($list);
 
-        if ($splitAt === null || $splitAt >= $list->count() - 1) {
+        if ($current->isEmpty() && $closed === []) {
             return [
                 'current' => self::activityItems($list),
                 'previous' => [],
@@ -52,37 +52,42 @@ final class OrderStatusTimeline
         }
 
         return [
-            'current' => self::activityItems($list->slice($splitAt + 1)->values()),
-            'previous' => self::activityItems($list->slice(0, $splitAt + 1)->values()),
+            'current' => self::activityItems($current->isEmpty() ? $list : $current),
+            'previous' => array_map(
+                static fn (Collection $segment): array => self::activityItems($segment),
+                array_reverse($closed),
+            ),
         ];
     }
 
     /**
-     * Closed first-attempt progress rail through Returned, when a re-attempt has started.
+     * Closed attempt progress rails, newest closed first.
+     *
+     * @param  iterable<int, OrderStatusHistory>  $histories
+     * @return list<list<array{key: string, label: string, state: string, actorName: string|null, detail: string|null, comment: string|null}>>
+     */
+    public static function previousAttemptRails(iterable $histories, bool $customer = false): array
+    {
+        $list = Collection::make($histories)->values();
+        [$closed] = self::closedAndCurrentSegments($list);
+
+        return array_map(
+            static fn (Collection $segment): array => self::closedAttemptSteps($segment, $customer),
+            array_reverse($closed),
+        );
+    }
+
+    /**
+     * @deprecated Use previousAttemptRails(); kept for any leftover callers.
      *
      * @param  iterable<int, OrderStatusHistory>  $histories
      * @return list<array{key: string, label: string, state: string, actorName: string|null, detail: string|null, comment: string|null}>
      */
     public static function previousAttemptSteps(iterable $histories, bool $customer = false): array
     {
-        $list = Collection::make($histories)->values();
-        $splitAt = self::lastReturnedIndex($list);
+        $rails = self::previousAttemptRails($histories, $customer);
 
-        if ($splitAt === null || $splitAt >= $list->count() - 1) {
-            return [];
-        }
-
-        $previousHistories = $list->slice(0, $splitAt + 1)->values();
-        $steps = self::steps(FulfillmentStatus::Returned, $previousHistories, $customer);
-
-        return array_map(
-            static function (array $step): array {
-                $step['state'] = 'completed';
-
-                return $step;
-            },
-            $steps,
-        );
+        return $rails[0] ?? [];
     }
 
     /**
@@ -146,6 +151,260 @@ final class OrderStatusTimeline
         }
 
         return $steps;
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     * @return array{0: list<Collection<int, OrderStatusHistory>>, 1: Collection<int, OrderStatusHistory>}
+     */
+    private static function closedAndCurrentSegments(Collection $histories): array
+    {
+        $segments = self::attemptSegments($histories);
+
+        if ($segments === []) {
+            return [[], Collection::make()];
+        }
+
+        // Cancelled right after Returned belongs on that attempt's rail, not a new one.
+        $lastIndex = count($segments) - 1;
+
+        if (
+            $lastIndex >= 1
+            && self::segmentIsOnlyCancelled($segments[$lastIndex])
+            && self::segmentEndsWith($segments[$lastIndex - 1], FulfillmentStatus::Returned)
+        ) {
+            $merged = $segments[$lastIndex - 1]
+                ->concat($segments[$lastIndex])
+                ->values();
+            $segments = [
+                ...array_slice($segments, 0, $lastIndex - 1),
+                $merged,
+            ];
+        }
+
+        $closed = [];
+        $current = Collection::make();
+
+        foreach ($segments as $index => $segment) {
+            $isLast = $index === count($segments) - 1;
+            $endsReturned = self::segmentEndsWith($segment, FulfillmentStatus::Returned);
+
+            if ($endsReturned && ! $isLast) {
+                $closed[] = $segment;
+            } elseif ($isLast) {
+                $current = $segment;
+            }
+        }
+
+        return [$closed, $current];
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     * @return list<Collection<int, OrderStatusHistory>>
+     */
+    private static function attemptSegments(Collection $histories): array
+    {
+        $segments = [];
+        $current = Collection::make();
+
+        foreach ($histories->values() as $row) {
+            $current->push($row);
+
+            if (FulfillmentStatus::tryFrom((string) $row->new_status) === FulfillmentStatus::Returned) {
+                $segments[] = $current->values();
+                $current = Collection::make();
+            }
+        }
+
+        if ($current->isNotEmpty()) {
+            $segments[] = $current->values();
+        }
+
+        return $segments;
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $segment
+     * @return list<array{key: string, label: string, state: string, actorName: string|null, detail: string|null, comment: string|null}>
+     */
+    private static function closedAttemptSteps(Collection $segment, bool $customer): array
+    {
+        $steps = self::stepsForClosedReturnSegment($segment, $customer);
+
+        return array_map(
+            static function (array $step): array {
+                $step['state'] = 'completed';
+
+                return $step;
+            },
+            $steps,
+        );
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $segment
+     * @return list<array{key: string, label: string, state: string, actorName: string|null, detail: string|null, comment: string|null}>
+     */
+    private static function stepsForClosedReturnSegment(Collection $segment, bool $customer): array
+    {
+        $events = [];
+
+        foreach ($segment as $row) {
+            $key = (string) $row->new_status;
+
+            if (! isset($events[$key]) || $row->fulfillment_id !== null) {
+                $events[$key] = $row;
+            }
+        }
+
+        $track = self::closedReturnTrack($segment, $customer);
+        $steps = [];
+
+        foreach ($track as $status) {
+            $row = $customer
+                ? self::customerEventForMilestone($status, $events)
+                : ($events[$status->value] ?? null);
+
+            $steps[] = [
+                'key' => $status->value,
+                'label' => $customer ? $status->customerLabel() : $status->label(),
+                'state' => 'completed',
+                'actorName' => $row?->changer?->name,
+                'detail' => DateTimeFormat::dateTime($row?->created_at),
+                'comment' => $row?->comment,
+            ];
+        }
+
+        return $steps;
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $segment
+     * @return list<FulfillmentStatus>
+     */
+    private static function closedReturnTrack(Collection $segment, bool $customer): array
+    {
+        $forward = $customer
+            ? [
+                FulfillmentStatus::Placed,
+                FulfillmentStatus::Ready,
+                FulfillmentStatus::OutForDelivery,
+                FulfillmentStatus::Arrived,
+                FulfillmentStatus::Delivered,
+            ]
+            : [
+                FulfillmentStatus::Pending,
+                FulfillmentStatus::Placed,
+                FulfillmentStatus::Processing,
+                FulfillmentStatus::Ready,
+                FulfillmentStatus::Assigned,
+                FulfillmentStatus::PickedUp,
+                FulfillmentStatus::OutForDelivery,
+                FulfillmentStatus::Arrived,
+                FulfillmentStatus::Delivered,
+            ];
+
+        $restartFrom = $customer
+            ? FulfillmentStatus::OutForDelivery
+            : FulfillmentStatus::Assigned;
+        $reattemptSegment = self::segmentLooksLikeReattempt($segment, $customer);
+        $headSource = $reattemptSegment
+            ? self::reattemptForwardTrack($forward, $restartFrom)
+            : $forward;
+        $arrivedIndex = array_search(FulfillmentStatus::Arrived, $headSource, true);
+        $head = $arrivedIndex === false
+            ? $headSource
+            : array_slice($headSource, 0, $arrivedIndex + 1);
+        $tail = self::returnTailFromHistories($segment);
+
+        return [...$head, ...$tail];
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $segment
+     */
+    private static function segmentLooksLikeReattempt(Collection $segment, bool $customer): bool
+    {
+        $early = $customer
+            ? [FulfillmentStatus::Placed, FulfillmentStatus::Ready]
+            : [
+                FulfillmentStatus::Pending,
+                FulfillmentStatus::Placed,
+                FulfillmentStatus::Processing,
+                FulfillmentStatus::Ready,
+            ];
+
+        foreach ($segment as $row) {
+            $status = FulfillmentStatus::tryFrom((string) $row->new_status);
+
+            if ($status !== null && in_array($status, $early, true)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $segment
+     */
+    private static function segmentEndsWith(Collection $segment, FulfillmentStatus $status): bool
+    {
+        $last = $segment->last();
+
+        if ($last === null) {
+            return false;
+        }
+
+        return FulfillmentStatus::tryFrom((string) $last->new_status) === $status;
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $segment
+     */
+    private static function segmentIsOnlyCancelled(Collection $segment): bool
+    {
+        if ($segment->count() !== 1) {
+            return false;
+        }
+
+        return self::segmentEndsWith($segment, FulfillmentStatus::Cancelled);
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     * @return list<FulfillmentStatus>
+     */
+    private static function returnTailFromHistories(Collection $histories): array
+    {
+        $seen = [];
+
+        foreach ($histories as $row) {
+            $status = FulfillmentStatus::tryFrom((string) $row->new_status);
+
+            if (in_array($status, [
+                FulfillmentStatus::DeliveryFailed,
+                FulfillmentStatus::Returning,
+                FulfillmentStatus::Returned,
+            ], true)) {
+                $seen[$status->value] = $status;
+            }
+        }
+
+        $tail = [];
+
+        foreach ([
+            FulfillmentStatus::DeliveryFailed,
+            FulfillmentStatus::Returning,
+            FulfillmentStatus::Returned,
+        ] as $status) {
+            if (isset($seen[$status->value])) {
+                $tail[] = $status;
+            }
+        }
+
+        return $tail;
     }
 
     /**
@@ -258,21 +517,13 @@ final class OrderStatusTimeline
      */
     private static function cancelledTrack(array $forward, Collection $histories, bool $customer): array
     {
-        $last = null;
-
-        foreach ($histories as $row) {
-            $status = FulfillmentStatus::tryFrom((string) $row->new_status);
-
-            if ($status === null || $status === FulfillmentStatus::Cancelled) {
-                continue;
-            }
-
-            $last = $customer ? self::customerMilestoneFor($status) : $status;
-        }
+        $last = self::lastNonCancelledStatus($histories);
 
         if ($last === null) {
             return [FulfillmentStatus::Cancelled];
         }
+
+        $displayLast = $customer ? self::customerMilestoneFor($last) : $last;
 
         if (in_array($last, [
             FulfillmentStatus::DeliveryFailed,
@@ -295,20 +546,40 @@ final class OrderStatusTimeline
             return [...$prefix, FulfillmentStatus::Cancelled];
         }
 
-        if (self::hasReturned($histories) && in_array($last, $forward, true)) {
+        if (self::hasReturned($histories) && in_array($displayLast, $forward, true)) {
             $full = $customer
                 ? self::customerTrack($last, $histories)
                 : self::track($last, $histories);
-            $index = self::lastIndexOf($full, $last);
+            $index = self::lastIndexOf($full, $displayLast);
             $prefix = $index === false ? $full : array_slice($full, 0, $index + 1);
 
             return [...$prefix, FulfillmentStatus::Cancelled];
         }
 
-        $index = array_search($last, $forward, true);
+        $index = array_search($displayLast, $forward, true);
         $prefix = $index === false ? [] : array_slice($forward, 0, $index + 1);
 
         return [...$prefix, FulfillmentStatus::Cancelled];
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     */
+    private static function lastNonCancelledStatus(Collection $histories): ?FulfillmentStatus
+    {
+        $last = null;
+
+        foreach ($histories as $row) {
+            $status = FulfillmentStatus::tryFrom((string) $row->new_status);
+
+            if ($status === null || $status === FulfillmentStatus::Cancelled) {
+                continue;
+            }
+
+            $last = $status;
+        }
+
+        return $last;
     }
 
     /**
