@@ -34,6 +34,58 @@ final class OrderStatusTimeline
     }
 
     /**
+     * Activity rows split at the last Returned when a new attempt has started.
+     *
+     * @param  iterable<int, OrderStatusHistory>  $histories
+     * @return array{current: list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>, previous: list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>}
+     */
+    public static function activitySections(iterable $histories): array
+    {
+        $list = Collection::make($histories)->values();
+        $splitAt = self::lastReturnedIndex($list);
+
+        if ($splitAt === null || $splitAt >= $list->count() - 1) {
+            return [
+                'current' => self::activityItems($list),
+                'previous' => [],
+            ];
+        }
+
+        return [
+            'current' => self::activityItems($list->slice($splitAt + 1)->values()),
+            'previous' => self::activityItems($list->slice(0, $splitAt + 1)->values()),
+        ];
+    }
+
+    /**
+     * Closed first-attempt progress rail through Returned, when a re-attempt has started.
+     *
+     * @param  iterable<int, OrderStatusHistory>  $histories
+     * @return list<array{key: string, label: string, state: string, actorName: string|null, detail: string|null, comment: string|null}>
+     */
+    public static function previousAttemptSteps(iterable $histories, bool $customer = false): array
+    {
+        $list = Collection::make($histories)->values();
+        $splitAt = self::lastReturnedIndex($list);
+
+        if ($splitAt === null || $splitAt >= $list->count() - 1) {
+            return [];
+        }
+
+        $previousHistories = $list->slice(0, $splitAt + 1)->values();
+        $steps = self::steps(FulfillmentStatus::Returned, $previousHistories, $customer);
+
+        return array_map(
+            static function (array $step): array {
+                $step['state'] = 'completed';
+
+                return $step;
+            },
+            $steps,
+        );
+    }
+
+    /**
      * Every status on this order's path, including ones that have not happened yet.
      *
      * @param  iterable<int, OrderStatusHistory>  $histories
@@ -41,10 +93,14 @@ final class OrderStatusTimeline
      */
     public static function steps(FulfillmentStatus $current, iterable $histories, bool $customer = false): array
     {
-        $history = Collection::make($histories);
+        $history = Collection::make($histories)->values();
+        $reattempt = self::isReattemptAfterReturn($current, $history);
+        $historyForEvents = $reattempt
+            ? self::historiesAfterLastReturned($history)
+            : $history;
         $events = [];
 
-        foreach ($history as $row) {
+        foreach ($historyForEvents as $row) {
             $key = (string) $row->new_status;
 
             if (! isset($events[$key]) || $row->fulfillment_id !== null) {
@@ -58,13 +114,14 @@ final class OrderStatusTimeline
         $displayCurrent = $customer
             ? self::customerMilestoneFor($current)
             : $current;
-        $currentIndex = array_search($displayCurrent, $track, true);
+        $currentIndex = self::lastIndexOf($track, $displayCurrent);
 
         if ($currentIndex === false) {
             $track[] = $displayCurrent;
             $currentIndex = count($track) - 1;
         }
 
+        $cancelled = $displayCurrent === FulfillmentStatus::Cancelled;
         $steps = [];
 
         foreach ($track as $index => $status) {
@@ -74,7 +131,7 @@ final class OrderStatusTimeline
             $happened = $row !== null;
             $state = match (true) {
                 $index === $currentIndex => 'current',
-                $index < $currentIndex && ($customer || $happened) => 'completed',
+                $index < $currentIndex && ($customer || $cancelled || $happened) => 'completed',
                 default => 'upcoming',
             };
 
@@ -127,20 +184,11 @@ final class OrderStatusTimeline
         }
 
         if ($current === FulfillmentStatus::Cancelled) {
-            $last = null;
+            return self::cancelledTrack($forward, $histories, customer: false);
+        }
 
-            foreach ($histories as $row) {
-                $status = FulfillmentStatus::tryFrom((string) $row->new_status);
-
-                if ($status !== null && $status !== FulfillmentStatus::Cancelled) {
-                    $last = $status;
-                }
-            }
-
-            $index = $last === null ? false : array_search($last, $forward, true);
-            $prefix = $index === false ? [] : array_slice($forward, 0, $index + 1);
-
-            return [...$prefix, FulfillmentStatus::Cancelled];
+        if (self::isReattemptAfterReturn($current, $histories) && in_array($current, $forward, true)) {
+            return self::reattemptForwardTrack($forward, FulfillmentStatus::Assigned);
         }
 
         return $forward;
@@ -178,25 +226,183 @@ final class OrderStatusTimeline
         }
 
         if ($current === FulfillmentStatus::Cancelled) {
-            $lastMilestone = null;
+            return self::cancelledTrack($forward, $histories, customer: true);
+        }
 
-            foreach ($histories as $row) {
-                $status = FulfillmentStatus::tryFrom((string) $row->new_status);
+        $milestone = self::customerMilestoneFor($current);
 
-                if ($status === null || $status === FulfillmentStatus::Cancelled) {
-                    continue;
-                }
+        if (self::isReattemptAfterReturn($current, $histories) && in_array($milestone, $forward, true)) {
+            return self::reattemptForwardTrack($forward, FulfillmentStatus::OutForDelivery);
+        }
 
-                $lastMilestone = self::customerMilestoneFor($status);
+        return $forward;
+    }
+
+    /**
+     * @param  list<FulfillmentStatus>  $forward
+     * @return list<FulfillmentStatus>
+     */
+    private static function reattemptForwardTrack(array $forward, FulfillmentStatus $restartFrom): array
+    {
+        $restartIndex = array_search($restartFrom, $forward, true);
+
+        return $restartIndex === false
+            ? $forward
+            : array_slice($forward, $restartIndex);
+    }
+
+    /**
+     * @param  list<FulfillmentStatus>  $forward
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     * @return list<FulfillmentStatus>
+     */
+    private static function cancelledTrack(array $forward, Collection $histories, bool $customer): array
+    {
+        $last = null;
+
+        foreach ($histories as $row) {
+            $status = FulfillmentStatus::tryFrom((string) $row->new_status);
+
+            if ($status === null || $status === FulfillmentStatus::Cancelled) {
+                continue;
             }
 
-            $index = $lastMilestone === null ? false : array_search($lastMilestone, $forward, true);
-            $prefix = $index === false ? [] : array_slice($forward, 0, $index + 1);
+            $last = $customer ? self::customerMilestoneFor($status) : $status;
+        }
+
+        if ($last === null) {
+            return [FulfillmentStatus::Cancelled];
+        }
+
+        if (in_array($last, [
+            FulfillmentStatus::DeliveryFailed,
+            FulfillmentStatus::Returning,
+            FulfillmentStatus::Returned,
+        ], true)) {
+            $prefix = $customer
+                ? self::customerTrack($last, $histories)
+                : self::track($last, $histories);
 
             return [...$prefix, FulfillmentStatus::Cancelled];
         }
 
-        return $forward;
+        if ($last === FulfillmentStatus::Hold) {
+            $withHold = $forward;
+            array_splice($withHold, 1, 0, [FulfillmentStatus::Hold]);
+            $index = array_search(FulfillmentStatus::Hold, $withHold, true);
+            $prefix = $index === false ? [] : array_slice($withHold, 0, $index + 1);
+
+            return [...$prefix, FulfillmentStatus::Cancelled];
+        }
+
+        if (self::hasReturned($histories) && in_array($last, $forward, true)) {
+            $full = $customer
+                ? self::customerTrack($last, $histories)
+                : self::track($last, $histories);
+            $index = self::lastIndexOf($full, $last);
+            $prefix = $index === false ? $full : array_slice($full, 0, $index + 1);
+
+            return [...$prefix, FulfillmentStatus::Cancelled];
+        }
+
+        $index = array_search($last, $forward, true);
+        $prefix = $index === false ? [] : array_slice($forward, 0, $index + 1);
+
+        return [...$prefix, FulfillmentStatus::Cancelled];
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     */
+    private static function isReattemptAfterReturn(FulfillmentStatus $current, Collection $histories): bool
+    {
+        if (! self::hasReturned($histories)) {
+            return false;
+        }
+
+        return ! in_array($current, [
+            FulfillmentStatus::DeliveryFailed,
+            FulfillmentStatus::Returning,
+            FulfillmentStatus::Returned,
+            FulfillmentStatus::Cancelled,
+            FulfillmentStatus::Hold,
+        ], true);
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     */
+    private static function hasReturned(Collection $histories): bool
+    {
+        return self::lastReturnedIndex($histories) !== null;
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     */
+    private static function lastReturnedIndex(Collection $histories): ?int
+    {
+        $splitAt = null;
+
+        foreach ($histories->values() as $index => $row) {
+            if (FulfillmentStatus::tryFrom((string) $row->new_status) === FulfillmentStatus::Returned) {
+                $splitAt = $index;
+            }
+        }
+
+        return $splitAt;
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     * @return Collection<int, OrderStatusHistory>
+     */
+    private static function historiesAfterLastReturned(Collection $histories): Collection
+    {
+        $splitAt = self::lastReturnedIndex($histories);
+
+        if ($splitAt === null) {
+            return $histories->values();
+        }
+
+        return $histories->values()->slice($splitAt + 1)->values();
+    }
+
+    /**
+     * @param  Collection<int, OrderStatusHistory>  $histories
+     * @return list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>
+     */
+    private static function activityItems(Collection $histories): array
+    {
+        return $histories
+            ->map(function (OrderStatusHistory $row): array {
+                $status = FulfillmentStatus::tryFrom((string) $row->new_status);
+
+                return [
+                    'key' => $status?->value ?? (string) $row->new_status,
+                    'label' => $status?->label() ?? (string) $row->new_status,
+                    'actorName' => $row->changer?->name,
+                    'detail' => DateTimeFormat::dateTime($row->created_at),
+                    'comment' => $row->comment,
+                ];
+            })
+            ->reverse()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @param  list<FulfillmentStatus>  $track
+     */
+    private static function lastIndexOf(array $track, FulfillmentStatus $status): int|false
+    {
+        for ($index = count($track) - 1; $index >= 0; $index--) {
+            if ($track[$index] === $status) {
+                return $index;
+            }
+        }
+
+        return false;
     }
 
     private static function customerMilestoneFor(FulfillmentStatus $status): FulfillmentStatus

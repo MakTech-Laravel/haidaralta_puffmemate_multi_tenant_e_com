@@ -329,6 +329,8 @@ class OrderController extends Controller
                 'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
             ])->all(),
             'timeline' => OrderStatusTimeline::steps($fulfillment->status, $fulfillment->statusHistories),
+            'timelinePrevious' => OrderStatusTimeline::previousAttemptSteps($fulfillment->statusHistories),
+            'timelineActivity' => OrderStatusTimeline::activitySections($fulfillment->statusHistories),
             'transfers' => $fulfillment->stockTransfers->map(fn (StockTransfer $transfer): array => [
                 'id' => $transfer->id,
                 'status' => $transfer->status->value,

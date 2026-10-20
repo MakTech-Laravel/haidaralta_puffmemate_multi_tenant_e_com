@@ -40,6 +40,7 @@ import { formatAppDateTime } from '@/lib/datetime';
 import {
     orderStatusBadgeClass,
     paymentStatusBadgeClass,
+    paymentStatusLabel,
 } from '@/lib/order-badges';
 import { paymentMethodLabel } from '@/lib/payment-method-label';
 
@@ -137,16 +138,44 @@ type OrderDetail = {
         detail: string | null;
         comment: string | null;
     }[];
+    timelinePrevious: {
+        key: string;
+        label: string;
+        state: 'completed' | 'current' | 'upcoming';
+        actorName: string | null;
+        detail: string | null;
+        comment: string | null;
+    }[];
+    timelineActivity: {
+        current: {
+            key: string;
+            label: string;
+            actorName: string | null;
+            detail: string | null;
+            comment: string | null;
+        }[];
+        previous: {
+            key: string;
+            label: string;
+            actorName: string | null;
+            detail: string | null;
+            comment: string | null;
+        }[];
+    };
 };
 
 function FulfillmentCard({
     orderId,
     fulfillment,
     canResendCode,
+    paymentStatus,
+    paymentStatusLabel: paymentLabel,
 }: {
     orderId: number;
     fulfillment: FulfillmentSummary;
     canResendCode: boolean;
+    paymentStatus: string;
+    paymentStatusLabel: string;
 }) {
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [assignOpen, setAssignOpen] = useState(false);
@@ -234,13 +263,9 @@ function FulfillmentCard({
                     </Badge>
                     <Badge
                         variant="outline"
-                        className={paymentStatusBadgeClass(
-                            fulfillment.isPaid
-                                ? 'collected'
-                                : 'pending_collection',
-                        )}
+                        className={paymentStatusBadgeClass(paymentStatus)}
                     >
-                        {fulfillment.isPaid ? 'Collected' : 'Pending collection'}
+                        {paymentLabel || paymentStatusLabel(paymentStatus)}
                     </Badge>
                 </div>
             </div>
@@ -548,7 +573,7 @@ function FulfillmentCard({
                     </p>
                 )}
 
-                {/* {fulfillment.canAssign ? (
+                {fulfillment.canAssign ? (
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                         <Button
                             disabled={processing}
@@ -570,7 +595,7 @@ function FulfillmentCard({
                             storeUrl={OrderAssignController.store.url(orderId)}
                         />
                     </div>
-                ) : null} */}
+                ) : null}
             </div>
         </Card>
     );
@@ -706,6 +731,8 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                 orderId={order.id}
                                 fulfillment={fulfillment}
                                 canResendCode={order.canResendCode}
+                                paymentStatus={order.paymentStatus}
+                                paymentStatusLabel={order.paymentStatusLabel}
                             />
                         ))}
 
@@ -758,7 +785,11 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                         />
 
                         <SectionCard icon={History} title="Order progress">
-                            <OrderStatusProgress steps={order.timeline} />
+                            <OrderStatusProgress
+                                steps={order.timeline}
+                                previousSteps={order.timelinePrevious}
+                                activity={order.timelineActivity}
+                            />
                         </SectionCard>
                     </div>
 

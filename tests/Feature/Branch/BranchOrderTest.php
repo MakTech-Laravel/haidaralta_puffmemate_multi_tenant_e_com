@@ -289,6 +289,41 @@ test('branch staff can assign a ready fulfillment to a branch driver', function 
         ->and($history->reason)->toBeNull();
 });
 
+test('branch staff must provide a reason when assigning after a return', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+
+    $fulfillment = branchOrderFulfillment($sydney, [
+        'status' => FulfillmentStatus::Returned,
+        'driver_id' => null,
+    ]);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.assign-candidates', [$sydney, $fulfillment]))
+        ->assertOk()
+        ->assertJsonPath('requires_reason', true)
+        ->assertJsonPath('current_driver_id', null);
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.assign-driver', [$sydney, $fulfillment]), [
+            'driver_id' => $driver->id,
+        ])
+        ->assertSessionHasErrors('reason');
+
+    expect($fulfillment->refresh()->driver_id)->toBeNull();
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.assign-driver', [$sydney, $fulfillment]), [
+            'driver_id' => $driver->id,
+            'reason' => 'Goods are back at the branch',
+        ])
+        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+
+    expect($fulfillment->refresh()->driver_id)->toBe($driver->id)
+        ->and($fulfillment->status)->toBe(FulfillmentStatus::Assigned);
+});
+
 test('branch staff must provide a reason when reassigning a driver', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
