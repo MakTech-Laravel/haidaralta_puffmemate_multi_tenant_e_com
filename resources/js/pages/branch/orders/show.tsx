@@ -894,6 +894,7 @@ export default function BranchOrderShow({
                                 steps={fulfillment.timeline}
                                 previousAttempts={fulfillment.timelinePrevious}
                                 activity={fulfillment.timelineActivity}
+                                previousAttemptsLayout="sheet"
                             />
                         </SectionCard>
                     </div>

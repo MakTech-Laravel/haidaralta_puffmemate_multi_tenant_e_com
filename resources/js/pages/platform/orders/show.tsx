@@ -789,6 +789,7 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                 steps={order.timeline}
                                 previousAttempts={order.timelinePrevious}
                                 activity={order.timelineActivity}
+                                previousAttemptsLayout="sheet"
                             />
                         </SectionCard>
                     </div>
