@@ -5,8 +5,11 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\UserType;
 use App\Models\Message;
+use App\Models\OrderDriverAssignmentHistory;
 use App\Models\User;
 use App\Services\Conversation\ConversationService;
+use App\Services\Order\DriverDeliveryService;
+use App\Services\Order\FulfillmentStatusService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Sms\FakeSmsSender;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -257,6 +260,137 @@ test('order history defaults to the running month and filters by a date range', 
             ->where('filters.from', '2026-09-25')
             ->where('filters.to', '2026-10-05')
             ->has('orders.data', 2));
+});
+
+test('cancelled orders stay on the last assignee history after driver_id is cleared', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $staff = User::factory()->create([
+        'user_type' => UserType::BRANCH,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::Assigned]);
+    $fulfillment = $order->fulfillment;
+
+    OrderDriverAssignmentHistory::query()->create([
+        'order_id' => $order->id,
+        'fulfillment_id' => $fulfillment->id,
+        'from_driver_id' => null,
+        'to_driver_id' => $driver->id,
+        'reason' => 'Assigned',
+        'changed_by' => $staff->id,
+    ]);
+
+    app(FulfillmentStatusService::class)->cancel($fulfillment, $staff, 'Branch cancelled');
+
+    expect($fulfillment->refresh()->driver_id)->toBeNull()
+        ->and($fulfillment->status)->toBe(FulfillmentStatus::Cancelled);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.data.0.orderNumber', $order->order_number)
+            ->where('orders.data.0.status', 'cancelled'));
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.show', $order))
+        ->assertOk();
+});
+
+test('returned orders stay on the last assignee history after driver_id is cleared', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $staff = User::factory()->create([
+        'user_type' => UserType::BRANCH,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($driver, ['status' => FulfillmentStatus::DeliveryFailed]);
+    $fulfillment = $order->fulfillment;
+
+    OrderDriverAssignmentHistory::query()->create([
+        'order_id' => $order->id,
+        'fulfillment_id' => $fulfillment->id,
+        'from_driver_id' => null,
+        'to_driver_id' => $driver->id,
+        'reason' => 'Assigned',
+        'changed_by' => $staff->id,
+    ]);
+
+    app(DriverDeliveryService::class)->beginReturn($fulfillment, $staff);
+    app(DriverDeliveryService::class)->confirmReturn($fulfillment->refresh(), $staff);
+
+    expect($fulfillment->refresh()->driver_id)->toBeNull()
+        ->and($fulfillment->status)->toBe(FulfillmentStatus::Returned);
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.history.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.data.0.orderNumber', $order->order_number)
+            ->where('orders.data.0.status', 'returned'));
+});
+
+test('a previous assignee does not see a cancelled drop after reassignment', function () {
+    $first = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $second = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $staff = User::factory()->create([
+        'user_type' => UserType::BRANCH,
+        'email_verified_at' => now(),
+    ]);
+    $order = driverPortalOrder($second, ['status' => FulfillmentStatus::Assigned]);
+    $fulfillment = $order->fulfillment;
+
+    OrderDriverAssignmentHistory::query()->create([
+        'order_id' => $order->id,
+        'fulfillment_id' => $fulfillment->id,
+        'from_driver_id' => null,
+        'to_driver_id' => $first->id,
+        'reason' => 'Assigned',
+        'changed_by' => $staff->id,
+    ]);
+    OrderDriverAssignmentHistory::query()->create([
+        'order_id' => $order->id,
+        'fulfillment_id' => $fulfillment->id,
+        'from_driver_id' => $first->id,
+        'to_driver_id' => $second->id,
+        'reason' => 'Reassigned',
+        'changed_by' => $staff->id,
+    ]);
+
+    app(FulfillmentStatusService::class)->cancel($fulfillment, $staff, 'Branch cancelled');
+
+    expect($fulfillment->refresh()->driver_id)->toBeNull();
+
+    $this->actingAs($second, 'driver')
+        ->get(route('driver.history.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 1)
+            ->where('orders.data.0.orderNumber', $order->order_number));
+
+    $this->actingAs($first, 'driver')
+        ->get(route('driver.history.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('orders.data', 0)
+            ->where('total', 0));
+
+    $this->actingAs($first, 'driver')
+        ->get(route('driver.orders.show', $order))
+        ->assertNotFound();
 });
 
 test('order history rejects future dates', function () {

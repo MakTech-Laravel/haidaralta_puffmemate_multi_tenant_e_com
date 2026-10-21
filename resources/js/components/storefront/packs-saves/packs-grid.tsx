@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { PackCard } from '@/components/storefront/pack-card';
+import { startPackCheckout } from '@/components/storefront/packs-saves/buy-pack';
 import { show as packShow } from '@/routes/packs-saves';
 import type { StorefrontPack } from '@/types/storefront';
 import { cn } from '@/lib/utils';
@@ -14,6 +16,8 @@ export function PacksGrid({
     updating = false,
     className,
 }: PacksGridProps) {
+    const [buyingId, setBuyingId] = useState<string | null>(null);
+
     return (
         <section className={className}>
             <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -47,6 +51,16 @@ export function PacksGrid({
                                     branch: pack.branchSlug,
                                     pack: pack.slug,
                                 })}
+                                buying={buyingId === pack.id}
+                                onBuyNow={() => {
+                                    setBuyingId(pack.id);
+                                    startPackCheckout(
+                                        pack.branchSlug,
+                                        pack.slug,
+                                        1,
+                                        () => setBuyingId(null),
+                                    );
+                                }}
                             />
                         ))}
                     </div>
