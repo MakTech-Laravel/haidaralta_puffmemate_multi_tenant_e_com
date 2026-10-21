@@ -7,12 +7,16 @@ type PackBuyControlsProps = {
     stockLeft?: number | null;
     buyLabel?: string;
     className?: string;
+    processing?: boolean;
+    onBuyNow?: (quantity: number) => void;
 };
 
 export function PackBuyControls({
     stockLeft,
     buyLabel = 'Buy now',
     className,
+    processing = false,
+    onBuyNow,
 }: PackBuyControlsProps) {
     const maxQuantity = Math.max(1, stockLeft ?? 1);
     const [quantity, setQuantity] = useState(1);
@@ -30,7 +34,7 @@ export function PackBuyControls({
                     size="icon"
                     className="size-11 rounded-none"
                     onClick={() => changeQuantity(quantity - 1)}
-                    disabled={quantity <= 1}
+                    disabled={processing || quantity <= 1}
                     aria-label="Decrease quantity"
                 >
                     <Minus className="size-4" />
@@ -44,7 +48,7 @@ export function PackBuyControls({
                     size="icon"
                     className="size-11 rounded-none"
                     onClick={() => changeQuantity(quantity + 1)}
-                    disabled={quantity >= maxQuantity}
+                    disabled={processing || quantity >= maxQuantity}
                     aria-label="Increase quantity"
                 >
                     <Plus className="size-4" />
@@ -53,9 +57,11 @@ export function PackBuyControls({
             <Button
                 type="button"
                 className="h-11 flex-1 rounded-md text-sm font-bold tracking-wide uppercase"
+                disabled={processing || (stockLeft !== null && stockLeft !== undefined && stockLeft < 1)}
+                onClick={() => onBuyNow?.(quantity)}
             >
                 <ShoppingCart className="size-4" />
-                {buyLabel}
+                {processing ? 'Redirecting…' : buyLabel}
             </Button>
         </div>
     );
