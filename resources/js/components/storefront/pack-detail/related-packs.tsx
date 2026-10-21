@@ -1,6 +1,8 @@
 import { Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
+import { useState } from 'react';
 import { PackCard } from '@/components/storefront/pack-card';
+import { startPackCheckout } from '@/components/storefront/packs-saves/buy-pack';
 import { packsSaves } from '@/routes';
 import { show as packShow } from '@/routes/packs-saves';
 import type { StorefrontPack } from '@/types/storefront';
@@ -11,6 +13,8 @@ type RelatedPacksProps = {
 };
 
 export function RelatedPacks({ packs, className }: RelatedPacksProps) {
+    const [buyingId, setBuyingId] = useState<string | null>(null);
+
     if (packs.length === 0) {
         return null;
     }
@@ -38,6 +42,16 @@ export function RelatedPacks({ packs, className }: RelatedPacksProps) {
                             branch: pack.branchSlug,
                             pack: pack.slug,
                         })}
+                        buying={buyingId === pack.id}
+                        onBuyNow={() => {
+                            setBuyingId(pack.id);
+                            startPackCheckout(
+                                pack.branchSlug,
+                                pack.slug,
+                                1,
+                                () => setBuyingId(null),
+                            );
+                        }}
                     />
                 ))}
             </div>

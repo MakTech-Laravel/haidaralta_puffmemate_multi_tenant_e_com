@@ -251,6 +251,11 @@ class DriverDeliveryService
             return;
         }
 
+        // Pack create already deducted branch stock via PackService::allocate.
+        if ($order->isPackCheckout()) {
+            return;
+        }
+
         $ids = [];
         $targets = [];
 
