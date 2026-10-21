@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderSource;
 use App\Enums\PaymentStatus;
@@ -74,7 +75,70 @@ test('platform order detail exposes the single fulfillment', function () {
             ->where('order.sourceLabel', 'Customer')
             ->where('order.paymentStatusLabel', $order->payment_status->label())
             ->where('order.customerId', $order->customer_id)
-            ->where('order.customerPhone', $order->customer?->phone));
+            ->where('order.customerPhone', $order->customer?->phone)
+            ->has('order.deliveryAttempts', 0));
+});
+
+test('platform order show keeps cant-deliver attempts after status leaves arrived', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'branch_id' => null,
+        'name' => 'Sam Driver',
+    ]);
+
+    $order = Order::factory()->create([
+        'shipping_address_snapshot' => [
+            'name' => 'Ada Lovelace',
+            'phone' => '+61410111222',
+            'address' => '1 Test Street',
+            'city' => 'Sydney',
+        ],
+    ]);
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create([
+        'branch_id' => $sydney->id,
+        'status' => FulfillmentStatus::Arrived,
+        'driver_id' => $driver->id,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.orders.fail', $order), [
+            'reason' => DeliveryFailureReason::CustomerUnavailable->value,
+            'note' => 'Customer not home after two knocks',
+        ])
+        ->assertRedirect(route('platform.orders.show', $order));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::DeliveryFailed);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('platform/orders/show')
+            ->has('order.deliveryAttempts', 1)
+            ->where('order.deliveryAttempts.0.reason', DeliveryFailureReason::CustomerUnavailable->value)
+            ->where('order.deliveryAttempts.0.reasonLabel', 'Customer unavailable')
+            ->where('order.deliveryAttempts.0.note', 'Customer not home after two knocks')
+            ->where('order.deliveryAttempts.0.driverName', 'Sam Driver')
+            ->where('order.canReportUnavailable', false)
+            ->where('order.fulfillments.0.canReturn', true));
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.orders.return-delivery', $order))
+        ->assertRedirect(route('platform.orders.show', $order));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Returning);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('order.deliveryAttempts', 1)
+            ->where('order.deliveryAttempts.0.note', 'Customer not home after two knocks')
+            ->where('order.canReportUnavailable', false)
+            ->where('order.fulfillments.0.canReturn', false)
+            ->where('order.fulfillments.0.canConfirmReturn', true));
 });
 
 test('platform admin can update any branchs fulfillment status', function () {
