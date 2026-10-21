@@ -184,6 +184,7 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                             steps={order.timeline}
                             previousAttempts={order.timelinePrevious}
                             showActivity={false}
+                            previousAttemptsLayout="sheet"
                         />
                     </CardContent>
                 </Card>
