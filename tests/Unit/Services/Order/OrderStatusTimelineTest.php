@@ -476,10 +476,10 @@ test('two return cycles produce two previous rails and a short current rail', fu
     $current = OrderStatusTimeline::steps(FulfillmentStatus::Assigned, $histories);
 
     expect($previous)->toHaveCount(2)
+        ->and(collect($previous[0])->pluck('key')->all())->toContain('pending')
         ->and(collect($previous[0])->pluck('key')->all())->toContain('returned')
-        ->and(collect($previous[0])->pluck('key')->all())->not->toContain('pending')
-        ->and(collect($previous[1])->pluck('key')->all())->toContain('pending')
         ->and(collect($previous[1])->pluck('key')->all())->toContain('returned')
+        ->and(collect($previous[1])->pluck('key')->all())->not->toContain('pending')
         ->and(collect($current)->pluck('key')->all())->toBe([
             'assigned',
             'picked_up',

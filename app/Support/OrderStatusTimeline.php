@@ -34,7 +34,7 @@ final class OrderStatusTimeline
     }
 
     /**
-     * Activity split per attempt. Previous is newest-closed-first, one list per closed attempt.
+     * Activity split per attempt. Previous is oldest-closed-first, one list per closed attempt.
      *
      * @param  iterable<int, OrderStatusHistory>  $histories
      * @return array{current: list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>, previous: list<list<array{key: string, label: string, actorName: string|null, detail: string|null, comment: string|null}>>}
@@ -55,13 +55,13 @@ final class OrderStatusTimeline
             'current' => self::activityItems($current->isEmpty() ? $list : $current),
             'previous' => array_map(
                 static fn (Collection $segment): array => self::activityItems($segment),
-                array_reverse($closed),
+                $closed,
             ),
         ];
     }
 
     /**
-     * Closed attempt progress rails, newest closed first.
+     * Closed attempt progress rails, oldest closed first.
      *
      * @param  iterable<int, OrderStatusHistory>  $histories
      * @return list<list<array{key: string, label: string, state: string, actorName: string|null, detail: string|null, comment: string|null}>>
@@ -73,7 +73,7 @@ final class OrderStatusTimeline
 
         return array_map(
             static fn (Collection $segment): array => self::closedAttemptSteps($segment, $customer),
-            array_reverse($closed),
+            $closed,
         );
     }
 

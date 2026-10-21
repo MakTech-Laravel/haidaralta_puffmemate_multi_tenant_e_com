@@ -14,7 +14,7 @@ export type OrderStatusActivityItem = {
 
 export type OrderStatusActivitySections = {
     current: OrderStatusActivityItem[];
-    /** Newest closed attempt first; one activity list per previous rail. */
+    /** Oldest closed attempt first; one activity list per previous rail. */
     previous: OrderStatusActivityItem[][];
 };
 
