@@ -23,6 +23,11 @@ import {
     SectionCard,
     SummaryRow,
 } from '@/components/orders/order-detail-section';
+import {
+    OrderDeliveryAttemptCount,
+    OrderDeliveryAttemptPending,
+    OrderDeliveryAttempts,
+} from '@/components/orders/order-delivery-attempts';
 import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
@@ -74,6 +79,14 @@ type FulfillmentDetail = {
     canReportUnavailable?: boolean;
     canCompleteWithoutCode?: boolean;
     failureReasons?: { value: string; label: string }[];
+    deliveryAttempts?: {
+        id: number;
+        reason: string;
+        reasonLabel: string;
+        note: string | null;
+        attemptedAt: string | null;
+        driverName: string | null;
+    }[];
     verificationMethods?: { value: string; label: string }[];
     order: {
         id: number;
@@ -622,26 +635,6 @@ export default function BranchOrderShow({
                                                 Reschedule
                                             </Button>
                                         ) : null}
-                                        {fulfillment.canReturn ? (
-                                            <Button
-                                                variant="outline"
-                                                disabled={processing}
-                                                onClick={() =>
-                                                    post(
-                                                        'return',
-                                                        OrderController.returnDelivery.url(
-                                                            [
-                                                                branch.slug,
-                                                                fulfillment.id,
-                                                            ],
-                                                        ),
-                                                    )
-                                                }
-                                            >
-                                                {spinnerFor('return')}
-                                                Start return
-                                            </Button>
-                                        ) : null}
                                         {fulfillment.canConfirmReturn ? (
                                             <Button
                                                 disabled={processing}
@@ -682,12 +675,28 @@ export default function BranchOrderShow({
                                                 Cancel order
                                             </Button>
                                         ) : null}
+                                        {fulfillment.canReturn ||
+                                        fulfillment.canConfirmReturn ? (
+                                            <OrderDeliveryAttemptCount
+                                                attempts={
+                                                    fulfillment.deliveryAttempts ??
+                                                    []
+                                                }
+                                            />
+                                        ) : null}
                                     </div>
                                 ) : (
                                     <p className="text-muted-foreground text-sm">
                                         No status change is available from here.
                                     </p>
                                 )}
+                                {fulfillment.canReturn ? (
+                                    <OrderDeliveryAttemptPending
+                                        attempts={
+                                            fulfillment.deliveryAttempts ?? []
+                                        }
+                                    />
+                                ) : null}
                             </div>
 
                             {fulfillment.canAssign ? (
@@ -1037,6 +1046,11 @@ export default function BranchOrderShow({
                                 </SummaryRow>
                             </div>
                         </SectionCard>
+
+                        <OrderDeliveryAttempts
+                            attempts={fulfillment.deliveryAttempts ?? []}
+                            visible={!fulfillment.canReturn}
+                        />
                     </aside>
                 </div>
             </div>

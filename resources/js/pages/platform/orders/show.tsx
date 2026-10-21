@@ -26,6 +26,12 @@ import {
     SectionCard,
     SummaryRow,
 } from '@/components/orders/order-detail-section';
+import {
+    OrderDeliveryAttemptCount,
+    OrderDeliveryAttemptPending,
+    OrderDeliveryAttempts,
+    type OrderDeliveryAttempt,
+} from '@/components/orders/order-delivery-attempts';
 import { OrderHandoverActions } from '@/components/orders/order-handover-actions';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
@@ -108,6 +114,14 @@ type OrderDetail = {
     canReportUnavailable?: boolean;
     canCompleteWithoutCode?: boolean;
     failureReasons?: { value: string; label: string }[];
+    deliveryAttempts?: {
+        id: number;
+        reason: string;
+        reasonLabel: string;
+        note: string | null;
+        attemptedAt: string | null;
+        driverName: string | null;
+    }[];
     verificationMethods?: { value: string; label: string }[];
     canResendCode: boolean;
     paymentMethod: string | null;
@@ -170,12 +184,14 @@ function FulfillmentCard({
     canResendCode,
     paymentStatus,
     paymentStatusLabel: paymentLabel,
+    deliveryAttempts,
 }: {
     orderId: number;
     fulfillment: FulfillmentSummary;
     canResendCode: boolean;
     paymentStatus: string;
     paymentStatusLabel: string;
+    deliveryAttempts: OrderDeliveryAttempt[];
 }) {
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [assignOpen, setAssignOpen] = useState(false);
@@ -517,23 +533,6 @@ function FulfillmentCard({
                                 Reschedule
                             </Button>
                         ) : null}
-                        {fulfillment.canReturn ? (
-                            <Button
-                                variant="outline"
-                                disabled={processing}
-                                onClick={() =>
-                                    post(
-                                        'return',
-                                        OrderController.returnDelivery.url(
-                                            orderId,
-                                        ),
-                                    )
-                                }
-                            >
-                                {spinnerFor('return')}
-                                Begin return
-                            </Button>
-                        ) : null}
                         {fulfillment.canConfirmReturn ? (
                             <Button
                                 disabled={processing}
@@ -566,12 +565,21 @@ function FulfillmentCard({
                                 Cancel order
                             </Button>
                         ) : null}
+                        {fulfillment.canReturn ||
+                        fulfillment.canConfirmReturn ? (
+                            <OrderDeliveryAttemptCount
+                                attempts={deliveryAttempts}
+                            />
+                        ) : null}
                     </div>
                 ) : (
                     <p className="text-muted-foreground text-sm">
                         No status change is available from here.
                     </p>
                 )}
+                {fulfillment.canReturn ? (
+                    <OrderDeliveryAttemptPending attempts={deliveryAttempts} />
+                ) : null}
 
                 {fulfillment.canAssign ? (
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -733,6 +741,7 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                 canResendCode={order.canResendCode}
                                 paymentStatus={order.paymentStatus}
                                 paymentStatusLabel={order.paymentStatusLabel}
+                                deliveryAttempts={order.deliveryAttempts ?? []}
                             />
                         ))}
 
@@ -914,6 +923,15 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                 </SummaryRow>
                             </div>
                         </SectionCard>
+
+                        <OrderDeliveryAttempts
+                            attempts={order.deliveryAttempts ?? []}
+                            visible={
+                                !order.fulfillments.some(
+                                    (fulfillment) => fulfillment.canReturn,
+                                )
+                            }
+                        />
                     </aside>
                 </div>
             </div>

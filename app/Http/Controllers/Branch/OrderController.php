@@ -21,6 +21,7 @@ use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
 use App\Services\Order\PaymentMarkingService;
 use App\Support\MediaUrl;
+use App\Support\Order\DeliveryAttemptPayload;
 use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
@@ -66,6 +67,7 @@ class OrderController extends Controller
             'order.customer',
             'driver:id,name',
             'items',
+            'deliveryAttempts.driver:id,name',
             'stockTransfers.items.product:id,name',
             'stockTransfers.sourceBranch:id,name',
             'stockTransfers.destinationBranch:id,name',
@@ -283,6 +285,7 @@ class OrderController extends Controller
                 ],
                 DeliveryFailureReason::cases(),
             ),
+            'deliveryAttempts' => DeliveryAttemptPayload::list($fulfillment->deliveryAttempts),
             'verificationMethods' => array_map(
                 fn (HandoverVerification $method): array => [
                     'value' => $method->value,
