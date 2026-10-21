@@ -29,5 +29,6 @@ yarn-error.log
 /.idea
 /.nova
 /.zed
+
 .gitignore
 branch_structure.json

@@ -4,9 +4,9 @@
   "type": "module",
   "packageManager": "pnpm@11.24.0",
   "scripts": {
-    "build": "vp build",
+    "build": "node api.js && vp build",
     "build:ssr": "vp build && vp build --ssr",
-    "dev": "vp dev",
+    "dev": "node api.js && vp dev",
     "check": "vp check",
     "check:fix": "vp check --fix",
     "types:check": "tsc --noEmit",
