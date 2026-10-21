@@ -26,12 +26,20 @@ const actionIcons: Record<DriverOrderNextActionKey, LucideIcon> = {
     return: Undo2,
 };
 
-const stepForms = {
-    pick_up: OrderController.pickUp.form,
-    start: OrderController.start.form,
-    arrive: OrderController.arrive.form,
-    return: OrderController.beginReturn.form,
-} as const;
+type StepActionKey = Exclude<DriverOrderNextActionKey, 'complete'>;
+
+function stepForm(key: StepActionKey) {
+    switch (key) {
+        case 'pick_up':
+            return OrderController.pickUp.form;
+        case 'start':
+            return OrderController.start.form;
+        case 'arrive':
+            return OrderController.arrive.form;
+        case 'return':
+            return OrderController.beginReturn.form;
+    }
+}
 
 type DriverOrderNextActionProps = {
     orderId: string;
@@ -63,9 +71,11 @@ export function DriverOrderNextAction({
         );
     }
 
+    const form = stepForm(action.key);
+
     return (
         <Form
-            {...stepForms[action.key](orderId)}
+            {...form(orderId)}
             options={{ preserveScroll: true }}
             showProgress={false}
             onError={(errors) => {

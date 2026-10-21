@@ -22,6 +22,7 @@ type CheckoutOrderSummaryProps = {
     deliveryFee: number;
     deliveryLabel: string;
     deliveryIsEstimate?: boolean;
+    couponsAllowed?: boolean;
     coupon: string;
     appliedCoupon: AppliedCoupon;
     couponError?: string;
@@ -43,6 +44,7 @@ export function CheckoutOrderSummary({
     deliveryFee,
     deliveryLabel,
     deliveryIsEstimate = false,
+    couponsAllowed = true,
     coupon,
     appliedCoupon,
     couponError,
@@ -58,7 +60,7 @@ export function CheckoutOrderSummary({
 }: CheckoutOrderSummaryProps) {
     const brand = useAppBrand();
     const [couponOpen, setCouponOpen] = useState(Boolean(couponError));
-    const discount = appliedCoupon?.discount ?? 0;
+    const discount = couponsAllowed ? (appliedCoupon?.discount ?? 0) : 0;
 
     useEffect(() => {
         if (couponError) {
@@ -104,87 +106,89 @@ export function CheckoutOrderSummary({
                 ))}
             </ul>
 
-            <div className="mt-5 space-y-2">
-                {appliedCoupon ? (
-                    <div className="bg-background flex items-center justify-between gap-3 p-3">
-                        <div className="min-w-0">
-                            <p className="text-foreground text-sm font-semibold">
-                                {appliedCoupon.code}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                                {appliedCoupon.formattedDiscount} off
-                            </p>
-                        </div>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                                setCouponOpen(false);
-                                onRemoveCoupon();
-                            }}
-                        >
-                            Remove
-                        </Button>
-                    </div>
-                ) : couponOpen ? (
-                    <div className="space-y-2">
-                        <Label htmlFor="checkout-coupon">Coupon code</Label>
-                        <div className="flex gap-2">
-                            <Input
-                                id="checkout-coupon"
-                                value={coupon}
-                                onChange={(event) =>
-                                    onCouponChange(event.target.value)
-                                }
-                                onKeyDown={(event) => {
-                                    if (event.key !== 'Enter') {
-                                        return;
-                                    }
-
-                                    event.preventDefault();
-
-                                    if (coupon.trim() !== '') {
-                                        onApplyCoupon();
-                                    }
-                                }}
-                                placeholder="Enter coupon code"
-                                autoComplete="off"
-                                className="bg-background h-11 rounded-none border-none"
-                            />
+            {couponsAllowed ? (
+                <div className="mt-5 space-y-2">
+                    {appliedCoupon ? (
+                        <div className="bg-background flex items-center justify-between gap-3 p-3">
+                            <div className="min-w-0">
+                                <p className="text-foreground text-sm font-semibold">
+                                    {appliedCoupon.code}
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                    {appliedCoupon.formattedDiscount} off
+                                </p>
+                            </div>
                             <Button
                                 type="button"
-                                variant="outline"
-                                disabled={coupon.trim() === ''}
-                                onClick={onApplyCoupon}
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                    setCouponOpen(false);
+                                    onRemoveCoupon();
+                                }}
                             >
-                                Apply
+                                Remove
                             </Button>
                         </div>
+                    ) : couponOpen ? (
+                        <div className="space-y-2">
+                            <Label htmlFor="checkout-coupon">Coupon code</Label>
+                            <div className="flex gap-2">
+                                <Input
+                                    id="checkout-coupon"
+                                    value={coupon}
+                                    onChange={(event) =>
+                                        onCouponChange(event.target.value)
+                                    }
+                                    onKeyDown={(event) => {
+                                        if (event.key !== 'Enter') {
+                                            return;
+                                        }
+
+                                        event.preventDefault();
+
+                                        if (coupon.trim() !== '') {
+                                            onApplyCoupon();
+                                        }
+                                    }}
+                                    placeholder="Enter coupon code"
+                                    autoComplete="off"
+                                    className="bg-background h-11 rounded-none border-none"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    disabled={coupon.trim() === ''}
+                                    onClick={onApplyCoupon}
+                                >
+                                    Apply
+                                </Button>
+                            </div>
+                            <button
+                                type="button"
+                                className="text-muted-foreground text-xs underline underline-offset-2"
+                                onClick={() => {
+                                    setCouponOpen(false);
+                                    onCouponChange('');
+                                }}
+                            >
+                                I don’t have a coupon
+                            </button>
+                        </div>
+                    ) : (
                         <button
                             type="button"
-                            className="text-muted-foreground text-xs underline underline-offset-2"
-                            onClick={() => {
-                                setCouponOpen(false);
-                                onCouponChange('');
-                            }}
+                            className="text-foreground text-sm font-medium underline underline-offset-2"
+                            onClick={() => setCouponOpen(true)}
                         >
-                            I don’t have a coupon
+                            Have a coupon code?
                         </button>
-                    </div>
-                ) : (
-                    <button
-                        type="button"
-                        className="text-foreground text-sm font-medium underline underline-offset-2"
-                        onClick={() => setCouponOpen(true)}
-                    >
-                        Have a coupon code?
-                    </button>
-                )}
-                {couponError ? (
-                    <p className="text-destructive text-xs">{couponError}</p>
-                ) : null}
-            </div>
+                    )}
+                    {couponError ? (
+                        <p className="text-destructive text-xs">{couponError}</p>
+                    ) : null}
+                </div>
+            ) : null}
 
             <dl className="mt-5 space-y-2.5">
                 <div className="flex items-center justify-between gap-3 text-sm">

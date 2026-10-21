@@ -108,7 +108,7 @@ export function PackCard({
                     onClick={onBuyNow}
                 >
                     <Plus className="size-3.5" />
-                    {buying ? 'Adding...' : 'Buy now'}
+                    {buying ? 'Redirecting…' : 'Buy now'}
                 </Button>
             </div>
         </article>

@@ -13,6 +13,7 @@ use App\Services\Customer\CustomerAccountService;
 use App\Services\Storefront\CartService;
 use App\Services\Storefront\CheckoutService;
 use App\Services\Storefront\CouponService;
+use App\Support\Storefront\PackCheckoutSession;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -32,6 +33,23 @@ class CheckoutController extends Controller
 
     public function index(): Response|RedirectResponse
     {
+        $packPayload = $this->checkout->packPayload(request());
+
+        if ($packPayload !== null) {
+            request()->session()->forget('storefront.checkout_coupon');
+
+            $user = $this->carts->customer() ?? request()->user('customer');
+
+            return Inertia::render('storefront/checkout', [
+                ...$packPayload,
+                'savedAddress' => $user !== null ? $this->accounts->deliveryAddress($user) : null,
+                'deliveryMethods' => $this->checkout->deliveryMethods(),
+                'paymentMethods' => $this->payments->enabledMethods(),
+                'appliedCoupon' => null,
+                'shippingQuote' => request()->session()->get('storefront.checkout_shipping'),
+            ]);
+        }
+
         $cart = $this->carts->payload(request());
 
         if ($cart['items'] === []) {
@@ -42,6 +60,8 @@ class CheckoutController extends Controller
 
         return Inertia::render('storefront/checkout', [
             ...$cart,
+            'checkoutMode' => 'cart',
+            'couponsAllowed' => true,
             'savedAddress' => $user !== null ? $this->accounts->deliveryAddress($user) : null,
             'deliveryMethods' => $this->checkout->deliveryMethods(),
             'paymentMethods' => $this->payments->enabledMethods(),
@@ -52,6 +72,12 @@ class CheckoutController extends Controller
 
     public function applyCoupon(ApplyCouponRequest $request): RedirectResponse
     {
+        if ($this->checkout->isPackCheckout($request)) {
+            throw ValidationException::withMessages([
+                'coupon' => 'Coupons cannot be applied to Packs & Saves orders.',
+            ]);
+        }
+
         $cart = $this->carts->payload($request);
         $quoted = $this->coupons->quote(
             $request->validated('coupon'),
@@ -114,6 +140,7 @@ class CheckoutController extends Controller
 
         $request->session()->forget('storefront.checkout_coupon');
         $request->session()->forget('storefront.checkout_shipping');
+        PackCheckoutSession::forget($request);
 
         Toast::success('Order placed.');
 

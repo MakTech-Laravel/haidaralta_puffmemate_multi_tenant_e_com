@@ -29,6 +29,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string|null $idempotency_key
  * @property OrderStatus $status
  * @property PaymentStatus $payment_status
+ * @property int|null $pack_id
+ * @property int|null $pack_quantity
  */
 class Order extends Model implements DataTableConfigurable
 {
@@ -62,6 +64,8 @@ class Order extends Model implements DataTableConfigurable
         'delivery_date',
         'time_slot',
         'notes',
+        'pack_id',
+        'pack_quantity',
     ];
 
     /**
@@ -119,6 +123,21 @@ class Order extends Model implements DataTableConfigurable
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    /**
+     * Packs & Saves buy-now orders only. Null for normal product cart checkout.
+     *
+     * @return BelongsTo<Pack, $this>
+     */
+    public function pack(): BelongsTo
+    {
+        return $this->belongsTo(Pack::class);
+    }
+
+    public function isPackCheckout(): bool
+    {
+        return $this->pack_id !== null;
     }
 
     /**
@@ -212,6 +231,7 @@ class Order extends Model implements DataTableConfigurable
             'tax' => 'decimal:2',
             'total_amount' => 'decimal:2',
             'delivery_date' => 'date',
+            'pack_quantity' => 'integer',
         ];
     }
 }

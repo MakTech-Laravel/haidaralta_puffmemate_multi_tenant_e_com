@@ -40,6 +40,8 @@ type CheckoutPageProps = {
     paymentMethods: StorefrontPaymentMethod[];
     appliedCoupon?: AppliedCoupon | null;
     shippingQuote?: ShippingQuote;
+    couponsAllowed?: boolean;
+    checkoutMode?: 'cart' | 'pack';
 };
 
 function sameCoordinate(left: string, right: string): boolean {
@@ -94,6 +96,7 @@ export default function StorefrontCheckout({
     paymentMethods,
     appliedCoupon = null,
     shippingQuote = null,
+    couponsAllowed = true,
 }: CheckoutPageProps) {
     const page = usePage<{ errors?: Record<string, string> }>();
     const defaultMethod = deliveryMethods[0];
@@ -302,11 +305,12 @@ export default function StorefrontCheckout({
 
                             form.transform((data) => ({
                                 ...data,
-                                coupon:
-                                    appliedCoupon?.code ??
-                                    (couponCode.trim() !== ''
-                                        ? couponCode.trim()
-                                        : null),
+                                coupon: couponsAllowed
+                                    ? (appliedCoupon?.code ??
+                                      (couponCode.trim() !== ''
+                                          ? couponCode.trim()
+                                          : null))
+                                    : null,
                             }));
                             form.post(storeCheckout.url(), {
                                 preserveScroll: true,
@@ -338,9 +342,14 @@ export default function StorefrontCheckout({
                                       : 'Calculated at checkout'
                             }
                             deliveryIsEstimate={!quotedMatchesPin && !quoting}
+                            couponsAllowed={couponsAllowed}
                             coupon={couponCode}
-                            appliedCoupon={appliedCoupon}
-                            couponError={errors.coupon}
+                            appliedCoupon={
+                                couponsAllowed ? appliedCoupon : null
+                            }
+                            couponError={
+                                couponsAllowed ? errors.coupon : undefined
+                            }
                             termsAccepted={form.data.terms}
                             termsError={errors.terms}
                             processing={form.processing}
