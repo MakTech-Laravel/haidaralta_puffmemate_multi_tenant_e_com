@@ -21,7 +21,7 @@ Laravel serves `GET /manifest.webmanifest` (`WebAppManifestController`). Do not 
 
 ## Icons
 
-Generate with `pnpm generate:pwa-assets` (`@vite-pwa/assets-generator` only). Never `vite-plugin-pwa`, Workbox, or Serwist. Output lives in `public/pwa/`. Dockerfile runs generate before `pnpm run build`. No new `VITE_*` PWA args.
+Generate with `pnpm generate:pwa-assets` (`@vite-pwa/assets-generator` only). Never `vite-plugin-pwa`, Workbox, or Serwist. Output lives in `public/pwa/` and is **committed**. Regenerate when `mark.svg` or `pwa-assets.config.ts` changes; the Docker app image does **not** run generate (Vite build only). No new `VITE_*` PWA args.
 
 ## Service worker
 

@@ -68,7 +68,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/components/{ui/date-picker,branch/product-inventory-panel}.tsx | .ai/rules/date-pickerbranch.md |
 | resources/js/components/branch/product-inventory-panel.tsx, resources/js/pages/{platform,branch}/**/products/show.tsx, resources/js/pages/{platform,branch}/stock/manage.tsx, resources/js/pages/{platform,branch}/catalog/pricing/manage.tsx, resources/js/components/catalog/manage-catalog-pricing-page.tsx, app/Support/ProductManageRedirect.php, routes/{platform,branch}.php, app/Support/BranchProductPriceDisplay.php, routes/platform.php, routes/*.php, app/Support/Phone.php | .ai/rules/discounts.md |
 | docker/**, docker/nginx.conf, docker/**, docker/nginx.conf | .ai/rules/docker.md |
-| Dockerfile | .ai/rules/dockerfile.md |
+| Dockerfile, Dockerfile.base | .ai/rules/dockerfile.md |
 | resources/js/pages/driver/account/**,resources/js/pages/driver/activity/**,resources/js/components/driver/driver-account-sheet.tsx | .ai/rules/driver-activity-js-components-driver.md |
 | resources/js/pages/driver/dashboard.tsx,resources/js/components/driver/driver-dashboard-hub.tsx | .ai/rules/driver-js-components-driver.md |
 | app/Http/Controllers/Driver/PlaceOrderController.php,app/Support/Driver/DriverPlaceOrderCatalog.php,resources/js/components/driver/place-order/** | .ai/rules/driver-place-order.md |
