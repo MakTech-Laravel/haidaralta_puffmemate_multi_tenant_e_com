@@ -12,6 +12,7 @@ use App\Http\Controllers\Storefront\PacksSavesController;
 use App\Http\Controllers\Storefront\ProductController;
 use App\Http\Controllers\Storefront\ShopController;
 use App\Http\Controllers\Storefront\WholesaleInquiryController;
+use App\Http\Controllers\Temp\DeployCacheTestController;
 use App\Http\Controllers\WebAppManifestController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,12 @@ Route::get('/manifest.webmanifest', WebAppManifestController::class)
     ->name('pwa.manifest');
 
 Route::get('/', HomeController::class)->name('home');
+
+// TEMP — Coolify BuildKit cache smoke test. Delete controller + page + these routes after verifying.
+Route::get('/__temp/deploy-cache-test', [DeployCacheTestController::class, 'show'])
+    ->name('temp.deploy-cache-test');
+Route::post('/__temp/deploy-cache-test/ping', [DeployCacheTestController::class, 'ping'])
+    ->name('temp.deploy-cache-test.ping');
 
 Route::redirect('/driver/login', '/login');
 Route::redirect('/platform/login', '/login');
