@@ -72,8 +72,7 @@ class WorkforceShiftSeeder extends Seeder
                     'benjamin.shaw@sydney-cbd.dev',
                 ],
                 'dispatch_emails' => [
-                    'oscar.knight@puffmemate.dev',
-                    'tessa.moran@puffmemate.dev',
+                    'marcus.reid@puffmemate.dev',
                 ],
             ],
             BranchSeeder::MELBOURNE_COLLINS => [
@@ -118,54 +117,15 @@ class WorkforceShiftSeeder extends Seeder
                 'dispatch' => ['08:00', '16:00'],
                 'floor_emails' => ['harvey.knox@perth-hay.dev', 'freya.sutton@perth-hay.dev'],
                 'late_emails' => ['lucia.bennett@perth-hay.dev', 'tate.morrison@perth-hay.dev'],
-                'dispatch_emails' => ['hugo.price@puffmemate.dev'],
+                'dispatch_emails' => ['hugo.price@puffmemate.dev', 'aria.wells@puffmemate.dev'],
             ],
-            BranchSeeder::ADELAIDE_RUNDLE => [
-                'floor' => ['09:00', '17:00'],
-                'late' => ['12:00', '21:00'],
-                'dispatch' => ['08:00', '16:00'],
-                'floor_emails' => ['noah.carr@adelaide-rundle.dev', 'piper.hughes@adelaide-rundle.dev'],
-                'late_emails' => ['jade.osullivan@adelaide-rundle.dev', 'callum.reid@adelaide-rundle.dev'],
-                'dispatch_emails' => ['aria.wells@puffmemate.dev'],
-            ],
-            BranchSeeder::GOLD_COAST_SURFERS => [
-                'floor' => ['10:00', '18:00'],
-                'late' => ['14:00', '22:00'],
-                'dispatch' => ['09:00', '17:00'],
-                'floor_emails' => ['mason.quinn@gold-coast-surfers.dev', 'ruby.ellis@gold-coast-surfers.dev'],
-                'late_emails' => ['keira.bond@gold-coast-surfers.dev', 'dylan.hayes@gold-coast-surfers.dev'],
-                'dispatch_emails' => ['felix.drake@puffmemate.dev'],
-            ],
-            BranchSeeder::CANBERRA_CIVIC => [
-                'floor' => ['09:30', '17:30'],
-                'late' => ['12:00', '20:00'],
-                'dispatch' => ['08:00', '16:00'],
-                'floor_emails' => ['clara.west@canberra-civic.dev', 'george.lambert@canberra-civic.dev'],
-                'late_emails' => ['helen.frost@canberra-civic.dev'],
-                'dispatch_emails' => ['olivia.kent@puffmemate.dev'],
-            ],
-            BranchSeeder::NEWCASTLE_HUNTER => [
+            BranchSeeder::IPSWICH_BRISBANE_ST => [
                 'floor' => ['09:00', '17:00'],
                 'late' => ['12:00', '20:00'],
-                'dispatch' => ['07:30', '15:30'],
-                'floor_emails' => ['leo.cameron@newcastle-hunter.dev', 'ivy.patel@newcastle-hunter.dev'],
-                'late_emails' => ['emma.nash@newcastle-hunter.dev', 'tom.bradley@newcastle-hunter.dev'],
-                'dispatch_emails' => ['miles.carter@puffmemate.dev'],
-            ],
-            BranchSeeder::PARRAMATTA_CHURCH => [
-                'floor' => ['09:00', '17:00'],
-                'late' => ['15:00', '21:00'],
-                'dispatch' => ['07:00', '15:00'],
-                'floor_emails' => [
-                    'seth.obrien@parramatta-church.dev',
-                    'maya.singh@parramatta-church.dev',
-                    'jack.torres@parramatta-church.dev',
-                ],
-                'late_emails' => ['grace.liu@parramatta-church.dev', 'arjun.mehta@parramatta-church.dev'],
-                'dispatch_emails' => [
-                    'sienna.park@puffmemate.dev',
-                    'jasper.lin@puffmemate.dev',
-                ],
+                'dispatch' => ['08:00', '16:00'],
+                'floor_emails' => ['noah.carr@ipswich-brisbane-st.dev', 'piper.hughes@ipswich-brisbane-st.dev'],
+                'late_emails' => ['jade.osullivan@ipswich-brisbane-st.dev', 'callum.reid@ipswich-brisbane-st.dev'],
+                'dispatch_emails' => ['felix.drake@puffmemate.dev', 'olivia.kent@puffmemate.dev'],
             ],
         ];
 

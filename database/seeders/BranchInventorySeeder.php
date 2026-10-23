@@ -146,11 +146,7 @@ class BranchInventorySeeder extends Seeder
 
         $regionalSlugs = [
             BranchSeeder::PERTH_HAY,
-            BranchSeeder::ADELAIDE_RUNDLE,
-            BranchSeeder::GOLD_COAST_SURFERS,
-            BranchSeeder::CANBERRA_CIVIC,
-            BranchSeeder::NEWCASTLE_HUNTER,
-            BranchSeeder::PARRAMATTA_CHURCH,
+            BranchSeeder::IPSWICH_BRISBANE_ST,
         ];
 
         foreach ($regionalSlugs as $slug) {
@@ -160,7 +156,7 @@ class BranchInventorySeeder extends Seeder
 
         $this->runQueuedSeedSteps(
             'Core stock',
-            fn (int $total): string => sprintf('%d hand-tuned stock and price lines across the 9 core branches.', $total),
+            fn (int $total): string => sprintf('%d hand-tuned stock and price lines across the 5 core branches.', $total),
         );
     }
 

@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
 
 /**
  * Seed a courier starter bag onto every active driver via DriverStockAssignmentService.
- * Depends on UserSeeder + BranchInventorySeeder / NationwideInventorySeeder.
+ * Depends on UserSeeder + BranchInventorySeeder (and NationwideInventorySeeder if that was seeded).
  * Safe to re-run: skips branches where drivers already hold inventory or an assignment exists.
  */
 class DriverStockAssignmentSeeder extends Seeder
