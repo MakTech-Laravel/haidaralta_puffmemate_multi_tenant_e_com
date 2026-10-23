@@ -5,6 +5,7 @@ use App\Http\Controllers\Branch\AreaController as BranchAreaController;
 use App\Http\Controllers\Branch\CatalogPricingController as BranchCatalogPricingController;
 use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
+use App\Http\Controllers\Branch\CustomerController as BranchCustomerController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Branch\OrderController as BranchOrderController;
 use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
+use App\Http\Controllers\Branch\ProductReviewController as BranchProductReviewController;
 use App\Http\Controllers\Branch\Reports\OrderAssignHistoryController as BranchOrderAssignHistoryController;
 use App\Http\Controllers\Branch\Reports\OrderReportController as BranchOrderReportController;
 use App\Http\Controllers\Branch\Reports\PriceHistoryController as BranchPriceHistoryController;
@@ -123,6 +125,26 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     });
 
     Route::middleware(['permission:manage-branch-orders'])->group(function () {
+        Route::get('customers', [BranchCustomerController::class, 'index'])->name('branch.customers.index');
+        Route::get('customers/{user}', [BranchCustomerController::class, 'show'])
+            ->whereNumber('user')
+            ->name('branch.customers.show');
+
+        Route::get('reviews', [BranchProductReviewController::class, 'index'])->name('branch.reviews.index');
+        Route::get('reviews/customer-options', [BranchProductReviewController::class, 'customerOptions'])
+            ->name('branch.reviews.customer-options');
+        Route::get('reviews/product-options', [BranchProductReviewController::class, 'productOptions'])
+            ->name('branch.reviews.product-options');
+        Route::get('reviews/{productReview}', [BranchProductReviewController::class, 'show'])
+            ->whereNumber('productReview')
+            ->name('branch.reviews.show');
+        Route::post('reviews/{productReview}/hide', [BranchProductReviewController::class, 'hide'])
+            ->whereNumber('productReview')
+            ->name('branch.reviews.hide');
+        Route::post('reviews/{productReview}/unhide', [BranchProductReviewController::class, 'unhide'])
+            ->whereNumber('productReview')
+            ->name('branch.reviews.unhide');
+
         Route::get('orders', [BranchOrderController::class, 'index'])->name('branch.orders.index');
         Route::get('orders/{fulfillment}', [BranchOrderController::class, 'show'])->name('branch.orders.show');
         Route::put('orders/{fulfillment}/status', [BranchOrderController::class, 'updateStatus'])

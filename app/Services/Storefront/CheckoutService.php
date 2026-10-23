@@ -3,16 +3,20 @@
 namespace App\Services\Storefront;
 
 use App\Actions\Order\PlaceOrderAction;
+use App\Actions\Order\PlacePackOrderAction;
 use App\Models\DeliveryMethod;
 use App\Models\DeliveryTimeSlot;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Pack;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Order\BranchDeliveryQuote;
 use App\Services\Order\OrderAllocationEngine;
 use App\Services\Order\ShippingCalculator;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
+use App\Support\Storefront\PackCheckoutSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -28,7 +32,9 @@ class CheckoutService
         private readonly PaymentGatewaySettingsService $payments,
         private readonly OrderAllocationEngine $allocator,
         private readonly ShippingCalculator $shipping,
+        private readonly BranchDeliveryQuote $branchDelivery,
         private readonly PlaceOrderAction $placeOrder,
+        private readonly PlacePackOrderAction $placePackOrder,
     ) {}
 
     /**
@@ -92,13 +98,98 @@ class CheckoutService
             ->get();
     }
 
+    public function isPackCheckout(Request $request): bool
+    {
+        return PackCheckoutSession::resolveActivePack($request) !== null;
+    }
+
     /**
-     * Preview the distance-based delivery fee for the current cart.
+     * Checkout line payload for a pack buy-now session (single summary line).
+     *
+     * @return array{
+     *     itemCount: int,
+     *     items: list<array<string, mixed>>,
+     *     subtotal: float,
+     *     formattedSubtotal: string,
+     *     checkoutMode: string,
+     *     couponsAllowed: bool
+     * }|null
+     */
+    public function packPayload(Request $request): ?array
+    {
+        $session = PackCheckoutSession::get($request);
+
+        if ($session === null) {
+            return null;
+        }
+
+        $pack = PackCheckoutSession::resolveActivePack($request);
+
+        if ($pack === null) {
+            return null;
+        }
+
+        $quantity = $session['quantity'];
+        $unit = round((float) $pack->pack_price, 2);
+        $line = round($unit * $quantity, 2);
+        $compareAt = round((float) $pack->subtotal, 2);
+        $compareAt = $compareAt > $unit ? $compareAt : null;
+
+        return [
+            'itemCount' => $quantity,
+            'items' => [[
+                'id' => 'pack:'.$pack->id,
+                'productId' => null,
+                'slug' => $pack->slug,
+                'name' => $pack->name,
+                'category' => 'Packs & Saves',
+                'description' => (string) ($pack->description ?? ''),
+                'image' => $pack->imageUrl(MediaUrl::DEFAULT_FALLBACK) ?? MediaUrl::DEFAULT_FALLBACK,
+                'unitPrice' => $unit,
+                'formattedUnitPrice' => '$'.number_format($unit, 2),
+                'compareAtUnitPrice' => $compareAt,
+                'formattedCompareAtUnitPrice' => $compareAt === null ? null : '$'.number_format($compareAt, 2),
+                'quantity' => $quantity,
+                'maxQuantity' => $pack->quantity,
+                'lineTotal' => $line,
+                'formattedLineTotal' => '$'.number_format($line, 2),
+            ]],
+            'subtotal' => $line,
+            'formattedSubtotal' => '$'.number_format($line, 2),
+            'checkoutMode' => 'pack',
+            'couponsAllowed' => false,
+        ];
+    }
+
+    /**
+     * Preview the distance-based delivery fee for the current cart or pack.
      *
      * @return array{fee: float, formattedFee: string}
      */
     public function quoteShipping(Request $request, float $latitude, float $longitude): array
     {
+        if ($this->isPackCheckout($request)) {
+            $resolved = PackCheckoutSession::requireActivePack($request);
+            /** @var Pack $pack */
+            $pack = $resolved['pack'];
+            $pack->loadMissing('branch');
+            $branch = $pack->branch;
+
+            if ($branch === null) {
+                throw ValidationException::withMessages([
+                    'pack' => 'This pack is no longer available.',
+                ]);
+            }
+
+            $quote = $this->branchDelivery->quote($branch, $latitude, $longitude);
+            $fee = round($quote['fee'], 2);
+
+            return [
+                'fee' => $fee,
+                'formattedFee' => '$'.number_format($fee, 2),
+            ];
+        }
+
         $cart = $this->carts->activeCart($request)->load(['items.product.media']);
 
         if ($cart->items->isEmpty()) {
@@ -202,50 +293,43 @@ class CheckoutService
      */
     public function place(Request $request, User $user, array $data): Order
     {
-        $cartPayload = $this->carts->payload($request);
-
-        if ($cartPayload['items'] === []) {
-            throw ValidationException::withMessages([
-                'cart' => 'Your cart is empty.',
-            ]);
-        }
-
-        $method = DeliveryMethod::query()
-            ->where('key', $data['delivery_method'])
-            ->where('status', true)
-            ->first();
-
-        if ($method === null) {
-            throw ValidationException::withMessages([
-                'delivery_method' => 'Choose a delivery method.',
-            ]);
-        }
-
-        $slotLabel = null;
-        $deliveryDate = null;
-
-        if ($method->requires_slot) {
-            $slot = DeliveryTimeSlot::query()
-                ->where('id', $data['time_slot_id'] ?? null)
-                ->where('delivery_method_id', $method->id)
-                ->where('status', true)
-                ->first();
-
-            if ($slot === null) {
-                throw ValidationException::withMessages([
-                    'time_slot_id' => 'Choose a time slot.',
-                ]);
-            }
-
-            $slotLabel = $slot->label;
-            $deliveryDate = now()->toDateString();
-        }
+        [$slotLabel, $deliveryDate] = $this->resolveDeliverySlot($data);
 
         $enabledKeys = collect($this->payments->enabledMethods())->pluck('id')->all();
 
         if (! in_array($data['payment_method'], $enabledKeys, true)) {
             throw ValidationException::withMessages([
                 'payment_method' => 'Choose an available payment method.',
+            ]);
+        }
+
+        if ($this->isPackCheckout($request)) {
+            if (filled($data['coupon'] ?? null)) {
+                throw ValidationException::withMessages([
+                    'coupon' => 'Coupons cannot be applied to Packs & Saves orders.',
+                ]);
+            }
+
+            $resolved = PackCheckoutSession::requireActivePack($request);
+
+            return $this->placePackOrder->handle(
+                $user,
+                $resolved['pack'],
+                $resolved['quantity'],
+                [
+                    ...$data,
+                    'delivery_date' => $deliveryDate,
+                    'time_slot' => $slotLabel,
+                ],
+                $request,
+            );
+        }
+
+        $cartPayload = $this->carts->payload($request);
+
+        if ($cartPayload['items'] === []) {
+            throw ValidationException::withMessages([
+                'cart' => 'Your cart is empty.',
             ]);
         }
 
@@ -284,5 +368,41 @@ class CheckoutService
             'coupon' => $coupon,
             'discount' => $discount,
         ]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array{0: string|null, 1: string|null}
+     */
+    private function resolveDeliverySlot(array $data): array
+    {
+        $method = DeliveryMethod::query()
+            ->where('key', $data['delivery_method'])
+            ->where('status', true)
+            ->first();
+
+        if ($method === null) {
+            throw ValidationException::withMessages([
+                'delivery_method' => 'Choose a delivery method.',
+            ]);
+        }
+
+        if (! $method->requires_slot) {
+            return [null, null];
+        }
+
+        $slot = DeliveryTimeSlot::query()
+            ->where('id', $data['time_slot_id'] ?? null)
+            ->where('delivery_method_id', $method->id)
+            ->where('status', true)
+            ->first();
+
+        if ($slot === null) {
+            throw ValidationException::withMessages([
+                'time_slot_id' => 'Choose a time slot.',
+            ]);
+        }
+
+        return [$slot->label, now()->toDateString()];
     }
 }

@@ -90,6 +90,28 @@ class PaymentMarkingService
         return $payment->refresh();
     }
 
+    public function cancel(Order $order): ?Payment
+    {
+        $payment = $order->payment()->first() ?? $order->payments()->first();
+
+        if ($payment === null) {
+            if ($order->payment_status === PaymentStatus::PendingCollection) {
+                $order->forceFill(['payment_status' => PaymentStatus::Cancelled])->save();
+            }
+
+            return null;
+        }
+
+        if ($payment->status !== PaymentStatus::PendingCollection) {
+            return $payment;
+        }
+
+        $payment->forceFill(['status' => PaymentStatus::Cancelled])->save();
+        $this->syncOrder($order, $payment);
+
+        return $payment->refresh();
+    }
+
     public function markFulfillmentPaid(OrderFulfillment $fulfillment): OrderFulfillment
     {
         if ($fulfillment->isPaid()) {

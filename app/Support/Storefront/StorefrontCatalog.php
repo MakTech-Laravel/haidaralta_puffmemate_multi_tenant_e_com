@@ -699,6 +699,22 @@ class StorefrontCatalog
     }
 
     /**
+     * An active, in-window pack by primary key (buy-now checkout session).
+     */
+    public static function findActivePackById(int $packId): ?Pack
+    {
+        return self::activePacksQuery(null)
+            ->whereKey($packId)
+            ->with([
+                'branch',
+                'media',
+                'items.product.media',
+                'items.product.categories:id,name,slug',
+            ])
+            ->first();
+    }
+
+    /**
      * Storefront pack detail payload.
      *
      * @return array{id: string, slug: string, branchSlug: string, name: string, eyebrow: string, description: string, image: string, price: string, currency: string, savings: string|null, stockLeft: int, regularPrice: string, discountPercent: int, branchName: string, items: list<array{name: string, quantity: int, image: string}>, images: list<string>, productCount: int, totalUnits: int, startsAt: string|null, endsAt: string|null}

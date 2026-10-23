@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\DeliveryFailureReason;
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
@@ -164,6 +165,59 @@ test('branch staff cannot view another branchs fulfillment', function () {
         ->assertNotFound();
 });
 
+test('branch order show keeps cant-deliver attempts after status leaves arrived', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'branch_id' => null,
+        'name' => 'Sam Driver',
+    ]);
+
+    $fulfillment = branchOrderFulfillment($sydney, [
+        'status' => FulfillmentStatus::Arrived,
+        'driver_id' => $driver->id,
+    ]);
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.fail', [$sydney, $fulfillment]), [
+            'reason' => DeliveryFailureReason::WrongAddress->value,
+            'note' => 'Wrong unit number on the order',
+        ])
+        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::DeliveryFailed);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.show', [$sydney, $fulfillment]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('branch/orders/show')
+            ->has('fulfillment.deliveryAttempts', 1)
+            ->where('fulfillment.deliveryAttempts.0.reason', DeliveryFailureReason::WrongAddress->value)
+            ->where('fulfillment.deliveryAttempts.0.reasonLabel', 'Wrong address')
+            ->where('fulfillment.deliveryAttempts.0.note', 'Wrong unit number on the order')
+            ->where('fulfillment.deliveryAttempts.0.driverName', 'Sam Driver')
+            ->where('fulfillment.canReportUnavailable', false)
+            ->where('fulfillment.canReturn', true));
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.return-delivery', [$sydney, $fulfillment]))
+        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Returning);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.show', [$sydney, $fulfillment]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('fulfillment.deliveryAttempts', 1)
+            ->where('fulfillment.deliveryAttempts.0.note', 'Wrong unit number on the order')
+            ->where('fulfillment.canReportUnavailable', false)
+            ->where('fulfillment.canReturn', false)
+            ->where('fulfillment.canConfirmReturn', true));
+});
+
 test('branch staff can update fulfillment status and it rolls up to the master order', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -289,6 +343,41 @@ test('branch staff can assign a ready fulfillment to a branch driver', function 
         ->and($history->reason)->toBeNull();
 });
 
+test('branch staff must provide a reason when assigning after a return', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+
+    $fulfillment = branchOrderFulfillment($sydney, [
+        'status' => FulfillmentStatus::Returned,
+        'driver_id' => null,
+    ]);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.assign-candidates', [$sydney, $fulfillment]))
+        ->assertOk()
+        ->assertJsonPath('requires_reason', true)
+        ->assertJsonPath('current_driver_id', null);
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.assign-driver', [$sydney, $fulfillment]), [
+            'driver_id' => $driver->id,
+        ])
+        ->assertSessionHasErrors('reason');
+
+    expect($fulfillment->refresh()->driver_id)->toBeNull();
+
+    $this->actingAs($admin, 'branch')
+        ->post(route('branch.orders.assign-driver', [$sydney, $fulfillment]), [
+            'driver_id' => $driver->id,
+            'reason' => 'Goods are back at the branch',
+        ])
+        ->assertRedirect(route('branch.orders.show', [$sydney, $fulfillment]));
+
+    expect($fulfillment->refresh()->driver_id)->toBe($driver->id)
+        ->and($fulfillment->status)->toBe(FulfillmentStatus::Assigned);
+});
+
 test('branch staff must provide a reason when reassigning a driver', function () {
     $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
@@ -347,6 +436,28 @@ test('branch staff must provide a reason when reassigning a driver', function ()
         ->and($history->to_driver_id)->toBe($replacement->id)
         ->and($history->changed_by)->toBe($admin->id)
         ->and($history->reason)->toBe('Original driver unavailable');
+});
+
+test('branch order show exposes detail labels for the ops layout', function () {
+    $admin = User::query()->where('email', UserSeeder::BRANCH_1_SUPER_ADMIN)->firstOrFail();
+    $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+    $driver = User::query()->where('email', UserSeeder::DRIVER)->firstOrFail();
+
+    $fulfillment = branchOrderFulfillment($sydney, [
+        'status' => FulfillmentStatus::Assigned,
+        'driver_id' => $driver->id,
+    ]);
+
+    $this->actingAs($admin, 'branch')
+        ->get(route('branch.orders.show', [$sydney, $fulfillment]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('branch/orders/show')
+            ->where('fulfillment.statusLabel', $fulfillment->status->label())
+            ->where('fulfillment.driverName', $driver->name)
+            ->has('fulfillment.order.totalLabel')
+            ->has('fulfillment.order.placedAt')
+            ->has('fulfillment.order.subtotalLabel'));
 });
 
 test('branch order show links to driver assign history report', function () {

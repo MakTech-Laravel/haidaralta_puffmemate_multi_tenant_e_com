@@ -1,5 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { Star } from 'lucide-react';
+import { useState } from 'react';
+import { startPackCheckout } from '@/components/storefront/packs-saves/buy-pack';
 import { PackBuyControls } from '@/components/storefront/packs-saves/pack-buy-controls';
 import { PackInsideList } from '@/components/storefront/packs-saves/pack-inside-list';
 import { show as packShow } from '@/routes/packs-saves';
@@ -17,6 +19,7 @@ type FeaturedPackProps = {
 };
 
 export function FeaturedPack({ pack, className }: FeaturedPackProps) {
+    const [buying, setBuying] = useState(false);
     const detailHref = packShow.url({
         branch: pack.branchSlug,
         pack: pack.slug,
@@ -106,6 +109,16 @@ export function FeaturedPack({ pack, className }: FeaturedPackProps) {
                     <PackBuyControls
                         stockLeft={pack.stockLeft}
                         className="mt-5"
+                        processing={buying}
+                        onBuyNow={(quantity) => {
+                            setBuying(true);
+                            startPackCheckout(
+                                pack.branchSlug,
+                                pack.slug,
+                                quantity,
+                                () => setBuying(false),
+                            );
+                        }}
                     />
                 </div>
             </div>

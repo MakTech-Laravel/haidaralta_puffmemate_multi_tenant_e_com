@@ -1,4 +1,6 @@
 import { PackageCheck } from 'lucide-react';
+import { useState } from 'react';
+import { startPackCheckout } from '@/components/storefront/packs-saves/buy-pack';
 import { PackBuyControls } from '@/components/storefront/packs-saves/pack-buy-controls';
 import { PackInsideList } from '@/components/storefront/packs-saves/pack-inside-list';
 import {
@@ -15,6 +17,7 @@ type PackDetailSummaryProps = {
 };
 
 export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
+    const [buying, setBuying] = useState(false);
     const subtitle = [pack.eyebrow, pack.branchName]
         .filter(Boolean)
         .join(' · ');
@@ -61,6 +64,16 @@ export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
             <PackBuyControls
                 stockLeft={pack.stockLeft}
                 buyLabel={`Buy now`}
+                processing={buying}
+                onBuyNow={(quantity) => {
+                    setBuying(true);
+                    startPackCheckout(
+                        pack.branchSlug,
+                        pack.slug,
+                        quantity,
+                        () => setBuying(false),
+                    );
+                }}
             />
 
             <div className="flex flex-wrap items-start justify-between gap-3 text-xs">

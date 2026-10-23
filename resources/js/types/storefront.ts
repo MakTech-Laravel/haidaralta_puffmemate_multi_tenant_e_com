@@ -64,8 +64,8 @@ export type StorefrontFeature = {
 };
 
 export type StorefrontCartItem = {
-    id: number;
-    productId: number;
+    id: number | string;
+    productId: number | null;
     slug: string;
     name: string;
     category: string;

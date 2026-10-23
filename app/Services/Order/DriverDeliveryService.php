@@ -193,7 +193,13 @@ class DriverDeliveryService
             'attempted_at' => now(),
         ]);
 
-        return $this->statuses->apply($fulfillment, FulfillmentStatus::DeliveryFailed, $actor, $reason->label());
+        $comment = $reason->label();
+        $trimmedNote = trim((string) $note);
+        if ($trimmedNote !== '') {
+            $comment .= ': '.$trimmedNote;
+        }
+
+        return $this->statuses->apply($fulfillment, FulfillmentStatus::DeliveryFailed, $actor, $comment);
     }
 
     public function retry(OrderFulfillment $fulfillment, User $actor): OrderFulfillment
@@ -248,6 +254,11 @@ class DriverDeliveryService
         $order = $fulfillment->order()->with('items')->first();
 
         if ($order === null) {
+            return;
+        }
+
+        // Pack create already deducted branch stock via PackService::allocate.
+        if ($order->isPackCheckout()) {
             return;
         }
 

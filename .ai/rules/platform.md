@@ -5,6 +5,7 @@ paths:
   - 'resources/js/components/platform/{category,product}-form.tsx'
   - resources/js/components/platform/category-profile.tsx
   - resources/js/components/platform/nav.ts
+  - 'resources/js/pages/platform/coupons/**'
 ---
 
 # Platform
@@ -84,5 +85,5 @@ branchOpsFields is buying_price + regular_price + selling_price + quantity on br
 ## Administrator shifts nav gated by config
 Platform Administrator Shifts + Assign to shift only render when config shifts.show_platform_administrator_shifts (env SHIFTS_SHOW_PLATFORM_ADMINISTRATOR_SHIFTS) is true. Default false. Branch management Shifts/Assign stay visible. Shared via Inertia shifts.show_platform_administrator_shifts into buildPlatformNav.
 
-## Marketing Announcement is live
-Platform Marketing shows a live Announcement item after Coupons/Deals at /platform/announcements (Megaphone, manage-reports). Coupons and Deals stay navSoon. No Branch copy of this page.
+## Marketing Coupons and Announcement are live
+Platform Marketing shows live Coupons at /platform/coupons (BadgePercent, manage-catalog) and Announcement at /platform/announcements (Megaphone, manage-reports). Deals stays navSoon. Coupons are platform-only (no Branch admin); discount applies to cart product subtotal at checkout, not delivery.

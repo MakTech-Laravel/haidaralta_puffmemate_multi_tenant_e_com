@@ -9,6 +9,7 @@ enum PaymentStatus: string
     case Verified = 'verified';
     case Failed = 'failed';
     case Refunded = 'refunded';
+    case Cancelled = 'cancelled';
 
     public function label(): string
     {
@@ -18,6 +19,7 @@ enum PaymentStatus: string
             self::Verified => 'Verified',
             self::Failed => 'Failed',
             self::Refunded => 'Refunded',
+            self::Cancelled => 'Cancelled',
         };
     }
 
@@ -28,6 +30,7 @@ enum PaymentStatus: string
             self::Collected, self::Verified => 'Payment received',
             self::Failed => 'Payment unsuccessful',
             self::Refunded => 'Refunded',
+            self::Cancelled => 'Cancelled',
         };
     }
 
@@ -53,7 +56,10 @@ enum PaymentStatus: string
      */
     public static function actionableOptions(): array
     {
-        $cases = array_filter(self::cases(), fn (self $status): bool => $status !== self::PendingCollection);
+        $cases = array_filter(
+            self::cases(),
+            fn (self $status): bool => ! in_array($status, [self::PendingCollection, self::Cancelled], true),
+        );
 
         return array_values(array_map(
             fn (self $status): array => [

@@ -118,12 +118,13 @@ class OrderController extends Controller
             [$from, $to] = [$to, $from];
         }
 
+        $historyStatuses = array_map(
+            fn (FulfillmentStatus $status): string => $status->value,
+            self::HISTORY_STATUSES,
+        );
+
         $orders = OrderFulfillment::query()
-            ->where('driver_id', $request->user()->id)
-            ->whereIn('status', array_map(
-                fn (FulfillmentStatus $status): string => $status->value,
-                self::HISTORY_STATUSES,
-            ))
+            ->visibleInDriverHistory((int) $request->user()->id, $historyStatuses)
             ->whereBetween('updated_at', [$from->startOfDay(), $to->endOfDay()])
             ->when($search !== '', fn (Builder $query) => $query->whereHas(
                 'order',
@@ -304,8 +305,12 @@ class OrderController extends Controller
         $driverId = (int) $request->user()->id;
         $assigned = $fulfillment !== null && (int) $fulfillment->driver_id === $driverId;
         $ownSale = $order->source === OrderSource::DriverSale && (int) $order->placed_by === $driverId;
+        $finishedHistory = $fulfillment !== null
+            && $fulfillment->driver_id === null
+            && in_array($fulfillment->status, self::HISTORY_STATUSES, true)
+            && $fulfillment->wasLastAssignedDriver($driverId);
 
-        abort_unless($fulfillment !== null && ($assigned || $ownSale), 404);
+        abort_unless($fulfillment !== null && ($assigned || $ownSale || $finishedHistory), 404);
 
         $fulfillment->loadMissing('order.items');
 
@@ -400,6 +405,12 @@ class OrderController extends Controller
                 'quantityLabel' => (string) $item->quantity,
                 'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
             ])->all(),
+            'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
+            'discountLabel' => (float) $order->discount > 0
+                ? '$'.number_format((float) $order->discount, 2)
+                : null,
+            'couponCode' => $order->coupon_code,
+            'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
         ];
     }
 

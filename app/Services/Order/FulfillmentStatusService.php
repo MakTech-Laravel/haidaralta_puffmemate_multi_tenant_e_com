@@ -6,8 +6,10 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
 use App\Enums\StockTransferStatus;
 use App\Models\Inventory;
+use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\OrderStatusHistory;
+use App\Models\Pack;
 use App\Models\User;
 use App\Services\Conversation\OrderConversationCloser;
 use App\Services\Driver\DriverInventorySaleService;
@@ -23,6 +25,7 @@ class FulfillmentStatusService
         private OrderConversationCloser $conversations,
         private DriverInventorySaleService $driverSales,
         private OrderPlacementNotifier $placements,
+        private PaymentMarkingService $payments,
     ) {}
 
     public function transition(
@@ -92,7 +95,9 @@ class FulfillmentStatusService
             $order = $fulfillment->order()->first();
 
             if ($order !== null) {
+                $this->restorePackQuantity($order);
                 $this->driverSales->reverse($order, $actor);
+                $this->payments->cancel($order);
             }
 
             if ($fulfillment->driver_id !== null) {
@@ -272,5 +277,32 @@ class FulfillmentStatusService
         }
 
         return $query->first();
+    }
+
+    /**
+     * Return sold pack slots to the pack offer so they can be bought again.
+     * Branch product stock was already held by PackService::allocate at create.
+     */
+    private function restorePackQuantity(Order $order): void
+    {
+        if (! $order->isPackCheckout() || $order->pack_id === null || (int) $order->pack_quantity < 1) {
+            return;
+        }
+
+        /** @var Pack|null $pack */
+        $pack = Pack::query()->whereKey($order->pack_id)->lockForUpdate()->first();
+
+        if ($pack === null) {
+            return;
+        }
+
+        $restored = $pack->quantity + (int) $order->pack_quantity;
+
+        Pack::query()->whereKey($pack->id)->update([
+            'quantity' => $restored,
+            'status' => true,
+        ]);
+
+        $order->forceFill(['pack_quantity' => 0])->save();
     }
 }

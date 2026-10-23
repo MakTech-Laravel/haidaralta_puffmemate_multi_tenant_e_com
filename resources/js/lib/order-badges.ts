@@ -86,6 +86,8 @@ export function paymentStatusLabel(status: string): string {
             return 'Failed';
         case 'refunded':
             return 'Refunded';
+        case 'cancelled':
+            return 'Cancelled';
         default:
             return status.replaceAll('_', ' ');
     }
@@ -103,6 +105,8 @@ export function paymentStatusBadgeClass(status: string): string {
             return tint.rose;
         case 'refunded':
             return tint.violet;
+        case 'cancelled':
+            return tint.zinc;
         default:
             return tint.zinc;
     }

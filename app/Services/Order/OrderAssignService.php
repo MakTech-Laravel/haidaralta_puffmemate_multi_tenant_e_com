@@ -52,7 +52,8 @@ class OrderAssignService
      * @return array{
      *     data: list<array{id: int, name: string, phone: string, avatar_url: string|null}>,
      *     meta: array{current_page: int, last_page: int, per_page: int, total: int},
-     *     current_driver_id: int|null
+     *     current_driver_id: int|null,
+     *     requires_reason: bool
      * }
      */
     public function paginatedCandidatesPayload(
@@ -107,6 +108,8 @@ class OrderAssignService
                 'total' => $paginator->total(),
             ],
             'current_driver_id' => $fulfillment->driver_id,
+            'requires_reason' => $fulfillment->driver_id !== null
+                || $fulfillment->status === FulfillmentStatus::Returned,
         ];
     }
 

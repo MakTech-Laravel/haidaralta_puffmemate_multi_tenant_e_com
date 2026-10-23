@@ -7,11 +7,13 @@ use App\Http\Requests\Storefront\ApplyCouponRequest;
 use App\Http\Requests\Storefront\PlaceOrderRequest;
 use App\Http\Requests\Storefront\QuoteShippingRequest;
 use App\Models\Order;
+use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Customer\CustomerAccountService;
 use App\Services\Storefront\CartService;
 use App\Services\Storefront\CheckoutService;
 use App\Services\Storefront\CouponService;
+use App\Support\Storefront\PackCheckoutSession;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -31,6 +33,23 @@ class CheckoutController extends Controller
 
     public function index(): Response|RedirectResponse
     {
+        $packPayload = $this->checkout->packPayload(request());
+
+        if ($packPayload !== null) {
+            request()->session()->forget('storefront.checkout_coupon');
+
+            $user = $this->carts->customer() ?? request()->user('customer');
+
+            return Inertia::render('storefront/checkout', [
+                ...$packPayload,
+                'savedAddress' => $user !== null ? $this->accounts->deliveryAddress($user) : null,
+                'deliveryMethods' => $this->checkout->deliveryMethods(),
+                'paymentMethods' => $this->payments->enabledMethods(),
+                'appliedCoupon' => null,
+                'shippingQuote' => request()->session()->get('storefront.checkout_shipping'),
+            ]);
+        }
+
         $cart = $this->carts->payload(request());
 
         if ($cart['items'] === []) {
@@ -41,16 +60,24 @@ class CheckoutController extends Controller
 
         return Inertia::render('storefront/checkout', [
             ...$cart,
+            'checkoutMode' => 'cart',
+            'couponsAllowed' => true,
             'savedAddress' => $user !== null ? $this->accounts->deliveryAddress($user) : null,
             'deliveryMethods' => $this->checkout->deliveryMethods(),
             'paymentMethods' => $this->payments->enabledMethods(),
-            'appliedCoupon' => request()->session()->get('storefront.checkout_coupon'),
+            'appliedCoupon' => $this->freshAppliedCoupon($cart, $user),
             'shippingQuote' => request()->session()->get('storefront.checkout_shipping'),
         ]);
     }
 
     public function applyCoupon(ApplyCouponRequest $request): RedirectResponse
     {
+        if ($this->checkout->isPackCheckout($request)) {
+            throw ValidationException::withMessages([
+                'coupon' => 'Coupons cannot be applied to Packs & Saves orders.',
+            ]);
+        }
+
         $cart = $this->carts->payload($request);
         $quoted = $this->coupons->quote(
             $request->validated('coupon'),
@@ -66,7 +93,7 @@ class CheckoutController extends Controller
 
         $request->session()->put('storefront.checkout_coupon', $applied);
 
-        return back()->with(['appliedCoupon' => $applied]);
+        return back();
     }
 
     public function removeCoupon(): RedirectResponse
@@ -113,6 +140,7 @@ class CheckoutController extends Controller
 
         $request->session()->forget('storefront.checkout_coupon');
         $request->session()->forget('storefront.checkout_shipping');
+        PackCheckoutSession::forget($request);
 
         Toast::success('Order placed.');
 
@@ -130,5 +158,42 @@ class CheckoutController extends Controller
         return Inertia::render('storefront/checkout-confirmation', [
             'order' => $this->checkout->confirmation($order),
         ]);
+    }
+
+    /**
+     * Re-quote the session coupon against the current cart product subtotal.
+     *
+     * @param  array<string, mixed>  $cart
+     * @return array{code: string, discount: float, formattedDiscount: string}|null
+     */
+    private function freshAppliedCoupon(array $cart, ?User $user): ?array
+    {
+        $session = request()->session()->get('storefront.checkout_coupon');
+
+        if (! is_array($session) || blank($session['code'] ?? null)) {
+            return null;
+        }
+
+        try {
+            $quoted = $this->coupons->quote(
+                (string) $session['code'],
+                (float) $cart['subtotal'],
+                $user,
+            );
+        } catch (ValidationException) {
+            request()->session()->forget('storefront.checkout_coupon');
+
+            return null;
+        }
+
+        $applied = [
+            'code' => $quoted['coupon']->code,
+            'discount' => $quoted['discount'],
+            'formattedDiscount' => '-$'.number_format($quoted['discount'], 2),
+        ];
+
+        request()->session()->put('storefront.checkout_coupon', $applied);
+
+        return $applied;
     }
 }

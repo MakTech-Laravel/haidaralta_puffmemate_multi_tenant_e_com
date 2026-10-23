@@ -21,7 +21,7 @@ There is no bulk Discounts workspace. When `catalog.show_branch_pricing` is true
 
 ## Price history is append-only
 
-`branch_product_price_histories` is the operational trail (who, when, source, from/to). Spatie activity log remains generic. Skip no-op upserts. Do not put AuditsChanges on the history model. Coupons stay checkout-only (navSoon); do not add a Coupon model on the catalog SKU. Operators read history on `reports/price-history`, not as an inline card on Manage. `BranchProductShowPayload::product` does not include `price_history`.
+`branch_product_price_histories` is the operational trail (who, when, source, from/to). Spatie activity log remains generic. Skip no-op upserts. Do not put AuditsChanges on the history model. Coupons are Marketing (platform `/platform/coupons`, manage-catalog) and checkout-only on cart product subtotal — do not add a Coupon model on the catalog SKU. Operators read history on `reports/price-history`, not as an inline card on Manage. `BranchProductShowPayload::product` does not include `price_history`.
 
 ## Old discount URLs redirect
 

@@ -12,11 +12,10 @@
 /resources/js/actions
 /resources/js/routes
 /resources/js/wayfinder
+temp_auto_push.bat
 /vendor
 .DS_Store
-.env
 .env.backup
-.env.production
 .phpactor.json
 .phpunit.result.cache
 npm-debug.log
@@ -25,5 +24,8 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
-/.zed.gitignore
+/.zed
 
+config.bat
+.gitignore
+branch_structure.json

@@ -104,6 +104,16 @@ class User extends Authenticatable implements HasMedia, PasskeyUser, ScoutSearch
     }
 
     /**
+     * Orders placed as a storefront / portal customer.
+     *
+     * @return HasMany<Order, $this>
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class, 'customer_id');
+    }
+
+    /**
      * @return HasOne<CustomerAddress, $this>
      */
     public function shippingAddress(): HasOne

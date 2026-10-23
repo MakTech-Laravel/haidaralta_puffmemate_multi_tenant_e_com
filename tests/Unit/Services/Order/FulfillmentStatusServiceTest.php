@@ -2,11 +2,13 @@
 
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
 use App\Services\Inventory\InventoryReservationService;
@@ -78,6 +80,26 @@ test('a customer cannot cancel a ready order but staff can', function () {
     app(FulfillmentStatusService::class)->transition($fulfillment, FulfillmentStatus::Cancelled, $staff);
 
     expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Cancelled);
+});
+
+test('cancelling a pending-collection order sets payment status to cancelled', function () {
+    $staff = User::factory()->create(['user_type' => UserType::BRANCH]);
+    $order = Order::factory()->create([
+        'payment_status' => PaymentStatus::PendingCollection,
+    ]);
+    $fulfillment = OrderFulfillment::factory()->forOrder($order)->create([
+        'status' => FulfillmentStatus::Ready,
+    ]);
+    Payment::factory()->create([
+        'order_id' => $order->id,
+        'status' => PaymentStatus::PendingCollection,
+    ]);
+
+    app(FulfillmentStatusService::class)->cancel($fulfillment, $staff);
+
+    expect($fulfillment->refresh()->status)->toBe(FulfillmentStatus::Cancelled)
+        ->and($order->refresh()->payment_status)->toBe(PaymentStatus::Cancelled)
+        ->and($order->payment->refresh()->status)->toBe(PaymentStatus::Cancelled);
 });
 
 test('cancel is rejected once an order is delivered', function () {
