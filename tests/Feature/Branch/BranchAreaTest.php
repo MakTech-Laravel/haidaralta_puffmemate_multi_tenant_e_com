@@ -51,7 +51,10 @@ test('branch admin can list create update show and delete areas', function () {
         ->post(route('branch.areas.store', $this->branch), branchAreaPayload())
         ->assertRedirect();
 
-    $area = BranchArea::query()->where('branch_id', $this->branch->id)->firstOrFail();
+    $area = BranchArea::query()
+        ->where('name', 'Surry Hills')
+        ->whereHas('branches', fn ($query) => $query->where('branches.id', $this->branch->id))
+        ->firstOrFail();
 
     expect($area->name)->toBe('Surry Hills')
         ->and((float) $area->latitude)->toBe(-33.8845)
@@ -98,7 +101,7 @@ test('branch staff without manage-branch-settings cannot access areas', function
 
 test('branch cannot mutate an area that belongs to another branch', function () {
     $otherBranch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
-    $area = BranchArea::factory()->create(['branch_id' => $otherBranch->id]);
+    $area = BranchArea::factory()->forBranch($otherBranch)->create();
 
     $this->actingAs($this->admin, 'branch')
         ->get(route('branch.areas.show', [$this->branch, $area]))
@@ -130,9 +133,8 @@ test('branch manager with settings permission can open areas index', function ()
         ->assertInertia(fn ($page) => $page->component('branch/areas/index'));
 });
 
-test('branch rejects duplicate area names within the same branch', function () {
-    BranchArea::factory()->create([
-        'branch_id' => $this->branch->id,
+test('branch rejects duplicate area names globally', function () {
+    BranchArea::factory()->forBranch($this->branch)->create([
         'name' => 'Surry Hills',
     ]);
 

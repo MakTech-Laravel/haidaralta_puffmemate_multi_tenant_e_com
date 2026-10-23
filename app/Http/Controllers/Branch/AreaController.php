@@ -107,6 +107,6 @@ class AreaController extends Controller
 
     private function ensureBelongsToBranch(Branch $branch, BranchArea $area): void
     {
-        abort_unless($area->branch_id === $branch->id, 404);
+        abort_unless($area->branches()->whereKey($branch->id)->exists(), 404);
     }
 }

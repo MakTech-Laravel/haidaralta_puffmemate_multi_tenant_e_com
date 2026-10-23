@@ -28,6 +28,6 @@ class UpdateBranchAreaRequest extends FormRequest
         /** @var BranchArea $area */
         $area = $this->route('area');
 
-        return $this->branchAreaRules($area->branch_id, $area->id);
+        return $this->branchAreaRules(null, $area->id);
     }
 }

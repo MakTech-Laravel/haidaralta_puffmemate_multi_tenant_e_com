@@ -176,6 +176,7 @@ export function BranchAreaDetail({
     const subtitle = branchName
         ? `Delivery zone for ${branchName}`
         : 'Delivery zone';
+    const branchesLabel = branchName;
 
     return (
         <>
@@ -250,10 +251,10 @@ export function BranchAreaDetail({
                         </CardHeader>
                         <CardContent>
                             <dl className="grid gap-5 sm:grid-cols-2">
-                                {branchName ? (
+                                {branchesLabel ? (
                                     <DetailItem
-                                        label="Branch"
-                                        value={branchName}
+                                        label="Branches"
+                                        value={branchesLabel}
                                         icon={<Building2 className="size-4" />}
                                     />
                                 ) : null}
@@ -387,7 +388,7 @@ export function BranchAreaDetail({
                     <CardHeader>
                         <CardTitle>Transfer history</CardTitle>
                         <CardDescription>
-                            When this area moved between branches.
+                            When this area was added to additional branches.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

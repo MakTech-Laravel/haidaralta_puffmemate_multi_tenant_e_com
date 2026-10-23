@@ -24,7 +24,7 @@ class BranchAreaSeeder extends Seeder
     public const MELBOURNE_FITZROY = 'Fitzroy';
 
     /**
-     * Seed delivery zones (areas) per branch. Idempotent by (branch_id, name).
+     * Seed delivery zones (areas) and attach them to branches. Idempotent by area name.
      */
     public function run(): void
     {
@@ -42,23 +42,22 @@ class BranchAreaSeeder extends Seeder
                 continue;
             }
 
-            foreach ($areas as $area) {
-                BranchArea::query()->updateOrCreate(
+            foreach ($areas as $areaData) {
+                $area = BranchArea::query()->updateOrCreate(
+                    ['name' => $areaData['name']],
                     [
-                        'branch_id' => $branch->id,
-                        'name' => $area['name'],
-                    ],
-                    [
-                        'address' => $area['address'],
-                        'latitude' => $area['latitude'],
-                        'longitude' => $area['longitude'],
-                        'city' => $area['city'],
-                        'state' => $area['state'],
-                        'postal_code' => $area['postal_code'],
-                        'notes' => $area['notes'],
+                        'address' => $areaData['address'],
+                        'latitude' => $areaData['latitude'],
+                        'longitude' => $areaData['longitude'],
+                        'city' => $areaData['city'],
+                        'state' => $areaData['state'],
+                        'postal_code' => $areaData['postal_code'],
+                        'notes' => $areaData['notes'],
                         'is_active' => true,
                     ],
                 );
+
+                $branch->areas()->syncWithoutDetaching([$area->id]);
 
                 $this->advanceSeedProgress();
             }

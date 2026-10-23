@@ -10,6 +10,7 @@ use App\Http\Requests\Platform\StoreBranchRequest;
 use App\Http\Requests\Platform\StoreBranchSuperAdminRequest;
 use App\Http\Requests\Platform\UpdateBranchRequest;
 use App\Models\Branch;
+use App\Models\BranchArea;
 use App\Services\Branch\BranchService;
 use App\Support\BranchMap;
 use App\Support\Toast;
@@ -37,7 +38,9 @@ class BranchController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('platform/branches/create');
+        return Inertia::render('platform/branches/create', [
+            'areaOptions' => $this->branches->areaOptionsForForm(),
+        ]);
     }
 
     /**
@@ -47,7 +50,8 @@ class BranchController extends Controller
     {
         $validated = $request->validated();
         $adminData = $validated['super_admin'];
-        unset($validated['super_admin']);
+        $areaIds = $validated['area_ids'] ?? [];
+        unset($validated['super_admin'], $validated['area_ids']);
 
         $branch = $this->branches->createWithSuperAdmin(
             [
@@ -57,6 +61,8 @@ class BranchController extends Controller
             $adminData,
             $request->file('logo'),
         );
+
+        $this->branches->syncAreasFromForm($branch, $areaIds, $request->user());
 
         Toast::success('Branch created with super-admin.');
 
@@ -107,11 +113,32 @@ class BranchController extends Controller
      */
     public function show(Request $request, Branch $branch): Response
     {
-        $branch->loadCount('users');
+        $branch->loadCount(['users', 'areas']);
+
+        $areas = $branch->areas()
+            ->orderBy('branch_areas.name')
+            ->get([
+                'branch_areas.id',
+                'branch_areas.name',
+                'branch_areas.is_active',
+                'branch_areas.city',
+                'branch_areas.state',
+            ])
+            ->map(fn (BranchArea $area): array => [
+                'id' => $area->id,
+                'name' => $area->name,
+                'is_active' => $area->is_active,
+                'city' => $area->city,
+                'state' => $area->state,
+            ])
+            ->values()
+            ->all();
 
         return Inertia::render('platform/branches/show', [
             'branch' => [
                 ...$this->mapBranchDetail($branch),
+                'areas_count' => (int) ($branch->areas_count ?? count($areas)),
+                'areas' => $areas,
                 'map' => BranchMap::links($branch->latitude, $branch->longitude),
                 'needs_super_admin' => ! $this->branches->hasSuperAdmin($branch),
             ],
@@ -125,7 +152,11 @@ class BranchController extends Controller
     public function edit(Branch $branch): Response
     {
         return Inertia::render('platform/branches/edit', [
-            'branch' => $this->mapBranchDetail($branch),
+            'branch' => [
+                ...$this->mapBranchDetail($branch),
+                'area_ids' => $branch->areas()->pluck('branch_areas.id')->all(),
+            ],
+            'areaOptions' => $this->branches->areaOptionsForForm(),
         ]);
     }
 
@@ -135,6 +166,8 @@ class BranchController extends Controller
     public function update(UpdateBranchRequest $request, Branch $branch): RedirectResponse
     {
         $validated = $request->validated();
+        $areaIds = $validated['area_ids'] ?? [];
+        unset($validated['area_ids']);
 
         $this->branches->update(
             $branch,
@@ -145,6 +178,8 @@ class BranchController extends Controller
             $request->file('logo'),
             $request->boolean('remove_logo'),
         );
+
+        $this->branches->syncAreasFromForm($branch, $areaIds, $request->user());
 
         Toast::success('Branch updated.');
 
