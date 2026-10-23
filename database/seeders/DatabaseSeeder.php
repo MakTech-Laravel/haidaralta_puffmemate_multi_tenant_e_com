@@ -17,7 +17,8 @@ class DatabaseSeeder extends Seeder
         $this->call([
             RolesAndPermissionsSeeder::class,
             BranchSeeder::class,
-            NationwideBranchSeeder::class,
+            // NationwideBranchSeeder / NationwideInventorySeeder: opt-in via
+            // `php artisan db:seed --class=NationwideBranchSeeder` (adds ~74 extra stores).
             BranchAreaSeeder::class,
             UserSeeder::class,
             ApplicationSettingsSeeder::class,
@@ -30,7 +31,6 @@ class DatabaseSeeder extends Seeder
             PriceRangeSeeder::class,
             CheckoutSettingsSeeder::class,
             BranchInventorySeeder::class,
-            NationwideInventorySeeder::class,
             DriverStockAssignmentSeeder::class,
             WorkforceShiftSeeder::class,
             TransferHistorySeeder::class,

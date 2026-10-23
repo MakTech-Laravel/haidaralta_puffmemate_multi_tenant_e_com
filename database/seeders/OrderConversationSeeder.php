@@ -112,7 +112,7 @@ class OrderConversationSeeder extends Seeder
             ],
             [
                 'order_number' => 'PMM-2026-1054',
-                'branch_email' => 'grace.liu@parramatta-church.dev',
+                'branch_email' => 'jade.osullivan@ipswich-brisbane-st.dev',
                 'order_status' => OrderStatus::Pending,
                 'with_driver' => false,
                 'messages' => [
@@ -134,11 +134,11 @@ class OrderConversationSeeder extends Seeder
             ],
             [
                 'order_number' => 'PMM-2026-1057',
-                'branch_email' => 'keira.bond@gold-coast-surfers.dev',
+                'branch_email' => 'callum.reid@ipswich-brisbane-st.dev',
                 'order_status' => OrderStatus::Processing,
                 'with_driver' => true,
                 'messages' => [
-                    ['from' => 'customer', 'body' => 'I am in a beachfront tower — ask for the visitor parking gate code 4421.', 'minutes_ago' => 55],
+                    ['from' => 'customer', 'body' => 'I am near Brisbane Street — use the rear lane gate code 4421.', 'minutes_ago' => 55],
                     ['from' => 'branch', 'body' => 'Code is on the delivery slip. Felix has the run.', 'minutes_ago' => 48],
                     ['from' => 'driver', 'body' => 'Through the gate, heading up now.', 'minutes_ago' => 8],
                 ],

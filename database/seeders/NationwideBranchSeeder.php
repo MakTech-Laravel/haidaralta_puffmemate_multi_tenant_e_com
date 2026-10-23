@@ -46,7 +46,7 @@ class NationwideBranchSeeder extends Seeder
     ];
 
     /**
-     * Seed the Australia-wide store network on top of the 9 core BranchSeeder stores.
+     * Seed the Australia-wide store network on top of the 5 core BranchSeeder stores.
      * Metro stores deliver locally, regional and remote stores cover wider areas, and the
      * core stores keep a null radius (deliver anywhere) so every address has a candidate.
      */

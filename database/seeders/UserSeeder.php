@@ -47,7 +47,7 @@ class UserSeeder extends Seeder
 
     public const DRIVER_PHONE = '+61488888888';
 
-    public const SECOND_DRIVER_PHONE = '+61488000000';
+    public const SECOND_DRIVER_PHONE = '+61488888881';
 
     public const CUSTOMER_PHONE = '+61499999999';
 
@@ -103,11 +103,7 @@ class UserSeeder extends Seeder
         $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
         $brisbane = Branch::query()->where('slug', BranchSeeder::BRISBANE_QUEEN)->firstOrFail();
         $perth = Branch::query()->where('slug', BranchSeeder::PERTH_HAY)->firstOrFail();
-        $adelaide = Branch::query()->where('slug', BranchSeeder::ADELAIDE_RUNDLE)->firstOrFail();
-        $surfers = Branch::query()->where('slug', BranchSeeder::GOLD_COAST_SURFERS)->firstOrFail();
-        $canberra = Branch::query()->where('slug', BranchSeeder::CANBERRA_CIVIC)->firstOrFail();
-        $newcastle = Branch::query()->where('slug', BranchSeeder::NEWCASTLE_HUNTER)->firstOrFail();
-        $parramatta = Branch::query()->where('slug', BranchSeeder::PARRAMATTA_CHURCH)->firstOrFail();
+        $ipswich = Branch::query()->where('slug', BranchSeeder::IPSWICH_BRISBANE_ST)->firstOrFail();
 
         $this->seedPlatformUsers();
 
@@ -145,39 +141,11 @@ class UserSeeder extends Seeder
             ['phone' => '+61430404004', 'email' => 'freya.sutton@perth-hay.dev', 'name' => 'Freya Sutton', 'role' => RoleEnum::STAFF],
         ]);
 
-        $this->seedBranchUsers($adelaide, [
-            ['phone' => '+61430505001', 'email' => 'callum.reid@adelaide-rundle.dev', 'name' => 'Callum Reid', 'role' => RoleEnum::SUPER_ADMIN],
-            ['phone' => '+61430505002', 'email' => 'jade.osullivan@adelaide-rundle.dev', 'name' => 'Jade O\'Sullivan', 'role' => RoleEnum::ADMIN],
-            ['phone' => '+61430505003', 'email' => 'noah.carr@adelaide-rundle.dev', 'name' => 'Noah Carr', 'role' => RoleEnum::STAFF],
-            ['phone' => '+61430505004', 'email' => 'piper.hughes@adelaide-rundle.dev', 'name' => 'Piper Hughes', 'role' => RoleEnum::STAFF],
-        ]);
-
-        $this->seedBranchUsers($surfers, [
-            ['phone' => '+61430606001', 'email' => 'dylan.hayes@gold-coast-surfers.dev', 'name' => 'Dylan Hayes', 'role' => RoleEnum::SUPER_ADMIN],
-            ['phone' => '+61430606002', 'email' => 'keira.bond@gold-coast-surfers.dev', 'name' => 'Keira Bond', 'role' => RoleEnum::ADMIN],
-            ['phone' => '+61430606003', 'email' => 'mason.quinn@gold-coast-surfers.dev', 'name' => 'Mason Quinn', 'role' => RoleEnum::STAFF],
-            ['phone' => '+61430606004', 'email' => 'ruby.ellis@gold-coast-surfers.dev', 'name' => 'Ruby Ellis', 'role' => RoleEnum::STAFF],
-        ]);
-
-        $this->seedBranchUsers($canberra, [
-            ['phone' => '+61430707001', 'email' => 'helen.frost@canberra-civic.dev', 'name' => 'Helen Frost', 'role' => RoleEnum::SUPER_ADMIN],
-            ['phone' => '+61430707002', 'email' => 'george.lambert@canberra-civic.dev', 'name' => 'George Lambert', 'role' => RoleEnum::ADMIN],
-            ['phone' => '+61430707003', 'email' => 'clara.west@canberra-civic.dev', 'name' => 'Clara West', 'role' => RoleEnum::STAFF],
-        ]);
-
-        $this->seedBranchUsers($newcastle, [
-            ['phone' => '+61430808001', 'email' => 'tom.bradley@newcastle-hunter.dev', 'name' => 'Tom Bradley', 'role' => RoleEnum::SUPER_ADMIN],
-            ['phone' => '+61430808002', 'email' => 'emma.nash@newcastle-hunter.dev', 'name' => 'Emma Nash', 'role' => RoleEnum::ADMIN],
-            ['phone' => '+61430808003', 'email' => 'leo.cameron@newcastle-hunter.dev', 'name' => 'Leo Cameron', 'role' => RoleEnum::STAFF],
-            ['phone' => '+61430808004', 'email' => 'ivy.patel@newcastle-hunter.dev', 'name' => 'Ivy Patel', 'role' => RoleEnum::STAFF],
-        ]);
-
-        $this->seedBranchUsers($parramatta, [
-            ['phone' => '+61430909001', 'email' => 'arjun.mehta@parramatta-church.dev', 'name' => 'Arjun Mehta', 'role' => RoleEnum::SUPER_ADMIN],
-            ['phone' => '+61430909002', 'email' => 'grace.liu@parramatta-church.dev', 'name' => 'Grace Liu', 'role' => RoleEnum::ADMIN],
-            ['phone' => '+61430909003', 'email' => 'seth.obrien@parramatta-church.dev', 'name' => 'Seth O\'Brien', 'role' => RoleEnum::STAFF],
-            ['phone' => '+61430909004', 'email' => 'maya.singh@parramatta-church.dev', 'name' => 'Maya Singh', 'role' => RoleEnum::STAFF],
-            ['phone' => '+61430909005', 'email' => 'jack.torres@parramatta-church.dev', 'name' => 'Jack Torres', 'role' => RoleEnum::STAFF],
+        $this->seedBranchUsers($ipswich, [
+            ['phone' => '+61430505001', 'email' => 'callum.reid@ipswich-brisbane-st.dev', 'name' => 'Callum Reid', 'role' => RoleEnum::SUPER_ADMIN],
+            ['phone' => '+61430505002', 'email' => 'jade.osullivan@ipswich-brisbane-st.dev', 'name' => 'Jade O\'Sullivan', 'role' => RoleEnum::ADMIN],
+            ['phone' => '+61430505003', 'email' => 'noah.carr@ipswich-brisbane-st.dev', 'name' => 'Noah Carr', 'role' => RoleEnum::STAFF],
+            ['phone' => '+61430505004', 'email' => 'piper.hughes@ipswich-brisbane-st.dev', 'name' => 'Piper Hughes', 'role' => RoleEnum::STAFF],
         ]);
 
         $this->seedDrivers([
@@ -188,7 +156,6 @@ class UserSeeder extends Seeder
                 'license' => 'DL-DF-001',
                 'vehicle' => DriverVehicleType::Motorcycle,
                 'branch' => $sydney,
-                'alt_branch' => $melbourne,
             ],
             [
                 'phone' => self::SECOND_DRIVER_PHONE,
@@ -199,47 +166,7 @@ class UserSeeder extends Seeder
                 'branch' => $sydney,
             ],
             [
-                'phone' => '+61488000001',
-                'email' => 'priya.sharma@puffmemate.dev',
-                'name' => 'Priya Sharma',
-                'license' => 'DL-PS-501',
-                'vehicle' => DriverVehicleType::Motorcycle,
-                'branch' => $sydney,
-            ],
-            [
-                'phone' => '+61488000002',
-                'email' => 'tom.gallagher@puffmemate.dev',
-                'name' => 'Tom Gallagher',
-                'license' => 'DL-TG-502',
-                'vehicle' => DriverVehicleType::Bicycle,
-                'branch' => $sydney,
-            ],
-            [
-                'phone' => '+61488000003',
-                'email' => 'lena.fischer@puffmemate.dev',
-                'name' => 'Lena Fischer',
-                'license' => 'DL-LF-503',
-                'vehicle' => DriverVehicleType::Motorcycle,
-                'branch' => $sydney,
-            ],
-            [
-                'phone' => '+61420101001',
-                'email' => 'oscar.knight@puffmemate.dev',
-                'name' => 'Oscar Knight',
-                'license' => 'DL-OK-214',
-                'vehicle' => DriverVehicleType::Bicycle,
-                'branch' => $sydney,
-            ],
-            [
-                'phone' => '+61420101002',
-                'email' => 'tessa.moran@puffmemate.dev',
-                'name' => 'Tessa Moran',
-                'license' => 'DL-TM-088',
-                'vehicle' => DriverVehicleType::Car,
-                'branch' => $sydney,
-            ],
-            [
-                'phone' => '+61420101003',
+                'phone' => '+61488888882',
                 'email' => 'kai.nguyen@puffmemate.dev',
                 'name' => 'Kai Nguyen',
                 'license' => 'DL-KN-441',
@@ -247,7 +174,7 @@ class UserSeeder extends Seeder
                 'branch' => $melbourne,
             ],
             [
-                'phone' => '+61420101004',
+                'phone' => '+61488888883',
                 'email' => 'bella.hart@puffmemate.dev',
                 'name' => 'Bella Hart',
                 'license' => 'DL-BH-119',
@@ -255,7 +182,7 @@ class UserSeeder extends Seeder
                 'branch' => $melbourne,
             ],
             [
-                'phone' => '+61420101005',
+                'phone' => '+61488888884',
                 'email' => 'ryan.cho@puffmemate.dev',
                 'name' => 'Ryan Cho',
                 'license' => 'DL-RC-307',
@@ -263,7 +190,7 @@ class UserSeeder extends Seeder
                 'branch' => $brisbane,
             ],
             [
-                'phone' => '+61420101006',
+                'phone' => '+61488888885',
                 'email' => 'nina.blake@puffmemate.dev',
                 'name' => 'Nina Blake',
                 'license' => 'DL-NB-552',
@@ -271,7 +198,7 @@ class UserSeeder extends Seeder
                 'branch' => $brisbane,
             ],
             [
-                'phone' => '+61420101007',
+                'phone' => '+61488888886',
                 'email' => 'hugo.price@puffmemate.dev',
                 'name' => 'Hugo Price',
                 'license' => 'DL-HP-073',
@@ -279,52 +206,28 @@ class UserSeeder extends Seeder
                 'branch' => $perth,
             ],
             [
-                'phone' => '+61420101008',
+                'phone' => '+61488888887',
                 'email' => 'aria.wells@puffmemate.dev',
                 'name' => 'Aria Wells',
                 'license' => 'DL-AW-918',
                 'vehicle' => DriverVehicleType::Bicycle,
-                'branch' => $adelaide,
+                'branch' => $perth,
             ],
             [
-                'phone' => '+61420101009',
+                'phone' => '+61488888889',
                 'email' => 'felix.drake@puffmemate.dev',
                 'name' => 'Felix Drake',
                 'license' => 'DL-FD-260',
                 'vehicle' => DriverVehicleType::Motorcycle,
-                'branch' => $surfers,
+                'branch' => $ipswich,
             ],
             [
-                'phone' => '+61420101010',
+                'phone' => '+61488888890',
                 'email' => 'olivia.kent@puffmemate.dev',
                 'name' => 'Olivia Kent',
                 'license' => 'DL-OK-634',
                 'vehicle' => DriverVehicleType::Car,
-                'branch' => $canberra,
-            ],
-            [
-                'phone' => '+61420101011',
-                'email' => 'miles.carter@puffmemate.dev',
-                'name' => 'Miles Carter',
-                'license' => 'DL-MC-147',
-                'vehicle' => DriverVehicleType::Motorcycle,
-                'branch' => $newcastle,
-            ],
-            [
-                'phone' => '+61420101012',
-                'email' => 'sienna.park@puffmemate.dev',
-                'name' => 'Sienna Park',
-                'license' => 'DL-SP-829',
-                'vehicle' => DriverVehicleType::Bicycle,
-                'branch' => $parramatta,
-            ],
-            [
-                'phone' => '+61420101013',
-                'email' => 'jasper.lin@puffmemate.dev',
-                'name' => 'Jasper Lin',
-                'license' => 'DL-JL-405',
-                'vehicle' => DriverVehicleType::Motorcycle,
-                'branch' => $parramatta,
+                'branch' => $ipswich,
             ],
         ]);
 

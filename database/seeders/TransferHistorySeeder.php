@@ -24,8 +24,8 @@ class TransferHistorySeeder extends Seeder
         $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
         $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
         $brisbane = Branch::query()->where('slug', BranchSeeder::BRISBANE_QUEEN)->firstOrFail();
-        $parramatta = Branch::query()->where('slug', BranchSeeder::PARRAMATTA_CHURCH)->firstOrFail();
-        $newcastle = Branch::query()->where('slug', BranchSeeder::NEWCASTLE_HUNTER)->firstOrFail();
+        $perth = Branch::query()->where('slug', BranchSeeder::PERTH_HAY)->firstOrFail();
+        $ipswich = Branch::query()->where('slug', BranchSeeder::IPSWICH_BRISBANE_ST)->firstOrFail();
 
         $rows = [
             [
@@ -49,24 +49,24 @@ class TransferHistorySeeder extends Seeder
                 'reason' => 'Collins Street needed evening floor cover after winter roster reshape.',
             ],
             [
-                'email' => 'jack.torres@parramatta-church.dev',
+                'email' => 'piper.hughes@ipswich-brisbane-st.dev',
                 'subject' => TransferSubjectType::BranchStaff,
-                'from' => $sydney,
-                'to' => $parramatta,
+                'from' => $brisbane,
+                'to' => $ipswich,
                 'from_role' => 'Staff',
                 'to_role' => 'Staff',
                 'date' => '2026-08-12',
-                'reason' => 'Opened Church Street with experienced CBD floor staff.',
+                'reason' => 'Opened Brisbane Street Ipswich with experienced Queen Street floor staff.',
             ],
             [
-                'email' => 'ivy.patel@newcastle-hunter.dev',
+                'email' => 'freya.sutton@perth-hay.dev',
                 'subject' => TransferSubjectType::BranchStaff,
-                'from' => $parramatta,
-                'to' => $newcastle,
+                'from' => $melbourne,
+                'to' => $perth,
                 'from_role' => 'Staff',
                 'to_role' => 'Staff',
                 'date' => '2026-08-28',
-                'reason' => 'Temporary cover for Newcastle peak trade became permanent.',
+                'reason' => 'Temporary cover for Perth peak trade became permanent.',
             ],
             [
                 'email' => 'kai.nguyen@puffmemate.dev',
@@ -89,14 +89,14 @@ class TransferHistorySeeder extends Seeder
                 'reason' => 'Transferred to Queen Street after CBD car courier hire.',
             ],
             [
-                'email' => 'jasper.lin@puffmemate.dev',
+                'email' => 'felix.drake@puffmemate.dev',
                 'subject' => TransferSubjectType::Driver,
-                'from' => $sydney,
-                'to' => $parramatta,
+                'from' => $brisbane,
+                'to' => $ipswich,
                 'from_role' => 'Driver',
                 'to_role' => 'Driver',
                 'date' => '2026-08-18',
-                'reason' => 'Western Sydney deliveries spun up with Church Street opening.',
+                'reason' => 'Ipswich Brisbane Street deliveries spun up with store opening.',
             ],
             [
                 'email' => UserSeeder::BRANCH_2_ADMIN,
@@ -121,14 +121,14 @@ class TransferHistorySeeder extends Seeder
                 'reason' => 'Promoted to second admin for CBD peak weekends.',
             ],
             [
-                'email' => 'grace.liu@parramatta-church.dev',
+                'email' => 'jade.osullivan@ipswich-brisbane-st.dev',
                 'subject' => TransferSubjectType::BranchStaff,
-                'from' => $sydney,
-                'to' => $parramatta,
+                'from' => $brisbane,
+                'to' => $ipswich,
                 'from_role' => 'Admin',
                 'to_role' => 'Admin',
                 'date' => '2026-08-01',
-                'reason' => 'Moved from CBD admin desk to open Parramatta store leadership.',
+                'reason' => 'Moved from Queen Street admin desk to open Ipswich store leadership.',
             ],
         ];
 
