@@ -4,6 +4,12 @@ import { BranchForm } from '@/components/admin/branch-form';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
+type AreaOption = {
+    id: number;
+    name: string;
+    branch_names: string[];
+};
+
 type Branch = {
     id: number;
     name: string;
@@ -19,9 +25,16 @@ type Branch = {
     opening_time: string | null;
     closing_time: string | null;
     status: boolean;
+    area_ids: number[];
 };
 
-export default function PlatformBranchesEdit({ branch }: { branch: Branch }) {
+export default function PlatformBranchesEdit({
+    branch,
+    areaOptions = [],
+}: {
+    branch: Branch;
+    areaOptions?: AreaOption[];
+}) {
     return (
         <>
             <Head title={`Edit ${branch.name}`} />
@@ -59,7 +72,9 @@ export default function PlatformBranchesEdit({ branch }: { branch: Branch }) {
                         opening_time: branch.opening_time,
                         closing_time: branch.closing_time,
                         status: branch.status,
+                        area_ids: branch.area_ids,
                     }}
+                    areaOptions={areaOptions}
                     cancelHref={BranchController.show.url(branch.slug)}
                 />
             </div>

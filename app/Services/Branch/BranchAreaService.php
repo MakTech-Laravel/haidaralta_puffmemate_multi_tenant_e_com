@@ -28,7 +28,12 @@ class BranchAreaService
      */
     public function create(Branch $branch, array $data): BranchArea
     {
-        return $branch->areas()->create($this->normalizedAttributes($data));
+        return DB::transaction(function () use ($branch, $data): BranchArea {
+            $area = BranchArea::query()->create($this->normalizedAttributes($data));
+            $area->branches()->attach($branch->id);
+
+            return $area;
+        });
     }
 
     /**
@@ -56,45 +61,51 @@ class BranchAreaService
         $area->delete();
     }
 
-    public function transfer(
+    public function detach(Branch $branch, BranchArea $area): void
+    {
+        if (! $area->branches()->whereKey($branch->id)->exists()) {
+            throw ValidationException::withMessages([
+                'branch_id' => 'This area is not linked to that branch.',
+            ]);
+        }
+
+        $area->branches()->detach($branch->id);
+    }
+
+    /**
+     * Attach an area to another branch without removing existing memberships.
+     */
+    public function attach(
         BranchArea $area,
         Branch $to,
         Carbon|string $effectiveDate,
         string $reason,
         User $actor,
     ): BranchAreaTransferHistory {
-        if ($to->id === $area->branch_id) {
+        if ($area->branches()->whereKey($to->id)->exists()) {
             throw ValidationException::withMessages([
-                'to_branch_id' => 'Choose a different branch than the current owner.',
+                'to_branch_id' => 'This area is already linked to that branch.',
             ]);
         }
 
         if (! $to->status) {
             throw ValidationException::withMessages([
-                'to_branch_id' => 'Cannot transfer an area to an inactive branch.',
+                'to_branch_id' => 'Cannot add an area to an inactive branch.',
             ]);
         }
 
-        $name = trim($area->name);
+        $fromBranchId = $area->branches()->orderBy('name')->value('branches.id');
 
-        $nameTaken = BranchArea::query()
-            ->where('branch_id', $to->id)
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
-            ->exists();
-
-        if ($nameTaken) {
-            throw ValidationException::withMessages([
-                'to_branch_id' => 'That branch already has an area with this name.',
-            ]);
+        if ($fromBranchId === null) {
+            $fromBranchId = $to->id;
         }
 
-        $fromBranchId = $area->branch_id;
         $effective = $effectiveDate instanceof Carbon
             ? $effectiveDate->copy()->startOfDay()
             : Carbon::parse($effectiveDate)->startOfDay();
 
         return DB::transaction(function () use ($area, $to, $fromBranchId, $effective, $reason, $actor): BranchAreaTransferHistory {
-            $area->update(['branch_id' => $to->id]);
+            $area->branches()->attach($to->id);
 
             return BranchAreaTransferHistory::query()->create([
                 'branch_area_id' => $area->id,
@@ -105,6 +116,19 @@ class BranchAreaService
                 'transferred_by' => $actor->id,
             ]);
         });
+    }
+
+    /**
+     * @deprecated Use attach() — kept for call-site clarity during rename.
+     */
+    public function transfer(
+        BranchArea $area,
+        Branch $to,
+        Carbon|string $effectiveDate,
+        string $reason,
+        User $actor,
+    ): BranchAreaTransferHistory {
+        return $this->attach($area, $to, $effectiveDate, $reason, $actor);
     }
 
     /**
@@ -121,6 +145,7 @@ class BranchAreaService
      *     notes: ?string,
      *     is_active: bool,
      *     created_at: ?string,
+     *     branches: list<array{id: int, name: string, slug: string}>,
      *     transfers: list<array{
      *         id: int,
      *         from_branch_id: int,
@@ -137,6 +162,7 @@ class BranchAreaService
     public function detail(BranchArea $area): array
     {
         $area->loadMissing([
+            'branches:id,name,slug',
             'transferHistories.fromBranch:id,name',
             'transferHistories.toBranch:id,name',
             'transferHistories.transferredBy:id,name',
@@ -155,6 +181,15 @@ class BranchAreaService
             'notes' => $area->notes,
             'is_active' => $area->is_active,
             'created_at' => $area->created_at?->toIso8601String(),
+            'branches' => $area->branches
+                ->sortBy('name')
+                ->values()
+                ->map(fn (Branch $branch): array => [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'slug' => $branch->slug,
+                ])
+                ->all(),
             'transfers' => $area->transferHistories
                 ->map(fn (BranchAreaTransferHistory $transfer): array => [
                     'id' => $transfer->id,
@@ -165,7 +200,7 @@ class BranchAreaService
                     'effective_date' => $transfer->effective_date?->toDateString(),
                     'reason' => $transfer->reason,
                     'transferred_by_name' => $transfer->transferredBy?->name,
-                    'transfer_type_label' => 'Branch change',
+                    'transfer_type_label' => 'Added to branch',
                 ])
                 ->values()
                 ->all(),

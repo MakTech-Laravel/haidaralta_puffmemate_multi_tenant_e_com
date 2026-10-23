@@ -2,6 +2,8 @@
 
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
+use App\Models\Branch;
+use App\Models\DriverBranchAssignment;
 use App\Models\User;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -84,4 +86,40 @@ test('platform and branch roles are assigned on the correct teams', function () 
 
     app(PermissionRegistrar::class)->setPermissionsTeamId($branch2->branch_id);
     expect($branch2->hasRole(RoleEnum::ADMIN->value))->toBeTrue();
+});
+
+test('branch seeder keeps five stores including ipswich brisbane street', function () {
+    expect(Branch::query()->count())->toBe(5);
+
+    $ipswich = Branch::query()->where('slug', BranchSeeder::IPSWICH_BRISBANE_ST)->firstOrFail();
+
+    expect($ipswich->address)
+        ->toContain('Brisbane Street')
+        ->toContain('Ipswich');
+});
+
+test('each seeded branch has two drivers on the serial phone range', function () {
+    $phones = [
+        '+61488888888',
+        '+61488888881',
+        '+61488888882',
+        '+61488888883',
+        '+61488888884',
+        '+61488888885',
+        '+61488888886',
+        '+61488888887',
+        '+61488888889',
+        '+61488888890',
+    ];
+
+    expect(User::query()->where('user_type', UserType::DRIVER)->whereIn('phone', $phones)->count())
+        ->toBe(10)
+        ->and(UserSeeder::DRIVER_PHONE)->toBe('+61488888888')
+        ->and(UserSeeder::SECOND_DRIVER_PHONE)->toBe('+61488888881');
+
+    foreach (Branch::query()->pluck('id') as $branchId) {
+        expect(
+            DriverBranchAssignment::query()->where('branch_id', $branchId)->count()
+        )->toBe(2);
+    }
 });

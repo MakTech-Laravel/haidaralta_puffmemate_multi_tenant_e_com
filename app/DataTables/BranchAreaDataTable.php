@@ -54,9 +54,15 @@ class BranchAreaDataTable extends AbstractDataTable
     {
         return BranchArea::query()
             ->when($this->scopedBranchId !== null, function (Builder $query): void {
-                $query->where('branch_id', $this->scopedBranchId);
+                $query->whereHas(
+                    'branches',
+                    fn (Builder $branches) => $branches->where('branches.id', $this->scopedBranchId),
+                );
             })
-            ->when($this->includeBranch, fn (Builder $query) => $query->with('branch:id,name,slug'));
+            ->when(
+                $this->includeBranch,
+                fn (Builder $query) => $query->with(['branches' => fn ($branches) => $branches->orderBy('name')->select('branches.id', 'branches.name', 'branches.slug')]),
+            );
     }
 
     /**
@@ -70,7 +76,21 @@ class BranchAreaDataTable extends AbstractDataTable
         ];
 
         if ($this->scopedBranchId === null) {
-            $filters[] = AllowedFilter::exact('branch_id');
+            $filters[] = AllowedFilter::callback(
+                'branch_id',
+                function (Builder $query, mixed $value): void {
+                    $branchId = $this->optionId($value);
+
+                    if ($branchId === null) {
+                        return;
+                    }
+
+                    $query->whereHas(
+                        'branches',
+                        fn (Builder $branches) => $branches->where('branches.id', $branchId),
+                    );
+                },
+            );
         }
 
         return $filters;
@@ -171,7 +191,13 @@ class BranchAreaDataTable extends AbstractDataTable
         ];
 
         if ($this->includeBranch) {
-            $row['branch'] = $model->branch?->only(['id', 'name', 'slug']);
+            $branches = $model->branches
+                ->map(fn (Branch $branch): array => $branch->only(['id', 'name', 'slug']))
+                ->values()
+                ->all();
+
+            $row['branches'] = $branches;
+            $row['branch'] = $branches[0] ?? null;
         }
 
         return $row;
