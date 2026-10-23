@@ -8,13 +8,12 @@ use Database\Factories\BranchAreaFactory;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
- * @property int $branch_id
  * @property string $name
  * @property string $address
  * @property string $latitude
@@ -26,7 +25,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- * @property-read Branch $branch
+ * @property-read Collection<int, Branch> $branches
  * @property-read Collection<int, BranchAreaTransferHistory> $transferHistories
  */
 class BranchArea extends Model implements DataTableConfigurable
@@ -53,7 +52,6 @@ class BranchArea extends Model implements DataTableConfigurable
      * @var list<string>
      */
     protected $fillable = [
-        'branch_id',
         'name',
         'address',
         'latitude',
@@ -66,11 +64,12 @@ class BranchArea extends Model implements DataTableConfigurable
     ];
 
     /**
-     * @return BelongsTo<Branch, $this>
+     * @return BelongsToMany<Branch, $this>
      */
-    public function branch(): BelongsTo
+    public function branches(): BelongsToMany
     {
-        return $this->belongsTo(Branch::class);
+        return $this->belongsToMany(Branch::class, 'branch_area_branch')
+            ->withTimestamps();
     }
 
     /**

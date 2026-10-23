@@ -52,22 +52,26 @@ class BranchAreasController extends Controller
 
     public function show(BranchArea $area): Response
     {
-        $area->load('branch:id,name,slug');
+        $detail = $this->areas->detail($area);
+        $primary = $detail['branches'][0] ?? null;
 
         return Inertia::render('platform/branch-areas/show', [
-            'branch' => $area->branch?->only(['id', 'name', 'slug']),
-            'area' => $this->areas->detail($area),
+            'branch' => $primary,
+            'branches' => $detail['branches'],
+            'area' => $detail,
             'canManage' => request()->user('platform')?->can('edit-branches') ?? false,
         ]);
     }
 
     public function edit(BranchArea $area): Response
     {
-        $area->load('branch:id,name,slug');
+        $detail = $this->areas->detail($area);
+        $primary = $detail['branches'][0] ?? null;
 
         return Inertia::render('platform/branch-areas/edit', [
-            'branch' => $area->branch?->only(['id', 'name', 'slug']),
-            'area' => $this->areas->detail($area),
+            'branch' => $primary,
+            'branches' => $detail['branches'],
+            'area' => $detail,
         ]);
     }
 
@@ -82,11 +86,15 @@ class BranchAreasController extends Controller
 
     public function destroy(BranchArea $area): RedirectResponse
     {
-        $branchId = $area->branch_id;
+        $branchId = $area->branches()->orderBy('name')->value('branches.id');
 
         $this->areas->delete($area);
 
         Toast::success('Area deleted.');
+
+        if ($branchId === null) {
+            return redirect()->route('platform.branch-areas.index');
+        }
 
         return redirect()->route('platform.branch-areas.index', [
             'filter' => ['branch_id' => $branchId],
@@ -99,7 +107,7 @@ class BranchAreasController extends Controller
         /** @var User $actor */
         $actor = $request->user('platform');
 
-        $this->areas->transfer(
+        $this->areas->attach(
             $area,
             $to,
             $request->date('effective_date') ?? now(),
@@ -107,7 +115,7 @@ class BranchAreasController extends Controller
             $actor,
         );
 
-        Toast::success('Area branch updated.');
+        Toast::success('Area added to branch.');
 
         return redirect()->route('platform.branch-areas.show', $area);
     }

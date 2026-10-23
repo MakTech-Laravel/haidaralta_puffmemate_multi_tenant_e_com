@@ -74,19 +74,17 @@ class BranchAreaController extends Controller
     {
         $this->ensureBelongsToBranch($branch, $area);
 
-        $branchId = $area->branch_id;
-
         $this->areas->delete($area);
 
         Toast::success('Area deleted.');
 
         return redirect()->route('platform.branch-areas.index', [
-            'filter' => ['branch_id' => $branchId],
+            'filter' => ['branch_id' => $branch->id],
         ]);
     }
 
     private function ensureBelongsToBranch(Branch $branch, BranchArea $area): void
     {
-        abort_unless($area->branch_id === $branch->id, 404);
+        abort_unless($area->branches()->whereKey($branch->id)->exists(), 404);
     }
 }

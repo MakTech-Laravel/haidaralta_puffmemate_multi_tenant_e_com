@@ -6,4 +6,4 @@ paths:
 # Admin Seeders
 
 ## Area names unique per branch; Change branch Platform-only
-Area name must be unique within a branch (case-insensitive) on create/update via ValidatesBranchArea for Precognition. Different branches may reuse the same name. Platform Change branch drawer (transfer) moves ownership; Branch portal create/edit only. BranchAreaSeeder seeds demo zones after BranchSeeder.
+Area name must be unique globally (case-insensitive) on create/update via ValidatesBranchArea for Precognition. Areas belong to many branches via `branch_area_branch`. Platform “Add to branch” drawer attaches without removing other links; Branch portal create/edit only. BranchAreaSeeder seeds demo zones after BranchSeeder and attaches via the pivot.

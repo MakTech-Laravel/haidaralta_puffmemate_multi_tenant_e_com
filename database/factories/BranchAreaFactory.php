@@ -17,7 +17,6 @@ class BranchAreaFactory extends Factory
     public function definition(): array
     {
         return [
-            'branch_id' => Branch::factory(),
             'name' => fake()->unique()->words(2, true),
             'address' => fake()->streetAddress(),
             'latitude' => fake()->latitude(-34.0, -33.5),
@@ -28,6 +27,26 @@ class BranchAreaFactory extends Factory
             'notes' => fake()->optional()->sentence(),
             'is_active' => true,
         ];
+    }
+
+    public function configure(): static
+    {
+        return $this->afterCreating(function (BranchArea $area): void {
+            if ($area->branches()->exists()) {
+                return;
+            }
+
+            $area->branches()->attach(Branch::factory()->create()->id);
+        });
+    }
+
+    public function forBranch(Branch|int $branch): static
+    {
+        $branchId = $branch instanceof Branch ? $branch->id : $branch;
+
+        return $this->afterCreating(function (BranchArea $area) use ($branchId): void {
+            $area->branches()->sync([$branchId]);
+        });
     }
 
     public function inactive(): static

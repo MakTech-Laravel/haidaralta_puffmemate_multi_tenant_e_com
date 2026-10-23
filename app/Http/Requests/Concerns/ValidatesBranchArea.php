@@ -34,11 +34,7 @@ trait ValidatesBranchArea
             'required',
             'string',
             'max:255',
-            function (string $attribute, mixed $value, Closure $fail) use ($branchId, $ignoreAreaId): void {
-                if ($branchId === null || $branchId < 1) {
-                    return;
-                }
-
+            function (string $attribute, mixed $value, Closure $fail) use ($ignoreAreaId): void {
                 $name = mb_strtolower(trim((string) $value));
 
                 if ($name === '') {
@@ -46,7 +42,6 @@ trait ValidatesBranchArea
                 }
 
                 $exists = BranchArea::query()
-                    ->where('branch_id', $branchId)
                     ->when(
                         $ignoreAreaId !== null && $ignoreAreaId > 0,
                         fn ($query) => $query->whereKeyNot($ignoreAreaId),
@@ -55,7 +50,7 @@ trait ValidatesBranchArea
                     ->exists();
 
                 if ($exists) {
-                    $fail('An area with this name already exists for this branch.');
+                    $fail('An area with this name already exists.');
                 }
             },
         ];

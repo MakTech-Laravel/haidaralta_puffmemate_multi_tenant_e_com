@@ -5,12 +5,14 @@ import {
     Eye,
     Mail,
     MapPin,
+    MapPinned,
     Pencil,
     Phone,
     Plus,
     Users,
 } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
+import BranchAreasController from '@/actions/App/Http/Controllers/Platform/BranchAreasController';
 import BranchController from '@/actions/App/Http/Controllers/Platform/BranchController';
 import BranchInventoryController from '@/actions/App/Http/Controllers/Platform/BranchInventoryController';
 import BranchScopedStaffController from '@/actions/App/Http/Controllers/Platform/BranchScopedStaffController';
@@ -65,6 +67,14 @@ type StaffRow = {
 
 type RoleOption = { value: string; label: string };
 
+type BranchAreaRow = {
+    id: number;
+    name: string;
+    is_active: boolean;
+    city: string | null;
+    state: string | null;
+};
+
 type Branch = {
     id: number;
     name: string;
@@ -74,6 +84,8 @@ type Branch = {
     logo_url: string | null;
     status: boolean;
     users_count: number;
+    areas_count: number;
+    areas: BranchAreaRow[];
     phone: string | null;
     email: string | null;
     address: string | null;
@@ -411,12 +423,18 @@ export default function PlatformBranchesShow({
                     </Alert>
                 ) : null}
 
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <StatCard
                         icon={Users}
                         label="Staff"
                         value={String(branch.users_count)}
                         hint="People assigned to this branch"
+                    />
+                    <StatCard
+                        icon={MapPinned}
+                        label="Areas"
+                        value={String(branch.areas_count)}
+                        hint="Service areas on this branch"
                     />
                     <StatCard
                         icon={Clock}
@@ -527,6 +545,81 @@ export default function PlatformBranchesShow({
                                 }
                             />
                         </dl>
+                    </CardContent>
+                </Card>
+
+                <Card className="shadow-sm">
+                    <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3 pb-3">
+                        <div className="space-y-1.5">
+                            <CardTitle>Service areas</CardTitle>
+                            <CardDescription>
+                                Areas currently assigned to this branch
+                            </CardDescription>
+                        </div>
+                        {can('view-branches') ? (
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href={filteredBranchAreasUrl(branch.id)}>
+                                    Manage areas
+                                </Link>
+                            </Button>
+                        ) : null}
+                    </CardHeader>
+                    <CardContent>
+                        {branch.areas.length === 0 ? (
+                            <p className="text-muted-foreground text-sm">
+                                No areas on this branch yet.{' '}
+                                {can('view-branches') ? (
+                                    <Link
+                                        href={filteredBranchAreasUrl(branch.id)}
+                                        className="text-foreground font-medium underline-offset-4 hover:underline"
+                                    >
+                                        Assign or create areas
+                                    </Link>
+                                ) : null}
+                            </p>
+                        ) : (
+                            <ul className="divide-border divide-y rounded-lg border">
+                                {branch.areas.map((area) => {
+                                    const place = [area.city, area.state]
+                                        .filter(Boolean)
+                                        .join(', ');
+
+                                    return (
+                                        <li
+                                            key={area.id}
+                                            className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5"
+                                        >
+                                            <div className="min-w-0">
+                                                <Link
+                                                    href={BranchAreasController.show.url(
+                                                        area.id,
+                                                    )}
+                                                    className="text-sm font-medium underline-offset-4 hover:underline"
+                                                >
+                                                    {area.name}
+                                                </Link>
+                                                {place ? (
+                                                    <p className="text-muted-foreground text-xs">
+                                                        {place}
+                                                    </p>
+                                                ) : null}
+                                            </div>
+                                            <Badge
+                                                variant={
+                                                    area.is_active
+                                                        ? 'default'
+                                                        : 'secondary'
+                                                }
+                                            >
+                                                {area.is_active
+                                                    ? 'Active'
+                                                    : 'Inactive'}
+                                            </Badge>
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        )}
                     </CardContent>
                 </Card>
 

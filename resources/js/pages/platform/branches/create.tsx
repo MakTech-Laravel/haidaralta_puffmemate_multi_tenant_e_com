@@ -4,7 +4,17 @@ import { BranchForm } from '@/components/admin/branch-form';
 import Heading from '@/components/heading';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-export default function PlatformBranchesCreate() {
+type AreaOption = {
+    id: number;
+    name: string;
+    branch_names: string[];
+};
+
+export default function PlatformBranchesCreate({
+    areaOptions = [],
+}: {
+    areaOptions?: AreaOption[];
+}) {
     return (
         <>
             <Head title="Add branch" />
@@ -28,6 +38,7 @@ export default function PlatformBranchesCreate() {
                     action={BranchController.store.form()}
                     cancelHref={BranchController.index.url()}
                     includeSuperAdmin
+                    areaOptions={areaOptions}
                     submitLabel="Create branch"
                 />
             </div>
