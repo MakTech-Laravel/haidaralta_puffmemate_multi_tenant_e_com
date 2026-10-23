@@ -20,15 +20,7 @@ class BranchSeeder extends Seeder
 
     public const PERTH_HAY = 'perth-hay';
 
-    public const ADELAIDE_RUNDLE = 'adelaide-rundle';
-
-    public const GOLD_COAST_SURFERS = 'gold-coast-surfers';
-
-    public const CANBERRA_CIVIC = 'canberra-civic';
-
-    public const NEWCASTLE_HUNTER = 'newcastle-hunter';
-
-    public const PARRAMATTA_CHURCH = 'parramatta-church';
+    public const IPSWICH_BRISBANE_ST = 'ipswich-brisbane-st';
 
     private const LOGO = '/images/storefront/logo.png';
 
@@ -94,68 +86,16 @@ class BranchSeeder extends Seeder
                 'status' => true,
             ],
             [
-                'slug' => self::ADELAIDE_RUNDLE,
-                'name' => 'PuffMeMate Adelaide Rundle Mall',
-                'code' => 'ADL-RUN-01',
-                'phone' => '+61882124410',
-                'email' => 'adelaide.rundle@puffmemate.dev',
-                'address' => 'Shop 22, 50 Rundle Mall, Adelaide SA 5000',
-                'latitude' => -34.9228000,
-                'longitude' => 138.6019000,
-                'opening_time' => '09:00',
-                'closing_time' => '21:00',
-                'status' => true,
-            ],
-            [
-                'slug' => self::GOLD_COAST_SURFERS,
-                'name' => 'PuffMeMate Surfers Paradise',
-                'code' => 'GC-SUR-01',
-                'phone' => '+61755384420',
-                'email' => 'surfers@puffmemate.dev',
-                'address' => 'Shop 8, 3207 Surfers Paradise Blvd, Surfers Paradise QLD 4217',
-                'latitude' => -28.0017000,
-                'longitude' => 153.4305000,
-                'opening_time' => '10:00',
-                'closing_time' => '22:00',
-                'status' => true,
-            ],
-            [
-                'slug' => self::CANBERRA_CIVIC,
-                'name' => 'PuffMeMate Canberra Civic',
-                'code' => 'CBR-CIV-01',
-                'phone' => '+61262573310',
-                'email' => 'canberra.civic@puffmemate.dev',
-                'address' => 'G11, Canberra Centre, 148 Bunda Street, Canberra ACT 2601',
-                'latitude' => -35.2792000,
-                'longitude' => 149.1331000,
-                'opening_time' => '09:30',
-                'closing_time' => '20:00',
-                'status' => true,
-            ],
-            [
-                'slug' => self::NEWCASTLE_HUNTER,
-                'name' => 'PuffMeMate Newcastle Hunter',
-                'code' => 'NTL-HUN-01',
-                'phone' => '+61249296680',
-                'email' => 'newcastle.hunter@puffmemate.dev',
-                'address' => 'Shop 5, 165 Hunter Street, Newcastle NSW 2300',
-                'latitude' => -32.9273000,
-                'longitude' => 151.7812000,
+                'slug' => self::IPSWICH_BRISBANE_ST,
+                'name' => 'PuffMeMate Ipswich Brisbane St',
+                'code' => 'IPS-BRS-01',
+                'phone' => '+61732811220',
+                'email' => 'ipswich@puffmemate.dev',
+                'address' => 'Shop 5, 48 Brisbane Street, Ipswich QLD 4305, Australia',
+                'latitude' => -27.6145000,
+                'longitude' => 152.7609000,
                 'opening_time' => '09:00',
                 'closing_time' => '20:00',
-                'status' => true,
-            ],
-            [
-                'slug' => self::PARRAMATTA_CHURCH,
-                'name' => 'PuffMeMate Parramatta Church St',
-                'code' => 'PAR-CHU-01',
-                'phone' => '+61296872250',
-                'email' => 'parramatta@puffmemate.dev',
-                'address' => 'Shop 12, 188 Church Street, Parramatta NSW 2150',
-                'latitude' => -33.8151000,
-                'longitude' => 151.0011000,
-                'opening_time' => '09:00',
-                'closing_time' => '21:00',
                 'status' => true,
             ],
         ];
