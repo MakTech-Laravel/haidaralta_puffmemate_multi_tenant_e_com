@@ -182,7 +182,9 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                     <CardContent>
                         <OrderStatusProgress
                             steps={order.timeline}
+                            previousAttempts={order.timelinePrevious}
                             showActivity={false}
+                            previousAttemptsLayout="sheet"
                         />
                     </CardContent>
                 </Card>

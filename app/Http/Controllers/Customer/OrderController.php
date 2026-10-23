@@ -272,6 +272,7 @@ class OrderController extends Controller
                 'mobile' => $order->shipping_address_snapshot['phone'] ?? '',
             ],
             'timeline' => OrderStatusTimeline::steps(FulfillmentStatus::from($order->status->value), $order->statusHistories, true),
+            'timelinePrevious' => OrderStatusTimeline::previousAttemptRails($order->statusHistories, true),
         ];
     }
 }

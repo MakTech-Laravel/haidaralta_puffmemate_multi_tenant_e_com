@@ -247,6 +247,37 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                     </ul>
 
                     <Separator />
+                    <div className="space-y-2 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="text-muted-foreground">
+                                Subtotal
+                            </span>
+                            <span className="font-medium tabular-nums">
+                                {order.subtotalLabel}
+                            </span>
+                        </div>
+                        {order.discountLabel ? (
+                            <div className="flex items-center justify-between gap-3">
+                                <span className="text-muted-foreground">
+                                    {order.couponCode
+                                        ? `Discount (${order.couponCode})`
+                                        : 'Discount'}
+                                </span>
+                                <span className="font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                                    −{order.discountLabel}
+                                </span>
+                            </div>
+                        ) : null}
+                        <div className="flex items-center justify-between gap-3">
+                            <span className="text-muted-foreground">
+                                Delivery
+                            </span>
+                            <span className="font-medium tabular-nums">
+                                {order.deliveryFeeLabel}
+                            </span>
+                        </div>
+                    </div>
+                    <Separator />
                     <div className="flex items-center justify-between gap-3">
                         <div>
                             <p className="text-foreground font-semibold">

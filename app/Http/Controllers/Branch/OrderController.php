@@ -21,6 +21,7 @@ use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
 use App\Services\Order\PaymentMarkingService;
 use App\Support\MediaUrl;
+use App\Support\Order\DeliveryAttemptPayload;
 use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
@@ -64,7 +65,9 @@ class OrderController extends Controller
 
         $fulfillment->load([
             'order.customer',
+            'driver:id,name',
             'items',
+            'deliveryAttempts.driver:id,name',
             'stockTransfers.items.product:id,name',
             'stockTransfers.sourceBranch:id,name',
             'stockTransfers.destinationBranch:id,name',
@@ -262,6 +265,7 @@ class OrderController extends Controller
             'id' => $fulfillment->id,
             'fulfillmentNumber' => $fulfillment->fulfillment_number,
             'status' => $fulfillment->status->value,
+            'statusLabel' => $fulfillment->status->label(),
             'actions' => $this->statusService->staffActions($fulfillment),
             'drivers' => $this->orderAssign->candidatesPayload($fulfillment),
             'canAssign' => $this->orderAssign->canAssign($fulfillment),
@@ -281,6 +285,7 @@ class OrderController extends Controller
                 ],
                 DeliveryFailureReason::cases(),
             ),
+            'deliveryAttempts' => DeliveryAttemptPayload::list($fulfillment->deliveryAttempts),
             'verificationMethods' => array_map(
                 fn (HandoverVerification $method): array => [
                     'value' => $method->value,
@@ -289,6 +294,7 @@ class OrderController extends Controller
                 HandoverVerification::cases(),
             ),
             'driverId' => $fulfillment->driver_id,
+            'driverName' => $fulfillment->driver?->name,
             'shippingCostLabel' => '$'.number_format((float) $fulfillment->shipping_cost, 2),
             'distanceKmLabel' => $fulfillment->distance_km !== null ? number_format((float) $fulfillment->distance_km, 2).' km' : '—',
             'isPaid' => $fulfillment->isPaid(),
@@ -297,15 +303,25 @@ class OrderController extends Controller
                 'orderNumber' => $order->order_number,
                 'customerName' => $order->customer?->name ?? 'Customer',
                 'customerPhone' => $order->customer?->phone,
+                'customerEmail' => $order->customer?->email
+                    ?? (is_array($order->shipping_address_snapshot) ? ($order->shipping_address_snapshot['email'] ?? null) : null),
                 'source' => $order->source->value,
                 'sourceLabel' => $order->source->label(),
                 'notes' => $order->notes,
+                'placedAt' => $order->created_at?->toIso8601String(),
                 'deliveryDate' => $order->delivery_date?->format('d M Y'),
                 'timeSlot' => $order->time_slot,
                 'paymentMethod' => $order->payment_method,
                 'paymentStatus' => $order->payment_status->value,
-                'returnRequest' => $order ? $this->returns->payload($order) : null,
                 'paymentStatusLabel' => $order->payment_status->label(),
+                'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
+                'discountLabel' => (float) $order->discount > 0
+                    ? '$'.number_format((float) $order->discount, 2)
+                    : null,
+                'couponCode' => $order->coupon_code,
+                'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
+                'totalLabel' => '$'.number_format((float) $order->total_amount, 2),
+                'returnRequest' => $order ? $this->returns->payload($order) : null,
                 'shippingAddress' => $order->shipping_address_snapshot,
             ],
             'items' => $fulfillment->items->map(fn ($item): array => [
@@ -316,6 +332,8 @@ class OrderController extends Controller
                 'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
             ])->all(),
             'timeline' => OrderStatusTimeline::steps($fulfillment->status, $fulfillment->statusHistories),
+            'timelinePrevious' => OrderStatusTimeline::previousAttemptRails($fulfillment->statusHistories),
+            'timelineActivity' => OrderStatusTimeline::activitySections($fulfillment->statusHistories),
             'transfers' => $fulfillment->stockTransfers->map(fn (StockTransfer $transfer): array => [
                 'id' => $transfer->id,
                 'status' => $transfer->status->value,

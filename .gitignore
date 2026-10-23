@@ -25,5 +25,5 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
-/.zed.gitignore
+/.zed
 

@@ -92,6 +92,10 @@ export type DriverOrderDetail = DriverAssignedOrder & {
         quantityLabel: string;
         priceLabel: string;
     }>;
+    subtotalLabel: string;
+    discountLabel: string | null;
+    couponCode: string | null;
+    deliveryFeeLabel: string;
 };
 
 export const driverOrderStatusLabel: Record<string, string> = {
