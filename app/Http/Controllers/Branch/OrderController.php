@@ -330,6 +330,7 @@ class OrderController extends Controller
                 'quantity' => $item->quantity,
                 'unitPriceLabel' => '$'.number_format((float) $item->unit_price, 2),
                 'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
+                'isLateDelivery' => (bool) $item->is_late_delivery,
             ])->all(),
             'timeline' => OrderStatusTimeline::steps($fulfillment->status, $fulfillment->statusHistories),
             'timelinePrevious' => OrderStatusTimeline::previousAttemptRails($fulfillment->statusHistories),

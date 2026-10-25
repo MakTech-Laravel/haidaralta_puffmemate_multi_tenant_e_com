@@ -10,3 +10,6 @@ Do not show the coupon input by default. Start with Have a coupon code? Reveal t
 
 ## Place order stays disabled until required checkout fields
 Checkout Place order is disabled until required fields are filled: name, mobile, address, city, pin lat/long, delivery and payment methods, terms, and an Express time slot when the selected method `requiresSlot`. Express has no customer date picker. Do not leave the button clickable with empty required inputs.
+
+## Cart checkout uses area polygons and late-delivery opt-in
+Storefront cart quote/place resolve the nearest active branch linked to an active `BranchArea` whose polygon contains the pin (`AreaCheckoutAllocator`). Pin outside every area → validation error on address (no `delivery_radius_km` fallback). Quote returns `requiresLateDelivery` + `shortfallLines`. When shortfalls exist, show a warning (remove from cart or accept late) and require `accept_late_delivery` before Place order; pack checkout stays branch-scoped and unchanged.

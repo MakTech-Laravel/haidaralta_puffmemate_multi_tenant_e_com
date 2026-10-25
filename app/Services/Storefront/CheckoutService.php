@@ -11,8 +11,8 @@ use App\Models\OrderItem;
 use App\Models\Pack;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Order\Allocation\AreaCheckoutAllocator;
 use App\Services\Order\BranchDeliveryQuote;
-use App\Services\Order\OrderAllocationEngine;
 use App\Services\Order\ShippingCalculator;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
@@ -30,7 +30,7 @@ class CheckoutService
         private readonly CartService $carts,
         private readonly CouponService $coupons,
         private readonly PaymentGatewaySettingsService $payments,
-        private readonly OrderAllocationEngine $allocator,
+        private readonly AreaCheckoutAllocator $allocator,
         private readonly ShippingCalculator $shipping,
         private readonly BranchDeliveryQuote $branchDelivery,
         private readonly PlaceOrderAction $placeOrder,
@@ -164,7 +164,21 @@ class CheckoutService
     /**
      * Preview the distance-based delivery fee for the current cart or pack.
      *
-     * @return array{fee: float, formattedFee: string}
+     * @return array{
+     *     fee: float,
+     *     formattedFee: string,
+     *     requiresLateDelivery?: bool,
+     *     shortfallLines?: list<array{
+     *         productId: int,
+     *         variantId: int|null,
+     *         productName: string,
+     *         quantity: int,
+     *         localQuantity: int,
+     *         shortfall: int
+     *     }>,
+     *     distanceKm?: float,
+     *     matchedBranchId?: int
+     * }
      */
     public function quoteShipping(Request $request, float $latitude, float $longitude): array
     {
@@ -187,6 +201,8 @@ class CheckoutService
             return [
                 'fee' => $fee,
                 'formattedFee' => '$'.number_format($fee, 2),
+                'requiresLateDelivery' => false,
+                'shortfallLines' => [],
             ];
         }
 
@@ -202,13 +218,29 @@ class CheckoutService
             $latitude,
             $longitude,
             $cart->items,
-            $request->input('delivery_method'),
+            (bool) $request->boolean('accept_late_delivery'),
+            false,
         );
         $fee = round($this->shipping->cost($plan['branch'], $plan['distance_km']), 2);
 
         return [
             'fee' => $fee,
             'formattedFee' => '$'.number_format($fee, 2),
+            'requiresLateDelivery' => $plan['requires_late_delivery'],
+            'shortfallLines' => collect($plan['lines'])
+                ->filter(fn (array $line): bool => $line['shortfall'] > 0)
+                ->map(fn (array $line): array => [
+                    'productId' => $line['product_id'],
+                    'variantId' => $line['variant_id'],
+                    'productName' => $line['product_name'],
+                    'quantity' => $line['quantity'],
+                    'localQuantity' => $line['local_quantity'],
+                    'shortfall' => $line['shortfall'],
+                ])
+                ->values()
+                ->all(),
+            'distanceKm' => $plan['distance_km'],
+            'matchedBranchId' => $plan['branch']->id,
         ];
     }
 
@@ -226,7 +258,8 @@ class CheckoutService
      *     city: string|null,
      *     postalCode: string|null,
      *     couponCode: string|null,
-     *     items: list<array{name: string, image: string, quantity: int, formattedLineTotal: string}>,
+     *     items: list<array{name: string, image: string, quantity: int, formattedLineTotal: string, isLateDelivery: bool}>,
+     *     hasLateDeliveryItems: bool,
      *     subtotal: string,
      *     discount: string|null,
      *     deliveryFee: string,
@@ -260,9 +293,13 @@ class CheckoutService
                     'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
                     'quantity' => $item->quantity,
                     'formattedLineTotal' => '$'.number_format((float) $item->subtotal, 2),
+                    'isLateDelivery' => (bool) $item->is_late_delivery,
                 ])
                 ->values()
                 ->all(),
+            'hasLateDeliveryItems' => $order->items->contains(
+                fn (OrderItem $item): bool => (bool) $item->is_late_delivery,
+            ),
             'subtotal' => '$'.number_format((float) $order->subtotal, 2),
             'discount' => (float) $order->discount > 0
                 ? '-$'.number_format((float) $order->discount, 2)
@@ -288,7 +325,8 @@ class CheckoutService
      *     time_slot_id?: string|null,
      *     payment_method: string,
      *     coupon?: string|null,
-     *     notes?: string|null
+     *     notes?: string|null,
+     *     accept_late_delivery?: bool
      * }  $data
      */
     public function place(Request $request, User $user, array $data): Order
