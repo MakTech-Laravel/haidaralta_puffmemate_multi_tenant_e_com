@@ -21,6 +21,7 @@ class OrderItem extends Model
         'quantity',
         'unit_price',
         'subtotal',
+        'is_late_delivery',
     ];
 
     /**
@@ -33,6 +34,7 @@ class OrderItem extends Model
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'is_late_delivery' => 'boolean',
         ];
     }
 

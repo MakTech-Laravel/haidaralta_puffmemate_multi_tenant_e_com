@@ -5,6 +5,7 @@ use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\BranchArea;
 use App\Models\User;
+use App\Support\Geo\Polygon;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -29,6 +30,7 @@ function branchAreaPayload(array $overrides = []): array
         'address' => '100 Crown St, Surry Hills NSW 2010',
         'latitude' => -33.8845,
         'longitude' => 151.2140,
+        'polygon' => Polygon::squareAround(-33.8845, 151.2140),
         'city' => 'Sydney',
         'state' => 'NSW',
         'postal_code' => '2010',
@@ -58,7 +60,9 @@ test('branch admin can list create update show and delete areas', function () {
 
     expect($area->name)->toBe('Surry Hills')
         ->and((float) $area->latitude)->toBe(-33.8845)
-        ->and($area->is_active)->toBeTrue();
+        ->and($area->is_active)->toBeTrue()
+        ->and($area->polygon)->toBeArray()
+        ->and(Polygon::uniqueVertexCount($area->polygon))->toBeGreaterThanOrEqual(3);
 
     $this->actingAs($this->admin, 'branch')
         ->get(route('branch.areas.show', [$this->branch, $area]))
@@ -66,6 +70,7 @@ test('branch admin can list create update show and delete areas', function () {
         ->assertInertia(fn ($page) => $page
             ->component('branch/areas/show')
             ->where('area.name', 'Surry Hills')
+            ->has('area.polygon')
             ->has('area.map.google')
             ->has('area.map.open_street_map')
             ->has('area.map.embed'));

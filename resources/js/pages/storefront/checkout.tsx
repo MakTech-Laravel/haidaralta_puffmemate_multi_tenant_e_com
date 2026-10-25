@@ -24,11 +24,22 @@ type AppliedCoupon = {
     formattedDiscount: string;
 };
 
+type ShortfallLine = {
+    productId: number;
+    variantId: number | null;
+    productName: string;
+    quantity: number;
+    localQuantity: number;
+    shortfall: number;
+};
+
 type ShippingQuote = {
     fee: number;
     formattedFee: string;
     latitude: string;
     longitude: string;
+    requiresLateDelivery: boolean;
+    shortfallLines: ShortfallLine[];
 } | null;
 
 type CheckoutPageProps = {
@@ -59,6 +70,8 @@ function checkoutCanPlaceOrder(
     details: CheckoutDetails,
     methods: StorefrontDeliveryMethod[],
     termsAccepted: boolean,
+    requiresLateDelivery: boolean,
+    acceptLateDelivery: boolean,
 ): boolean {
     const method = methods.find((row) => row.id === details.deliveryMethodId);
     const pinReady =
@@ -77,6 +90,10 @@ function checkoutCanPlaceOrder(
         !filled(details.paymentMethodId) ||
         !termsAccepted
     ) {
+        return false;
+    }
+
+    if (requiresLateDelivery && !acceptLateDelivery) {
         return false;
     }
 
@@ -115,11 +132,21 @@ export default function StorefrontCheckout({
             : '',
         payment_method: paymentMethods[0]?.id ?? '',
         coupon: appliedCoupon?.code ?? '',
+        accept_late_delivery: false,
         terms: false,
     });
 
     const [couponCode, setCouponCode] = useState(appliedCoupon?.code ?? '');
-    const [quote, setQuote] = useState<ShippingQuote>(shippingQuote);
+    const [quote, setQuote] = useState<ShippingQuote>(
+        shippingQuote
+            ? {
+                  ...shippingQuote,
+                  requiresLateDelivery:
+                      shippingQuote.requiresLateDelivery ?? false,
+                  shortfallLines: shippingQuote.shortfallLines ?? [],
+              }
+            : null,
+    );
     const requestedPin = useRef<string | null>(
         shippingQuote
             ? `${shippingQuote.latitude},${shippingQuote.longitude}`
@@ -132,7 +159,12 @@ export default function StorefrontCheckout({
         errors: quoteErrors,
     } = useHttp<
         { latitude: string; longitude: string; delivery_method: string },
-        { fee: number; formattedFee: string }
+        {
+            fee: number;
+            formattedFee: string;
+            requiresLateDelivery?: boolean;
+            shortfallLines?: ShortfallLine[];
+        }
     >({
         latitude: '',
         longitude: '',
@@ -186,15 +218,22 @@ export default function StorefrontCheckout({
 
         void postQuote(quoteShipping.url())
             .then((payload) => {
+                const requiresLate = Boolean(payload.requiresLateDelivery);
                 setQuote({
                     fee: payload.fee,
                     formattedFee: payload.formattedFee,
                     latitude,
                     longitude,
+                    requiresLateDelivery: requiresLate,
+                    shortfallLines: payload.shortfallLines ?? [],
                 });
+                if (!requiresLate) {
+                    form.setData('accept_late_delivery', false);
+                }
             })
             .catch(() => {
                 setQuote(null);
+                form.setData('accept_late_delivery', false);
             });
     }, [
         details.latitude,
@@ -273,10 +312,19 @@ export default function StorefrontCheckout({
         ...quoteErrors,
     };
 
+    const requiresLateDelivery = Boolean(
+        quotedMatchesPin && quote?.requiresLateDelivery,
+    );
+    const shortfallLines = quotedMatchesPin
+        ? (quote?.shortfallLines ?? [])
+        : [];
+
     const canPlaceOrder = checkoutCanPlaceOrder(
         details,
         deliveryMethods,
         form.data.terms,
+        requiresLateDelivery,
+        form.data.accept_late_delivery,
     );
 
     return (
@@ -305,6 +353,9 @@ export default function StorefrontCheckout({
 
                             form.transform((data) => ({
                                 ...data,
+                                accept_late_delivery:
+                                    requiresLateDelivery &&
+                                    data.accept_late_delivery,
                                 coupon: couponsAllowed
                                     ? (appliedCoupon?.code ??
                                       (couponCode.trim() !== ''
@@ -354,6 +405,13 @@ export default function StorefrontCheckout({
                             termsError={errors.terms}
                             processing={form.processing}
                             canPlaceOrder={canPlaceOrder}
+                            requiresLateDelivery={requiresLateDelivery}
+                            shortfallLines={shortfallLines}
+                            acceptLateDelivery={form.data.accept_late_delivery}
+                            acceptLateError={errors.accept_late_delivery}
+                            onAcceptLateDeliveryChange={(accepted) =>
+                                form.setData('accept_late_delivery', accepted)
+                            }
                             onCouponChange={setCouponCode}
                             onApplyCoupon={() =>
                                 router.post(

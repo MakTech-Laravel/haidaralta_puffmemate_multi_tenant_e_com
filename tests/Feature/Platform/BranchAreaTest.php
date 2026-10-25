@@ -6,6 +6,7 @@ use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\BranchArea;
 use App\Models\User;
+use App\Support\Geo\Polygon;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -31,6 +32,7 @@ function platformAreaPayload(array $overrides = []): array
         'address' => '100 Crown St, Surry Hills NSW 2010',
         'latitude' => -33.8845,
         'longitude' => 151.2140,
+        'polygon' => Polygon::squareAround(-33.8845, 151.2140),
         'city' => 'Sydney',
         'state' => 'NSW',
         'postal_code' => '2010',
@@ -128,7 +130,9 @@ test('platform admin can create update show and delete branch areas on global ro
     expect($area->name)->toBe('Surry Hills')
         ->and($area->city)->toBe('Sydney')
         ->and($area->state)->toBe('NSW')
-        ->and($area->is_active)->toBeTrue();
+        ->and($area->is_active)->toBeTrue()
+        ->and($area->polygon)->toBeArray()
+        ->and(Polygon::uniqueVertexCount($area->polygon))->toBeGreaterThanOrEqual(3);
 
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.branch-areas.show', $area))
@@ -137,6 +141,7 @@ test('platform admin can create update show and delete branch areas on global ro
             ->component('platform/branch-areas/show')
             ->where('area.name', 'Surry Hills')
             ->where('branch.slug', $this->branch->slug)
+            ->has('area.polygon')
             ->has('area.map.google')
             ->has('area.map.open_street_map')
             ->has('area.map.embed'));
@@ -190,7 +195,54 @@ test('platform area store validates required fields', function () {
         ->from(route('platform.branches.areas.create', $this->branch))
         ->post(route('platform.branches.areas.store', $this->branch), [])
         ->assertRedirect(route('platform.branches.areas.create', $this->branch))
-        ->assertSessionHasErrors(['name', 'address', 'latitude', 'longitude', 'city', 'state']);
+        ->assertSessionHasErrors(['name', 'address', 'latitude', 'longitude', 'polygon', 'city', 'state']);
+});
+
+test('platform area store rejects missing or invalid polygon', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->from(route('platform.branch-areas.create'))
+        ->post(route('platform.branch-areas.store'), platformAreaPayload([
+            'branch_id' => $this->branch->id,
+            'name' => 'No Polygon Zone',
+            'polygon' => null,
+        ]))
+        ->assertRedirect(route('platform.branch-areas.create'))
+        ->assertSessionHasErrors(['polygon']);
+
+    $this->actingAs($this->admin, 'platform')
+        ->from(route('platform.branch-areas.create'))
+        ->post(route('platform.branch-areas.store'), platformAreaPayload([
+            'branch_id' => $this->branch->id,
+            'name' => 'Two Point Zone',
+            'polygon' => [
+                ['lat' => -33.88, 'lng' => 151.21],
+                ['lat' => -33.87, 'lng' => 151.22],
+            ],
+        ]))
+        ->assertRedirect(route('platform.branch-areas.create'))
+        ->assertSessionHasErrors(['polygon']);
+});
+
+test('platform area store accepts an open ring and persists a closed polygon', function () {
+    $openRing = [
+        ['lat' => -33.89, 'lng' => 151.20],
+        ['lat' => -33.89, 'lng' => 151.22],
+        ['lat' => -33.87, 'lng' => 151.22],
+        ['lat' => -33.87, 'lng' => 151.20],
+    ];
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.branch-areas.store'), platformAreaPayload([
+            'branch_id' => $this->branch->id,
+            'name' => 'Open Ring Zone',
+            'polygon' => $openRing,
+        ]))
+        ->assertRedirect();
+
+    $area = BranchArea::query()->where('name', 'Open Ring Zone')->firstOrFail();
+
+    expect(Polygon::uniqueVertexCount($area->polygon))->toBe(4)
+        ->and($area->polygon[0])->toBe($area->polygon[array_key_last($area->polygon)]);
 });
 
 test('platform user without edit-branches cannot create areas', function () {

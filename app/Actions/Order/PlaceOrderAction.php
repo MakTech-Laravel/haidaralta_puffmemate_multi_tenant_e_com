@@ -24,8 +24,8 @@ use App\Models\User;
 use App\Services\Customer\CustomerAccountService;
 use App\Services\Inventory\InventoryReservationService;
 use App\Services\Notifications\NotificationService;
+use App\Services\Order\Allocation\AreaCheckoutAllocator;
 use App\Services\Order\AllocationDecisionRecorder;
-use App\Services\Order\OrderAllocationEngine;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\StockTransferService;
 use App\Support\BranchProductPriceDisplay;
@@ -38,7 +38,7 @@ use Illuminate\Validation\ValidationException;
 class PlaceOrderAction
 {
     public function __construct(
-        private OrderAllocationEngine $allocator,
+        private AreaCheckoutAllocator $allocator,
         private InventoryReservationService $reservations,
         private StockTransferService $transfers,
         private NotificationService $notifications,
@@ -63,7 +63,8 @@ class PlaceOrderAction
      *     payment_method: string,
      *     coupon?: Coupon|null,
      *     discount?: float,
-     *     notes?: string|null
+     *     notes?: string|null,
+     *     accept_late_delivery?: bool
      * }  $data
      */
     public function handle(User $user, Cart $cart, array $data): Order
@@ -94,11 +95,13 @@ class PlaceOrderAction
             $discount,
             $subtotal,
         ): Order {
+            $acceptLate = (bool) ($data['accept_late_delivery'] ?? false);
             $plan = $this->allocator->allocate(
                 $latitude,
                 $longitude,
                 $cart->items,
-                $data['delivery_method'],
+                $acceptLate,
+                true,
             );
 
             $inventoryMap = $this->loadInventoryMap($plan);
@@ -138,6 +141,7 @@ class PlaceOrderAction
                 'delivery_date' => $data['delivery_date'] ?? null,
                 'time_slot' => $data['time_slot'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'accepts_late_delivery' => $acceptLate && $plan['requires_late_delivery'],
             ]);
 
             $this->decisions->record($order, $plan['branch']->id, $plan['decision_trace']);
@@ -175,9 +179,12 @@ class PlaceOrderAction
                     'quantity' => $line['quantity'],
                     'unit_price' => $unit,
                     'subtotal' => $unit * $line['quantity'],
+                    'is_late_delivery' => (bool) ($line['is_late_delivery'] ?? false),
                 ]);
             }
 
+            // Area checkout never plans automated transfers for shortfalls —
+            // late lines rely on staff collecting stock later.
             foreach ($plan['transfers'] as $leg) {
                 $this->transfers->createForFulfillment($fulfillment, $leg);
             }

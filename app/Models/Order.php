@@ -64,6 +64,7 @@ class Order extends Model implements DataTableConfigurable
         'delivery_date',
         'time_slot',
         'notes',
+        'accepts_late_delivery',
         'pack_id',
         'pack_quantity',
     ];
@@ -232,6 +233,7 @@ class Order extends Model implements DataTableConfigurable
             'total_amount' => 'decimal:2',
             'delivery_date' => 'date',
             'pack_quantity' => 'integer',
+            'accepts_late_delivery' => 'boolean',
         ];
     }
 }

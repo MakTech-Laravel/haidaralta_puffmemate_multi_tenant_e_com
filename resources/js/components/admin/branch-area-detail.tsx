@@ -11,6 +11,10 @@ import {
     BranchLocationMapDialog,
     type BranchMapLinks,
 } from '@/components/admin/branch-location-map-dialog';
+import {
+    BranchAreaPolygonMap,
+    type PolygonPoint,
+} from '@/components/admin/branch-area-polygon-map';
 import { AppDate } from '@/components/app-datetime';
 import Heading from '@/components/heading';
 import { StatCard } from '@/components/portal/stat-card';
@@ -45,6 +49,7 @@ export type BranchAreaDetailData = {
     address: string;
     latitude: string;
     longitude: string;
+    polygon?: PolygonPoint[] | null;
     map: BranchMapLinks | null;
     city: string;
     state: string;
@@ -166,6 +171,8 @@ export function BranchAreaDetail({
     const latitude = formatCoord(area.latitude);
     const longitude = formatCoord(area.longitude);
     const hasPin = area.map !== null && latitude !== null && longitude !== null;
+    const polygon = Array.isArray(area.polygon) ? area.polygon : [];
+    const hasPolygon = polygon.length >= 3;
     const createdLabel = formatAppDateTime(area.created_at);
     const transfers = area.transfers ?? [];
     const coverage = coverageLabel(area.city, area.state);
@@ -332,54 +339,20 @@ export function BranchAreaDetail({
                                 </span>
                             </div>
 
-                            <div
-                                className="relative h-56 overflow-hidden rounded-xl border"
-                                aria-label="Area boundary map coming soon"
-                            >
-                                <div className="from-muted via-muted/80 to-muted absolute inset-0 bg-linear-to-br" />
-                                <div
-                                    className="absolute inset-0 opacity-40"
-                                    style={{
-                                        backgroundImage:
-                                            'linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)',
-                                        backgroundSize: '28px 28px',
-                                    }}
+                            {hasPolygon ? (
+                                <BranchAreaPolygonMap
+                                    value={polygon}
+                                    onChange={() => undefined}
+                                    centerLat={area.latitude}
+                                    centerLng={area.longitude}
+                                    readOnly
                                 />
-                                <svg
-                                    className="absolute inset-0 size-full"
-                                    viewBox="0 0 400 224"
-                                    fill="none"
-                                    aria-hidden
-                                >
-                                    <path
-                                        d="M72 48 L168 36 L246 58 L318 44 L352 96 L330 156 L268 188 L180 198 L98 170 L58 112 Z"
-                                        className="fill-primary/20 stroke-destructive"
-                                        strokeWidth="3"
-                                        strokeDasharray="10 6"
-                                        strokeLinejoin="round"
-                                    />
-                                    <circle
-                                        cx="210"
-                                        cy="118"
-                                        r="5"
-                                        className="fill-primary stroke-background"
-                                        strokeWidth="2"
-                                    />
-                                </svg>
-                                <div className="bg-background/50 absolute inset-0" />
-                                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-6 text-center">
-                                    <span className="bg-background/95 text-foreground rounded-full border px-3 py-1 text-xs font-semibold tracking-wide uppercase shadow-sm">
-                                        Coming soon
-                                    </span>
-                                    <p className="text-foreground text-sm font-medium">
-                                        Selected area boundary
-                                    </p>
-                                    <p className="text-muted-foreground max-w-xs text-xs leading-relaxed">
-                                        Draw and preview the delivery zone
-                                        outline on the map in a future update.
-                                    </p>
-                                </div>
-                            </div>
+                            ) : (
+                                <p className="text-muted-foreground text-sm">
+                                    No service zone polygon yet. Edit this area
+                                    to draw one.
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

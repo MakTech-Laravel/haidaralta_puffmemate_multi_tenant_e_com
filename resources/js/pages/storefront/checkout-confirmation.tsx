@@ -9,6 +9,7 @@ type ConfirmationItem = {
     image: string;
     quantity: number;
     formattedLineTotal: string;
+    isLateDelivery?: boolean;
 };
 
 type ConfirmationOrder = {
@@ -25,6 +26,7 @@ type ConfirmationOrder = {
     postalCode: string | null;
     couponCode: string | null;
     items: ConfirmationItem[];
+    hasLateDeliveryItems?: boolean;
     subtotal: string;
     discount: string | null;
     deliveryFee: string;
@@ -83,6 +85,12 @@ export default function StorefrontCheckoutConfirmation({
                             We received order {order.orderNumber}. Pay{' '}
                             {order.total} on delivery.
                         </p>
+                        {order.hasLateDeliveryItems ? (
+                            <p className="text-muted-foreground mt-3 text-sm">
+                                Some items may arrive later while we collect
+                                stock for your order.
+                            </p>
+                        ) : null}
                     </div>
 
                     <div className="mt-8 grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8">
@@ -179,6 +187,9 @@ export default function StorefrontCheckoutConfirmation({
                                             </p>
                                             <p className="text-muted-foreground text-xs">
                                                 Quantity x {item.quantity}
+                                                {item.isLateDelivery
+                                                    ? ' · May arrive later'
+                                                    : ''}
                                             </p>
                                         </div>
                                         <p className="text-foreground shrink-0 text-sm font-bold">

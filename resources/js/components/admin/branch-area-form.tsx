@@ -1,6 +1,10 @@
 import { Link, useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import {
+    BranchAreaPolygonMap,
+    type PolygonPoint,
+} from '@/components/admin/branch-area-polygon-map';
 import InputError from '@/components/input-error';
 import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
 import { AddressSuggestInput } from '@/components/storefront/wholesale/address-suggest-input';
@@ -11,7 +15,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
+import { resolveAreaZoneRing } from '@/lib/geo-polygon';
 import { cn } from '@/lib/utils';
+
+const AU_COUNTRY = 'au';
 
 type FormAction = {
     action: string;
@@ -23,6 +30,7 @@ export type BranchAreaFormDefaults = {
     address?: string;
     latitude?: string | number | null;
     longitude?: string | number | null;
+    polygon?: PolygonPoint[] | null;
     city?: string;
     state?: string;
     postal_code?: string | null;
@@ -141,6 +149,46 @@ function formatCoord(value: string): string {
     return Number.isFinite(numeric) ? numeric.toFixed(7) : value;
 }
 
+function toPolygonPoints(
+    value: PolygonPoint[] | null | undefined,
+): PolygonPoint[] {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+
+    return value
+        .filter(
+            (point): point is PolygonPoint =>
+                point !== null &&
+                typeof point === 'object' &&
+                Number.isFinite(Number(point.lat)) &&
+                Number.isFinite(Number(point.lng)),
+        )
+        .map((point) => ({
+            lat: Number(point.lat),
+            lng: Number(point.lng),
+        }));
+}
+
+function polygonVertexCount(ring: PolygonPoint[]): number {
+    if (ring.length === 0) {
+        return 0;
+    }
+
+    const first = ring[0];
+    const last = ring[ring.length - 1];
+
+    if (
+        ring.length > 1 &&
+        first.lat === last.lat &&
+        first.lng === last.lng
+    ) {
+        return ring.length - 1;
+    }
+
+    return ring.length;
+}
+
 export function BranchAreaForm({
     action,
     defaults,
@@ -156,6 +204,8 @@ export function BranchAreaForm({
             ? String(defaults.branch_id)
             : '';
     const [branchLabel, setBranchLabel] = useState<string | null>(null);
+    const [zoneResolveFailed, setZoneResolveFailed] = useState(false);
+    const zoneAbortRef = useRef<AbortController | null>(null);
 
     const { data, setData, post, processing, errors, setValidationTimeout } =
         useForm(formMethod, action.action, {
@@ -164,6 +214,7 @@ export function BranchAreaForm({
             address: defaults?.address ?? '',
             latitude: toCoordString(defaults?.latitude),
             longitude: toCoordString(defaults?.longitude),
+            polygon: toPolygonPoints(defaults?.polygon),
             city: defaults?.city ?? '',
             state: defaults?.state ?? '',
             postal_code: defaults?.postal_code ?? '',
@@ -176,12 +227,82 @@ export function BranchAreaForm({
         setValidationTimeout(500);
     }, [setValidationTimeout]);
 
+    useEffect(() => {
+        return () => {
+            zoneAbortRef.current?.abort();
+        };
+    }, []);
+
+    const applyLocationAndZone = (input: {
+        address: string;
+        latitude: string;
+        longitude: string;
+        city?: string;
+        state?: string;
+        postalCode?: string;
+    }): void => {
+        setData((current) => ({
+            ...current,
+            address: input.address,
+            latitude: input.latitude,
+            longitude: input.longitude,
+            city: input.city ?? current.city,
+            state: input.state ?? current.state,
+            postal_code: input.postalCode ?? current.postal_code,
+        }));
+        setZoneResolveFailed(false);
+
+        const lat = Number(input.latitude);
+        const lng = Number(input.longitude);
+
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            setZoneResolveFailed(true);
+
+            return;
+        }
+
+        zoneAbortRef.current?.abort();
+        const controller = new AbortController();
+        zoneAbortRef.current = controller;
+
+        void resolveAreaZoneRing({
+            query: input.address,
+            lat,
+            lng,
+            countrycodes: AU_COUNTRY,
+            signal: controller.signal,
+        })
+            .then((ring) => {
+                if (controller.signal.aborted) {
+                    return;
+                }
+
+                if (ring === null || polygonVertexCount(ring) < 3) {
+                    setZoneResolveFailed(true);
+                    setData('polygon', []);
+
+                    return;
+                }
+
+                setZoneResolveFailed(false);
+                setData('polygon', ring);
+            })
+            .catch((err: unknown) => {
+                if (err instanceof DOMException && err.name === 'AbortError') {
+                    return;
+                }
+
+                setZoneResolveFailed(true);
+            });
+    };
+
     const submit = (event: FormEvent) => {
         event.preventDefault();
         post(action.action);
     };
 
     const hasPin = data.latitude.trim() !== '' && data.longitude.trim() !== '';
+    const hasPolygon = polygonVertexCount(data.polygon) >= 3;
     const branchId =
         'branch_id' in data && typeof data.branch_id === 'string'
             ? data.branch_id
@@ -258,7 +379,7 @@ export function BranchAreaForm({
             <section className={sectionClassName()}>
                 <SectionHeader
                     title="Location"
-                    description="Search an address or drop a pin. City and state fill when available."
+                    description="Search an Australian address or drop a pin. The zone outline follows the address."
                 />
                 <div className="flex flex-col gap-5">
                     <div className="space-y-2">
@@ -271,7 +392,8 @@ export function BranchAreaForm({
                                     id="area-address"
                                     name="address"
                                     value={data.address}
-                                    placeholder="Start typing and select an address"
+                                    countrycodes={AU_COUNTRY}
+                                    placeholder="Start typing an Australian address"
                                     onSelect={({
                                         address,
                                         latitude,
@@ -280,24 +402,24 @@ export function BranchAreaForm({
                                         state,
                                         postalCode,
                                     }) => {
-                                        setData((current) => ({
-                                            ...current,
+                                        applyLocationAndZone({
                                             address,
                                             latitude,
                                             longitude,
-                                            city: city ?? current.city,
-                                            state: state ?? current.state,
-                                            postal_code:
-                                                postalCode ??
-                                                current.postal_code,
-                                        }));
+                                            city,
+                                            state,
+                                            postalCode,
+                                        });
                                     }}
                                     onClear={() => {
+                                        zoneAbortRef.current?.abort();
+                                        setZoneResolveFailed(false);
                                         setData((current) => ({
                                             ...current,
                                             address: '',
                                             latitude: '',
                                             longitude: '',
+                                            polygon: [],
                                         }));
                                     }}
                                 />
@@ -305,6 +427,7 @@ export function BranchAreaForm({
                             <CheckoutMapDialog
                                 latitude={data.latitude}
                                 longitude={data.longitude}
+                                countrycodes={AU_COUNTRY}
                                 onSelect={({
                                     latitude,
                                     longitude,
@@ -313,16 +436,17 @@ export function BranchAreaForm({
                                     state,
                                     postalCode,
                                 }) => {
-                                    setData((current) => ({
-                                        ...current,
+                                    applyLocationAndZone({
+                                        address:
+                                            address ||
+                                            data.address ||
+                                            `${latitude}, ${longitude}`,
                                         latitude,
                                         longitude,
-                                        address: address || current.address,
-                                        city: city ?? current.city,
-                                        state: state ?? current.state,
-                                        postal_code:
-                                            postalCode ?? current.postal_code,
-                                    }));
+                                        city,
+                                        state,
+                                        postalCode,
+                                    });
                                 }}
                             />
                         </div>
@@ -341,8 +465,8 @@ export function BranchAreaForm({
                         ) : (
                             <Alert variant="destructive">
                                 <AlertDescription>
-                                    Select an address from the suggestions or
-                                    pin the location on the map.
+                                    Select an Australian address from the
+                                    suggestions or pin the location on the map.
                                 </AlertDescription>
                             </Alert>
                         )}
@@ -397,6 +521,28 @@ export function BranchAreaForm({
                             />
                             <InputError message={errors.postal_code} />
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-muted-foreground text-xs">
+                            Zone outline follows the address.
+                        </p>
+                        <BranchAreaPolygonMap
+                            value={data.polygon}
+                            onChange={(ring) => setData('polygon', ring)}
+                            centerLat={data.latitude}
+                            centerLng={data.longitude}
+                        />
+                        <InputError message={errors.polygon} />
+                        {hasPin && !hasPolygon ? (
+                            <Alert variant="destructive">
+                                <AlertDescription>
+                                    {zoneResolveFailed
+                                        ? 'Could not build a zone outline for this address. Try another Australian address or draw on the map.'
+                                        : 'Waiting for zone outline…'}
+                                </AlertDescription>
+                            </Alert>
+                        ) : null}
                     </div>
                 </div>
             </section>

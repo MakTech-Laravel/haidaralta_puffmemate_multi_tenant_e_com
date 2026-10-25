@@ -72,6 +72,7 @@ type FulfillmentSummary = {
         image: string;
         quantity: number;
         subtotalLabel: string;
+        isLateDelivery?: boolean;
     }[];
     transfers: {
         id: number;
@@ -343,6 +344,9 @@ function FulfillmentCard({
                                 </p>
                                 <p className="text-muted-foreground mt-0.5 text-xs">
                                     Qty {item.quantity}
+                                    {item.isLateDelivery
+                                        ? ' · Late delivery'
+                                        : ''}
                                 </p>
                             </div>
                             <p className="text-foreground shrink-0 text-sm font-semibold tabular-nums">

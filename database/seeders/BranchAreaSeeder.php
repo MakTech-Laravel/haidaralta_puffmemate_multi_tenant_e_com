@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Branch;
 use App\Models\BranchArea;
+use App\Support\Geo\Polygon;
 use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 
@@ -49,6 +50,10 @@ class BranchAreaSeeder extends Seeder
                         'address' => $areaData['address'],
                         'latitude' => $areaData['latitude'],
                         'longitude' => $areaData['longitude'],
+                        'polygon' => Polygon::squareAround(
+                            (float) $areaData['latitude'],
+                            (float) $areaData['longitude'],
+                        ),
                         'city' => $areaData['city'],
                         'state' => $areaData['state'],
                         'postal_code' => $areaData['postal_code'],
