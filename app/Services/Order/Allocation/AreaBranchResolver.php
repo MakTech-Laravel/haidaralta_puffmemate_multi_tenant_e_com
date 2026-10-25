@@ -9,53 +9,62 @@ use App\Support\Geo\Polygon;
 use Illuminate\Support\Collection;
 
 /**
- * Picks the nearest active branch whose active BranchArea polygon contains the
- * customer pin. Cart checkout uses this instead of delivery_radius_km.
+ * Picks the nearest active branch for cart checkout: prefer branches linked to
+ * an active BranchArea whose polygon contains the pin; otherwise nearest active
+ * branch by distance (Australia gate lives in AreaCheckoutAllocator).
  */
 class AreaBranchResolver
 {
     public function __construct(private DistanceCalculator $distance) {}
 
     /**
-     * @return array{branch: Branch, distance_km: float}|null
+     * @return array{branch: Branch, distance_km: float, allocation: string}|null
      */
-    public function nearest(float $latitude, float $longitude): ?array
+    public function resolveForCheckout(float $latitude, float $longitude): ?array
     {
-        $branches = $this->matchingBranches($latitude, $longitude);
+        $areaMatch = $this->nearest($latitude, $longitude);
 
-        if ($branches->isEmpty()) {
-            return null;
+        if ($areaMatch !== null) {
+            return [
+                ...$areaMatch,
+                'allocation' => 'area_nearest',
+            ];
         }
 
-        $best = null;
-        $bestDistance = PHP_FLOAT_MAX;
+        $fallback = $this->nearestActiveBranch($latitude, $longitude);
 
-        foreach ($branches as $branch) {
-            if ($branch->latitude === null || $branch->longitude === null) {
-                continue;
-            }
-
-            $distanceKm = $this->distance->distanceKm(
-                $latitude,
-                $longitude,
-                (float) $branch->latitude,
-                (float) $branch->longitude,
-            );
-
-            if ($distanceKm < $bestDistance) {
-                $best = $branch;
-                $bestDistance = $distanceKm;
-            }
-        }
-
-        if ($best === null) {
+        if ($fallback === null) {
             return null;
         }
 
         return [
-            'branch' => $best,
-            'distance_km' => round($bestDistance, 2),
+            ...$fallback,
+            'allocation' => 'nearest_active',
         ];
+    }
+
+    /**
+     * @return array{branch: Branch, distance_km: float}|null
+     */
+    public function nearest(float $latitude, float $longitude): ?array
+    {
+        return $this->pickNearest($this->matchingBranches($latitude, $longitude), $latitude, $longitude);
+    }
+
+    /**
+     * Nearest active branch with coordinates (area membership ignored).
+     *
+     * @return array{branch: Branch, distance_km: float}|null
+     */
+    public function nearestActiveBranch(float $latitude, float $longitude): ?array
+    {
+        $branches = Branch::query()
+            ->where('status', true)
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->get();
+
+        return $this->pickNearest($branches, $latitude, $longitude);
     }
 
     /**
@@ -90,5 +99,46 @@ class AreaBranchResolver
         }
 
         return $matched->values();
+    }
+
+    /**
+     * @param  Collection<int, Branch>  $branches
+     * @return array{branch: Branch, distance_km: float}|null
+     */
+    private function pickNearest(Collection $branches, float $latitude, float $longitude): ?array
+    {
+        if ($branches->isEmpty()) {
+            return null;
+        }
+
+        $best = null;
+        $bestDistance = PHP_FLOAT_MAX;
+
+        foreach ($branches as $branch) {
+            if ($branch->latitude === null || $branch->longitude === null) {
+                continue;
+            }
+
+            $distanceKm = $this->distance->distanceKm(
+                $latitude,
+                $longitude,
+                (float) $branch->latitude,
+                (float) $branch->longitude,
+            );
+
+            if ($distanceKm < $bestDistance) {
+                $best = $branch;
+                $bestDistance = $distanceKm;
+            }
+        }
+
+        if ($best === null) {
+            return null;
+        }
+
+        return [
+            'branch' => $best,
+            'distance_km' => round($bestDistance, 2),
+        ];
     }
 }

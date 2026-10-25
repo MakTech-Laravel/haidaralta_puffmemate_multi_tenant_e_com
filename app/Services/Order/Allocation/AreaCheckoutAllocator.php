@@ -5,12 +5,13 @@ namespace App\Services\Order\Allocation;
 use App\Models\Branch;
 use App\Models\CartItem;
 use App\Services\Order\ShippingCalculator;
+use App\Support\Geo\Australia;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Storefront cart allocation: nearest BranchArea polygon branch, local stock
- * check, optional late-delivery opt-in for shortfalls (no transfer planner).
+ * Storefront cart allocation: AU-only pin, prefer BranchArea polygon branch,
+ * else nearest active branch; local stock + late-delivery opt-in (no transfers).
  */
 class AreaCheckoutAllocator
 {
@@ -70,17 +71,24 @@ class AreaCheckoutAllocator
             ]);
         }
 
-        $match = $this->areas->nearest($latitude, $longitude);
+        if (! Australia::contains($latitude, $longitude)) {
+            throw ValidationException::withMessages([
+                'address' => 'We only deliver within Australia.',
+            ]);
+        }
+
+        $match = $this->areas->resolveForCheckout($latitude, $longitude);
 
         if ($match === null) {
             throw ValidationException::withMessages([
-                'address' => 'We do not deliver to this location yet. Choose an address inside a delivery area.',
+                'cart' => 'No branch is currently available to fulfil your order.',
             ]);
         }
 
         /** @var Branch $branch */
         $branch = $match['branch'];
         $distanceKm = $match['distance_km'];
+        $allocation = $match['allocation'];
         $stock = $this->inventory->sellableByBranch($linesInput);
         $branchStock = $stock[$branch->id] ?? [];
 
@@ -143,7 +151,7 @@ class AreaCheckoutAllocator
                     'load' => 0,
                     'transferred_units' => 0,
                     'priority' => (int) $branch->fulfillment_priority,
-                    'allocation' => 'area_nearest',
+                    'allocation' => $allocation,
                     'requires_late_delivery' => $requiresLate ? 1 : 0,
                 ]],
                 'rejected' => [],

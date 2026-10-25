@@ -12,4 +12,7 @@ Do not show the coupon input by default. Start with Have a coupon code? Reveal t
 Checkout Place order is disabled until required fields are filled: name, mobile, address, city, pin lat/long, delivery and payment methods, terms, and an Express time slot when the selected method `requiresSlot`. Express has no customer date picker. Do not leave the button clickable with empty required inputs.
 
 ## Cart checkout uses area polygons and late-delivery opt-in
-Storefront cart quote/place resolve the nearest active branch linked to an active `BranchArea` whose polygon contains the pin (`AreaCheckoutAllocator`). Pin outside every area → validation error on address (no `delivery_radius_km` fallback). Quote returns `requiresLateDelivery` + `shortfallLines`. When shortfalls exist, show a warning (remove from cart or accept late) and require `accept_late_delivery` before Place order; pack checkout stays branch-scoped and unchanged.
+Storefront cart quote/place use `AreaCheckoutAllocator`: AU-only pin (bounding box); inside an active `BranchArea` polygon → nearest linked branch; outside every area but still in Australia → nearest active branch. Non-AU pin → address validation error. Quote returns `requiresLateDelivery` + `shortfallLines`. When shortfalls exist, show a warning (remove from cart or accept late) and require `accept_late_delivery` before Place order; pack checkout stays branch-scoped and unchanged.
+
+## Checkout address uses AU address suggest
+Delivery address uses `AddressSuggestInput` + `CheckoutMapDialog` with `countrycodes=au` (same pattern as area create / wholesale). Free-typed text is query-only; committed address + lat/lng come from a suggestion pick or map pin. Selecting a suggestion also fills city/postcode when Nominatim provides them.

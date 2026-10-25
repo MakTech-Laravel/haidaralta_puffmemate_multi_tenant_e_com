@@ -6,7 +6,7 @@ paths:
 # Storefront Checkout
 
 ## Checkout delivery methods are not free
-DeliveryMethod.fee is a leftover flat amount (seeded 0). Real shipping is ShippingCalculator distance cost at place() via the area-matched branch. Never label method.formattedFee as FREE. Checkout cards and the order summary say Calculated at checkout. Cart quote/place use area polygons + late-delivery opt-in (see checkout.md / order.md); pack buy-now stays on the pack's branch.
+DeliveryMethod.fee is a leftover flat amount (seeded 0). Real shipping is ShippingCalculator distance cost at place() via the matched branch (area polygon or nearest-active AU fallback). Never label method.formattedFee as FREE. Checkout cards and the order summary say Calculated at checkout. Cart quote/place use AU gate + area/nearest-active + late-delivery opt-in (see checkout.md / order.md); pack buy-now stays on the pack's branch.
 
 ## Delivery method cards omit shipping cost
 DeliveryMethod.fee is leftover and unused. deliveryMethods() returns id/label/description/requiresSlot/timeSlots only. Distance cost lives in the checkout summary via the shipping quote, not on the method cards.

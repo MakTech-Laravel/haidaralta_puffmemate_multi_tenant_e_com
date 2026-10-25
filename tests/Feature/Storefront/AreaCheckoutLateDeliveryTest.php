@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\AllocationDecisionLog;
 use App\Models\Branch;
 use App\Models\BranchArea;
 use App\Models\Inventory;
@@ -104,9 +105,41 @@ test('cart checkout routes to the nearest branch whose area contains the pin', f
         ->and(StockTransfer::query()->count())->toBe(0);
 });
 
-test('cart checkout rejects a pin outside every delivery area', function () {
+test('cart checkout outside every area but inside Australia uses the nearest active branch', function () {
     $user = User::factory()->create();
-    $product = areaCheckoutProduct('area-outside');
+    $product = areaCheckoutProduct('area-outside-au-ok');
+    [$branch] = areaCheckoutBranchWithZone(-33.8688, 151.2093, 0.01);
+
+    Inventory::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'quantity' => 5,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    // Adelaide — inside AU bounds, outside the tiny Sydney area polygon.
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), areaCheckoutPayload([
+            'latitude' => -34.9285,
+            'longitude' => 138.6007,
+            'city' => 'Adelaide',
+            'postal_code' => '5000',
+        ]))
+        ->assertRedirect();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->fulfillment->branch_id)->toBe($branch->id)
+        ->and(AllocationDecisionLog::query()->where('order_id', $order->id)->firstOrFail()
+            ->considered_branches[0]['allocation'] ?? null)->toBe('nearest_active');
+});
+
+test('cart checkout rejects a pin outside Australia', function () {
+    $user = User::factory()->create();
+    $product = areaCheckoutProduct('area-outside-au-block');
     [$branch] = areaCheckoutBranchWithZone();
 
     Inventory::factory()->create([
@@ -122,8 +155,8 @@ test('cart checkout rejects a pin outside every delivery area', function () {
     $this->actingAs($user, 'customer')
         ->from(route('checkout'))
         ->post(route('checkout.store'), areaCheckoutPayload([
-            'latitude' => -34.9,
-            'longitude' => 138.6,
+            'latitude' => 27.4689623,
+            'longitude' => 153.0235009,
         ]))
         ->assertRedirect(route('checkout'))
         ->assertSessionHasErrors('address');

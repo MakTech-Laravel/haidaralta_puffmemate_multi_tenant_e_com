@@ -64,6 +64,21 @@ export function CheckoutMapDialog({
         setLatLng: (latlng: [number, number]) => void;
     } | null>(null);
 
+    // Keep local fields in sync with parent pin (e.g. address suggest) while closed.
+    useEffect(() => {
+        if (open) {
+            return;
+        }
+
+        setLat(latitude.trim() !== '' ? latitude : String(DEFAULT_LAT));
+        setLng(longitude.trim() !== '' ? longitude : String(DEFAULT_LNG));
+        setAddress(undefined);
+        setCity(undefined);
+        setState(undefined);
+        setPostalCode(undefined);
+        setLocationError(null);
+    }, [latitude, longitude, open]);
+
     useEffect(() => {
         if (!open || mapElement.current === null) {
             return;
