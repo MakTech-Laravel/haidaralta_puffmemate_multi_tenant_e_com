@@ -11,6 +11,7 @@ type Area = {
     address: string;
     latitude: string;
     longitude: string;
+    polygon?: { lat: number; lng: number }[] | null;
     city: string;
     state: string;
     postal_code: string | null;

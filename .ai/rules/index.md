@@ -14,8 +14,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/platform/announcements/** | .ai/rules/announcements.md |
 | app/Http/Middleware/EnsureAnyPortalGuard.php,routes/settings.php | .ai/rules/app-http-middleware.md |
 | app/Services/Application/ApplicationSettingsService.php,resources/js/hooks/use-app-brand.ts | .ai/rules/application-js-hooks.md |
-| app/Models/BranchArea.php,app/Services/Branch/BranchAreaService.php,app/Http/Controllers/{Platform,Branch}/*Area*Controller.php,resources/js/pages/{platform,branch}/**/areas/**,resources/js/components/admin/branch-area-form.tsx | .ai/rules/areas-js-components-admin.md |
-| resources/js/components/admin/branch-area-detail.tsx,app/Services/Branch/BranchAreaService.php,resources/js/pages/{platform,branch}/**/areas/** | .ai/rules/areas.md |
+| app/Models/BranchArea.php,app/Services/Branch/BranchAreaService.php,app/Http/Controllers/{Platform,Branch}/*Area*Controller.php,app/Support/Geo/Polygon.php,resources/js/lib/{nominatim,geo-polygon}.ts,resources/js/pages/{platform,branch}/**/areas/**,resources/js/components/admin/branch-area-{form,polygon-map}.tsx,resources/js/components/admin/boundary-place-suggest-input.tsx | .ai/rules/areas-js-components-admin.md |
+| resources/js/components/admin/branch-area-{detail,polygon-map}.tsx,app/Services/Branch/BranchAreaService.php,resources/js/pages/{platform,branch}/**/areas/** | .ai/rules/areas.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php, config/shifts.php | .ai/rules/backup.md |
 | resources/js/components/{platform,branch}/nav.ts,resources/js/pages/platform/branch-areas/**,app/Http/Controllers/Platform/BranchAreasController.php | .ai/rules/branch-areas-http-controllers-platform.md |
