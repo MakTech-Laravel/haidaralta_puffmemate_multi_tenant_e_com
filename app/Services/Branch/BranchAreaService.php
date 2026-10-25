@@ -7,6 +7,7 @@ use App\Models\BranchArea;
 use App\Models\BranchAreaTransferHistory;
 use App\Models\User;
 use App\Support\BranchMap;
+use App\Support\Geo\Polygon;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +20,7 @@ class BranchAreaService
      *     address: string,
      *     latitude: float|string,
      *     longitude: float|string,
+     *     polygon: list<array{lat: float|int|string, lng: float|int|string}>,
      *     city: string,
      *     state: string,
      *     postal_code?: string|null,
@@ -42,6 +44,7 @@ class BranchAreaService
      *     address: string,
      *     latitude: float|string,
      *     longitude: float|string,
+     *     polygon: list<array{lat: float|int|string, lng: float|int|string}>,
      *     city: string,
      *     state: string,
      *     postal_code?: string|null,
@@ -138,6 +141,7 @@ class BranchAreaService
      *     address: string,
      *     latitude: string,
      *     longitude: string,
+     *     polygon: list<array{lat: float, lng: float}>,
      *     map: ?array{google: string, open_street_map: string, embed: string},
      *     city: string,
      *     state: string,
@@ -174,6 +178,7 @@ class BranchAreaService
             'address' => $area->address,
             'latitude' => (string) $area->latitude,
             'longitude' => (string) $area->longitude,
+            'polygon' => is_array($area->polygon) ? $area->polygon : [],
             'map' => BranchMap::links($area->latitude, $area->longitude),
             'city' => $area->city,
             'state' => $area->state,
@@ -214,6 +219,7 @@ class BranchAreaService
      *     address: string,
      *     latitude: string,
      *     longitude: string,
+     *     polygon: list<array{lat: float, lng: float}>,
      *     city: string,
      *     state: string,
      *     postal_code: ?string,
@@ -223,11 +229,28 @@ class BranchAreaService
      */
     private function normalizedAttributes(array $data): array
     {
+        /** @var list<array{lat?: mixed, lng?: mixed}> $rawPolygon */
+        $rawPolygon = is_array($data['polygon'] ?? null) ? $data['polygon'] : [];
+        $polygon = Polygon::normalize($rawPolygon);
+
+        $latitude = filled($data['latitude'] ?? null) ? (float) $data['latitude'] : null;
+        $longitude = filled($data['longitude'] ?? null) ? (float) $data['longitude'] : null;
+
+        if (($latitude === null || $longitude === null) && $polygon !== []) {
+            $centroid = Polygon::centroid($polygon);
+
+            if ($centroid !== null) {
+                $latitude = $centroid['lat'];
+                $longitude = $centroid['lng'];
+            }
+        }
+
         return [
             'name' => trim((string) $data['name']),
             'address' => trim((string) $data['address']),
-            'latitude' => number_format((float) $data['latitude'], 7, '.', ''),
-            'longitude' => number_format((float) $data['longitude'], 7, '.', ''),
+            'latitude' => number_format((float) $latitude, 7, '.', ''),
+            'longitude' => number_format((float) $longitude, 7, '.', ''),
+            'polygon' => $polygon,
             'city' => trim((string) $data['city']),
             'state' => trim((string) $data['state']),
             'postal_code' => filled($data['postal_code'] ?? null)

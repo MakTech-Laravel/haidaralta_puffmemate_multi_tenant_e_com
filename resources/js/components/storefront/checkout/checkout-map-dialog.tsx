@@ -27,6 +27,8 @@ type CheckoutMapDialogProps = {
     latitude: string;
     longitude: string;
     onSelect: (pin: Pin) => void;
+    /** When set (e.g. "au"), pins outside that country are rejected. */
+    countrycodes?: string;
 };
 
 const DEFAULT_LAT = -33.8688;
@@ -42,6 +44,7 @@ export function CheckoutMapDialog({
     latitude,
     longitude,
     onSelect,
+    countrycodes,
 }: CheckoutMapDialogProps) {
     const [open, setOpen] = useState(false);
     const [lat, setLat] = useState(latitude || String(DEFAULT_LAT));
@@ -50,6 +53,7 @@ export function CheckoutMapDialog({
     const [city, setCity] = useState<string | undefined>();
     const [state, setState] = useState<string | undefined>();
     const [postalCode, setPostalCode] = useState<string | undefined>();
+    const [locationError, setLocationError] = useState<string | null>(null);
     const mapElement = useRef<HTMLDivElement | null>(null);
     const mapRef = useRef<{
         remove: () => void;
@@ -59,6 +63,21 @@ export function CheckoutMapDialog({
     const markerRef = useRef<{
         setLatLng: (latlng: [number, number]) => void;
     } | null>(null);
+
+    // Keep local fields in sync with parent pin (e.g. address suggest) while closed.
+    useEffect(() => {
+        if (open) {
+            return;
+        }
+
+        setLat(latitude.trim() !== '' ? latitude : String(DEFAULT_LAT));
+        setLng(longitude.trim() !== '' ? longitude : String(DEFAULT_LNG));
+        setAddress(undefined);
+        setCity(undefined);
+        setState(undefined);
+        setPostalCode(undefined);
+        setLocationError(null);
+    }, [latitude, longitude, open]);
 
     useEffect(() => {
         if (!open || mapElement.current === null) {
@@ -98,8 +117,23 @@ export function CheckoutMapDialog({
                 setLng(String(nextLng));
                 marker.setLatLng([nextLat, nextLng]);
                 map.setView([nextLat, nextLng], map.getZoom());
-                void reverseGeocodeDetails(nextLat, nextLng).then((result) => {
+                setLocationError(null);
+
+                void reverseGeocodeDetails(nextLat, nextLng, undefined, {
+                    countrycodes,
+                }).then((result) => {
                     if (!result) {
+                        setAddress(undefined);
+                        setCity(undefined);
+                        setState(undefined);
+                        setPostalCode(undefined);
+
+                        if (countrycodes === 'au') {
+                            setLocationError(
+                                'Only Australian locations can be selected.',
+                            );
+                        }
+
                         return;
                     }
 
@@ -107,6 +141,7 @@ export function CheckoutMapDialog({
                     setCity(result.city);
                     setState(result.state);
                     setPostalCode(result.postalCode);
+                    setLocationError(null);
                 });
             };
 
@@ -127,7 +162,9 @@ export function CheckoutMapDialog({
             mapRef.current = null;
             markerRef.current = null;
         };
-    }, [open]);
+        // Re-init map when dialog opens; lat/lng seeds are read once at open.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, countrycodes]);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -145,8 +182,9 @@ export function CheckoutMapDialog({
                 <DialogHeader>
                     <DialogTitle>Select location</DialogTitle>
                     <DialogDescription>
-                        Drop a pin on the map. OpenStreetMap is used; no Google
-                        key is required.
+                        {countrycodes === 'au'
+                            ? 'Drop a pin in Australia. OpenStreetMap is used; no Google key is required.'
+                            : 'Drop a pin on the map. OpenStreetMap is used; no Google key is required.'}
                     </DialogDescription>
                 </DialogHeader>
                 <div
@@ -173,6 +211,9 @@ export function CheckoutMapDialog({
                         />
                     </div>
                 </div>
+                {locationError ? (
+                    <p className="text-destructive text-sm">{locationError}</p>
+                ) : null}
                 {address ? (
                     <p className="text-muted-foreground text-sm">{address}</p>
                 ) : null}
@@ -197,6 +238,7 @@ export function CheckoutMapDialog({
                     </Button>
                     <Button
                         type="button"
+                        disabled={Boolean(locationError)}
                         onClick={() => {
                             const nextLat = Number(lat);
                             const nextLng = Number(lng);
@@ -208,15 +250,48 @@ export function CheckoutMapDialog({
                                 return;
                             }
 
-                            onSelect({
-                                latitude: String(nextLat),
-                                longitude: String(nextLng),
-                                address,
-                                city,
-                                state,
-                                postalCode,
-                            });
-                            setOpen(false);
+                            void (async () => {
+                                if (countrycodes) {
+                                    const result = await reverseGeocodeDetails(
+                                        nextLat,
+                                        nextLng,
+                                        undefined,
+                                        { countrycodes },
+                                    );
+
+                                    if (!result) {
+                                        setLocationError(
+                                            countrycodes === 'au'
+                                                ? 'Only Australian locations can be selected.'
+                                                : 'Location is outside the allowed country.',
+                                        );
+
+                                        return;
+                                    }
+
+                                    onSelect({
+                                        latitude: String(nextLat),
+                                        longitude: String(nextLng),
+                                        address: result.address,
+                                        city: result.city,
+                                        state: result.state,
+                                        postalCode: result.postalCode,
+                                    });
+                                    setOpen(false);
+
+                                    return;
+                                }
+
+                                onSelect({
+                                    latitude: String(nextLat),
+                                    longitude: String(nextLng),
+                                    address,
+                                    city,
+                                    state,
+                                    postalCode,
+                                });
+                                setOpen(false);
+                            })();
                         }}
                     >
                         Use this pin

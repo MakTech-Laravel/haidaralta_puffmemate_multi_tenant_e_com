@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property string $address
  * @property string $latitude
  * @property string $longitude
+ * @property list<array{lat: float, lng: float}>|null $polygon
  * @property string $city
  * @property string $state
  * @property string|null $postal_code
@@ -56,6 +57,7 @@ class BranchArea extends Model implements DataTableConfigurable
         'address',
         'latitude',
         'longitude',
+        'polygon',
         'city',
         'state',
         'postal_code',
@@ -88,6 +90,7 @@ class BranchArea extends Model implements DataTableConfigurable
         return [
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
+            'polygon' => 'array',
             'is_active' => 'boolean',
         ];
     }

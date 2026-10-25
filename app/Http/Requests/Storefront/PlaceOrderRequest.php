@@ -42,6 +42,7 @@ class PlaceOrderRequest extends FormRequest
             'payment_method' => ['required', 'string', Rule::in($enabledPaymentKeys)],
             'coupon' => ['nullable', 'string', 'max:60'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'accept_late_delivery' => ['sometimes', 'boolean'],
             'terms' => ['accepted'],
         ];
     }

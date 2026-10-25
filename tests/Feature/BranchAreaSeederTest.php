@@ -17,9 +17,23 @@ test('branch area seeder creates zones for seeded branches and is idempotent', f
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $melbourne = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
-    expect(BranchArea::query()->where('branch_id', $sydney->id)->count())->toBe(3)
-        ->and(BranchArea::query()->where('branch_id', $melbourne->id)->count())->toBe(3)
-        ->and(BranchArea::query()->where('branch_id', $sydney->id)->where('name', BranchAreaSeeder::SYDNEY_SURRY_HILLS)->exists())->toBeTrue();
+    expect(
+        BranchArea::query()->whereHas('branches', fn ($query) => $query->whereKey($sydney->id))->count(),
+    )->toBe(3)
+        ->and(
+            BranchArea::query()->whereHas('branches', fn ($query) => $query->whereKey($melbourne->id))->count(),
+        )->toBe(3)
+        ->and(
+            BranchArea::query()
+                ->where('name', BranchAreaSeeder::SYDNEY_SURRY_HILLS)
+                ->whereHas('branches', fn ($query) => $query->whereKey($sydney->id))
+                ->exists(),
+        )->toBeTrue();
+
+    $sample = BranchArea::query()->where('name', BranchAreaSeeder::SYDNEY_SURRY_HILLS)->firstOrFail();
+
+    expect($sample->polygon)->toBeArray()
+        ->and(count($sample->polygon))->toBeGreaterThanOrEqual(4);
 
     $before = BranchArea::query()->count();
 

@@ -312,6 +312,7 @@ class OrderController extends Controller
                         'image' => MediaUrl::resolve($snapshot['image'] ?? null),
                         'quantity' => $item->quantity,
                         'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
+                        'isLateDelivery' => (bool) $item->is_late_delivery,
                     ];
                 })->all(),
                 'transfers' => $row->stockTransfers->map(fn (StockTransfer $transfer): array => [
