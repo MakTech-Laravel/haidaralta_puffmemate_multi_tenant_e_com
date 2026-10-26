@@ -7,6 +7,7 @@ import {
     Mail,
     MapPin,
     Package,
+    PackagePlus,
     Phone,
     ReceiptText,
     Trash2,
@@ -19,6 +20,7 @@ import OrderAssignController from '@/actions/App/Http/Controllers/Branch/OrderAs
 import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Branch/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Branch/StockTransferController';
+import { ConfirmActionDialog } from '@/components/orders/confirm-action-dialog';
 import {
     HeaderFact,
     SectionCard,
@@ -198,6 +200,11 @@ export default function BranchOrderShow({
     );
     const [assignReason, setAssignReason] = useState('');
     const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [lateConfirm, setLateConfirm] = useState<{
+        type: 'collect' | 'remove';
+        itemId: number;
+        itemName: string;
+    } | null>(null);
     const processing = pendingAction !== null;
     const isReassign = fulfillment.driverId !== null;
     const needsAssignReason =
@@ -233,52 +240,40 @@ export default function BranchOrderShow({
     const spinnerFor = (key: string) =>
         pendingAction === key ? <Spinner /> : null;
 
-    const removeLateItem = (itemId: number, itemName: string) => {
-        if (
-            !confirm(
-                `Remove “${itemName}” from this order? The customer will be notified.`,
-            )
-        ) {
+    const confirmLateAction = () => {
+        if (!lateConfirm) {
             return;
         }
 
-        setPendingAction(`remove-late-${itemId}`);
-        router.post(
-            OrderController.removeLateItem.url([
-                branch.slug,
-                fulfillment.id,
-                itemId,
-            ]),
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => setPendingAction(null),
-            },
-        );
-    };
-
-    const collectLateItem = (itemId: number, itemName: string) => {
-        if (
-            !confirm(
-                `Collect stock for “${itemName}” and reserve it for this order? Remove will no longer be available for this line.`,
-            )
-        ) {
-            return;
+        if (lateConfirm.type === 'remove') {
+            setPendingAction(`remove-late-${lateConfirm.itemId}`);
+            router.post(
+                OrderController.removeLateItem.url([
+                    branch.slug,
+                    fulfillment.id,
+                    lateConfirm.itemId,
+                ]),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => setPendingAction(null),
+                },
+            );
+        } else {
+            setPendingAction(`collect-late-${lateConfirm.itemId}`);
+            router.post(
+                OrderController.collectLateItem.url([
+                    branch.slug,
+                    fulfillment.id,
+                    lateConfirm.itemId,
+                ]),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => setPendingAction(null),
+                },
+            );
         }
-
-        setPendingAction(`collect-late-${itemId}`);
-        router.post(
-            OrderController.collectLateItem.url([
-                branch.slug,
-                fulfillment.id,
-                itemId,
-            ]),
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => setPendingAction(null),
-            },
-        );
     };
 
     const post = (key: string, url: string) => {
@@ -558,10 +553,12 @@ export default function BranchOrderShow({
                                                                 processing
                                                             }
                                                             onClick={() =>
-                                                                collectLateItem(
-                                                                    item.id,
-                                                                    item.name,
-                                                                )
+                                                                setLateConfirm({
+                                                                    type: 'collect',
+                                                                    itemId: item.id,
+                                                                    itemName:
+                                                                        item.name,
+                                                                })
                                                             }
                                                         >
                                                             {spinnerFor(
@@ -579,10 +576,12 @@ export default function BranchOrderShow({
                                                                 processing
                                                             }
                                                             onClick={() =>
-                                                                removeLateItem(
-                                                                    item.id,
-                                                                    item.name,
-                                                                )
+                                                                setLateConfirm({
+                                                                    type: 'remove',
+                                                                    itemId: item.id,
+                                                                    itemName:
+                                                                        item.name,
+                                                                })
                                                             }
                                                         >
                                                             {spinnerFor(
@@ -1174,6 +1173,38 @@ export default function BranchOrderShow({
                     </aside>
                 </div>
             </div>
+
+            <ConfirmActionDialog
+                open={lateConfirm !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setLateConfirm(null);
+                    }
+                }}
+                icon={
+                    lateConfirm?.type === 'remove' ? Trash2 : PackagePlus
+                }
+                variant={
+                    lateConfirm?.type === 'remove' ? 'destructive' : 'default'
+                }
+                title={
+                    lateConfirm?.type === 'remove'
+                        ? 'Remove late item'
+                        : 'Collect late stock'
+                }
+                description={
+                    lateConfirm === null
+                        ? ''
+                        : lateConfirm.type === 'remove'
+                          ? `Remove “${lateConfirm.itemName}” from this order? The customer will be notified.`
+                          : `Collect stock for “${lateConfirm.itemName}” and reserve it for this order? Remove will no longer be available for this line.`
+                }
+                confirmLabel={
+                    lateConfirm?.type === 'remove' ? 'Remove' : 'Collect'
+                }
+                processing={processing}
+                onConfirm={confirmLateAction}
+            />
         </>
     );
 }

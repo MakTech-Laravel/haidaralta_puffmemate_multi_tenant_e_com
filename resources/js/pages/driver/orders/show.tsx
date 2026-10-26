@@ -6,6 +6,7 @@ import {
     MessageCircle,
     Navigation,
     Package,
+    PackagePlus,
     Phone,
     Trash2,
 } from 'lucide-react';
@@ -19,6 +20,7 @@ import {
     type DriverOrderDetail,
 } from '@/components/driver/driver-order-types';
 import { DriverOrderUnavailableSheet } from '@/components/driver/driver-order-unavailable-sheet';
+import { ConfirmActionDialog } from '@/components/orders/confirm-action-dialog';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +46,11 @@ type DriverOrderShowProps = {
 
 export default function DriverOrderShow({ order }: DriverOrderShowProps) {
     const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [lateConfirm, setLateConfirm] = useState<{
+        type: 'collect' | 'remove';
+        itemId: number;
+        itemName: string;
+    } | null>(null);
     const isDelivered = order.status === 'delivered';
     const paymentLabel = usePaymentGatewayLabel(
         order.paymentMethod,
@@ -63,50 +70,38 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
         .filter(Boolean)
         .join(' ');
 
-    const removeLateItem = (itemId: number, itemName: string) => {
-        if (
-            !confirm(
-                `Remove “${itemName}” from this order? The customer will be notified.`,
-            )
-        ) {
+    const confirmLateAction = () => {
+        if (!lateConfirm) {
             return;
         }
 
-        setPendingAction(`remove-late-${itemId}`);
-        router.post(
-            OrderController.removeLateItem.url({
-                order: order.orderNumber,
-                item: itemId,
-            }),
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => setPendingAction(null),
-            },
-        );
-    };
-
-    const collectLateItem = (itemId: number, itemName: string) => {
-        if (
-            !confirm(
-                `Collect stock for “${itemName}” and reserve it for this order? Remove will no longer be available for this line.`,
-            )
-        ) {
-            return;
+        if (lateConfirm.type === 'remove') {
+            setPendingAction(`remove-late-${lateConfirm.itemId}`);
+            router.post(
+                OrderController.removeLateItem.url({
+                    order: order.orderNumber,
+                    item: lateConfirm.itemId,
+                }),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => setPendingAction(null),
+                },
+            );
+        } else {
+            setPendingAction(`collect-late-${lateConfirm.itemId}`);
+            router.post(
+                OrderController.collectLateItem.url({
+                    order: order.orderNumber,
+                    item: lateConfirm.itemId,
+                }),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => setPendingAction(null),
+                },
+            );
         }
-
-        setPendingAction(`collect-late-${itemId}`);
-        router.post(
-            OrderController.collectLateItem.url({
-                order: order.orderNumber,
-                item: itemId,
-            }),
-            {},
-            {
-                preserveScroll: true,
-                onFinish: () => setPendingAction(null),
-            },
-        );
     };
 
     return (
@@ -332,10 +327,12 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                                         pendingAction !== null
                                                     }
                                                     onClick={() =>
-                                                        collectLateItem(
-                                                            product.id,
-                                                            product.name,
-                                                        )
+                                                        setLateConfirm({
+                                                            type: 'collect',
+                                                            itemId: product.id,
+                                                            itemName:
+                                                                product.name,
+                                                        })
                                                     }
                                                 >
                                                     Collect
@@ -350,10 +347,12 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                                         pendingAction !== null
                                                     }
                                                     onClick={() =>
-                                                        removeLateItem(
-                                                            product.id,
-                                                            product.name,
-                                                        )
+                                                        setLateConfirm({
+                                                            type: 'remove',
+                                                            itemId: product.id,
+                                                            itemName:
+                                                                product.name,
+                                                        })
                                                     }
                                                 >
                                                     <Trash2 data-icon="inline-start" />
@@ -470,6 +469,38 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                     </>
                 ) : null}
             </div>
+
+            <ConfirmActionDialog
+                open={lateConfirm !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setLateConfirm(null);
+                    }
+                }}
+                icon={
+                    lateConfirm?.type === 'remove' ? Trash2 : PackagePlus
+                }
+                variant={
+                    lateConfirm?.type === 'remove' ? 'destructive' : 'default'
+                }
+                title={
+                    lateConfirm?.type === 'remove'
+                        ? 'Remove late item'
+                        : 'Collect late stock'
+                }
+                description={
+                    lateConfirm === null
+                        ? ''
+                        : lateConfirm.type === 'remove'
+                          ? `Remove “${lateConfirm.itemName}” from this order? The customer will be notified.`
+                          : `Collect stock for “${lateConfirm.itemName}” and reserve it for this order? Remove will no longer be available for this line.`
+                }
+                confirmLabel={
+                    lateConfirm?.type === 'remove' ? 'Remove' : 'Collect'
+                }
+                processing={pendingAction !== null}
+                onConfirm={confirmLateAction}
+            />
         </>
     );
 }

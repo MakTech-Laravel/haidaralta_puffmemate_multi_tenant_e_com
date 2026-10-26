@@ -7,6 +7,7 @@ import {
     Mail,
     MapPin,
     Package,
+    PackagePlus,
     Phone,
     ReceiptText,
     Store,
@@ -22,6 +23,7 @@ import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Platfor
 import OrderController from '@/actions/App/Http/Controllers/Platform/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Platform/StockTransferController';
 import { OrderAssignDriverSheet } from '@/components/branch/order-assign-driver-sheet';
+import { ConfirmActionDialog } from '@/components/orders/confirm-action-dialog';
 import {
     HeaderFact,
     SectionCard,
@@ -201,6 +203,11 @@ function FulfillmentCard({
 }) {
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [assignOpen, setAssignOpen] = useState(false);
+    const [lateConfirm, setLateConfirm] = useState<{
+        type: 'collect' | 'remove';
+        itemId: number;
+        itemName: string;
+    } | null>(null);
     const processing = pendingAction !== null;
     const itemCount = fulfillment.items.filter((item) => !item.isRemoved)
         .length;
@@ -220,40 +227,28 @@ function FulfillmentCard({
         );
     };
 
-    const removeLateItem = (itemId: number, itemName: string) => {
-        if (
-            !confirm(
-                `Remove “${itemName}” from this order? The customer will be notified.`,
-            )
-        ) {
+    const confirmLateAction = () => {
+        if (!lateConfirm) {
             return;
         }
 
-        post(
-            `remove-late-${itemId}`,
-            OrderController.removeLateItem.url({
-                order: orderId,
-                item: itemId,
-            }),
-        );
-    };
-
-    const collectLateItem = (itemId: number, itemName: string) => {
-        if (
-            !confirm(
-                `Collect stock for “${itemName}” and reserve it for this order? Remove will no longer be available for this line.`,
-            )
-        ) {
-            return;
+        if (lateConfirm.type === 'remove') {
+            post(
+                `remove-late-${lateConfirm.itemId}`,
+                OrderController.removeLateItem.url({
+                    order: orderId,
+                    item: lateConfirm.itemId,
+                }),
+            );
+        } else {
+            post(
+                `collect-late-${lateConfirm.itemId}`,
+                OrderController.collectLateItem.url({
+                    order: orderId,
+                    item: lateConfirm.itemId,
+                }),
+            );
         }
-
-        post(
-            `collect-late-${itemId}`,
-            OrderController.collectLateItem.url({
-                order: orderId,
-                item: itemId,
-            }),
-        );
     };
 
     const updateStatus = (key: string, status: string) => {
@@ -417,10 +412,11 @@ function FulfillmentCard({
                                             size="sm"
                                             disabled={processing}
                                             onClick={() =>
-                                                collectLateItem(
-                                                    item.id,
-                                                    item.name,
-                                                )
+                                                setLateConfirm({
+                                                    type: 'collect',
+                                                    itemId: item.id,
+                                                    itemName: item.name,
+                                                })
                                             }
                                         >
                                             {spinnerFor(
@@ -436,10 +432,11 @@ function FulfillmentCard({
                                             size="sm"
                                             disabled={processing}
                                             onClick={() =>
-                                                removeLateItem(
-                                                    item.id,
-                                                    item.name,
-                                                )
+                                                setLateConfirm({
+                                                    type: 'remove',
+                                                    itemId: item.id,
+                                                    itemName: item.name,
+                                                })
                                             }
                                         >
                                             {spinnerFor(
@@ -708,6 +705,38 @@ function FulfillmentCard({
                     </div>
                 ) : null}
             </div>
+
+            <ConfirmActionDialog
+                open={lateConfirm !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setLateConfirm(null);
+                    }
+                }}
+                icon={
+                    lateConfirm?.type === 'remove' ? Trash2 : PackagePlus
+                }
+                variant={
+                    lateConfirm?.type === 'remove' ? 'destructive' : 'default'
+                }
+                title={
+                    lateConfirm?.type === 'remove'
+                        ? 'Remove late item'
+                        : 'Collect late stock'
+                }
+                description={
+                    lateConfirm === null
+                        ? ''
+                        : lateConfirm.type === 'remove'
+                          ? `Remove “${lateConfirm.itemName}” from this order? The customer will be notified.`
+                          : `Collect stock for “${lateConfirm.itemName}” and reserve it for this order? Remove will no longer be available for this line.`
+                }
+                confirmLabel={
+                    lateConfirm?.type === 'remove' ? 'Remove' : 'Collect'
+                }
+                processing={processing}
+                onConfirm={confirmLateAction}
+            />
         </Card>
     );
 }
