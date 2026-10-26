@@ -26,6 +26,9 @@ use Tests\TestCase;
 |
 */
 
+require_once __DIR__.'/Support/platformPermissionProbe.php';
+require_once __DIR__.'/Support/branchPermissionProbe.php';
+
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
     ->in('Feature');
