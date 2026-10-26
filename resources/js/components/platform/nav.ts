@@ -179,6 +179,7 @@ export function buildPlatformNav(
                 icon: Building2,
                 permissions: [
                     'view-branches',
+                    'manage-branches',
                     'manage-branch-users',
                     'manage-branch-inventories',
                     'manage-shifts',
@@ -188,13 +189,13 @@ export function buildPlatformNav(
                         title: 'Branches',
                         href: '/platform/branches',
                         icon: Building2,
-                        permissions: ['view-branches'],
+                        permissions: ['view-branches', 'manage-branches'],
                     }),
                     navLink({
                         title: 'Areas',
                         href: '/platform/branch-areas',
                         icon: MapPinned,
-                        permissions: ['view-branches'],
+                        permissions: ['view-branches', 'manage-branches'],
                     }),
                     navLink({
                         title: 'Staff',
@@ -441,6 +442,7 @@ export function buildPlatformNav(
                     'view-horizon',
                     'view-pulse',
                     'view-dashboard',
+                    'manage-catalog',
                 ],
                 items: [
                     navLink({
