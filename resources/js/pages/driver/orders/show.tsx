@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     ChevronLeft,
     KeyRound,
@@ -7,7 +7,9 @@ import {
     Navigation,
     Package,
     Phone,
+    Trash2,
 } from 'lucide-react';
+import { useState } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
 import { DriverOrderNextAction } from '@/components/driver/driver-order-next-action';
@@ -41,6 +43,7 @@ type DriverOrderShowProps = {
 };
 
 export default function DriverOrderShow({ order }: DriverOrderShowProps) {
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
     const isDelivered = order.status === 'delivered';
     const paymentLabel = usePaymentGatewayLabel(
         order.paymentMethod,
@@ -59,6 +62,52 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
     ]
         .filter(Boolean)
         .join(' ');
+
+    const removeLateItem = (itemId: number, itemName: string) => {
+        if (
+            !confirm(
+                `Remove “${itemName}” from this order? The customer will be notified.`,
+            )
+        ) {
+            return;
+        }
+
+        setPendingAction(`remove-late-${itemId}`);
+        router.post(
+            OrderController.removeLateItem.url({
+                order: order.orderNumber,
+                item: itemId,
+            }),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setPendingAction(null),
+            },
+        );
+    };
+
+    const collectLateItem = (itemId: number, itemName: string) => {
+        if (
+            !confirm(
+                `Collect stock for “${itemName}” and reserve it for this order? Remove will no longer be available for this line.`,
+            )
+        ) {
+            return;
+        }
+
+        setPendingAction(`collect-late-${itemId}`);
+        router.post(
+            OrderController.collectLateItem.url({
+                order: order.orderNumber,
+                item: itemId,
+            }),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setPendingAction(null),
+            },
+        );
+    };
 
     return (
         <>
@@ -227,20 +276,92 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
 
                     <ul className="flex flex-col">
                         {order.products.map((product, index) => (
-                            <li key={`${product.name}-${index}`}>
+                            <li key={product.id}>
                                 {index > 0 ? (
                                     <Separator className="my-2.5" />
                                 ) : null}
-                                <div className="flex items-start justify-between gap-3">
-                                    <p className="text-foreground min-w-0 text-sm font-medium">
-                                        <span className="text-muted-foreground tabular-nums">
-                                            {product.quantityLabel}×{' '}
-                                        </span>
-                                        {product.name}
-                                    </p>
-                                    <p className="text-foreground shrink-0 text-sm font-medium tabular-nums">
-                                        {product.priceLabel}
-                                    </p>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <p
+                                                className={
+                                                    product.isRemoved
+                                                        ? 'text-muted-foreground text-sm font-medium line-through'
+                                                        : 'text-foreground text-sm font-medium'
+                                                }
+                                            >
+                                                <span className="text-muted-foreground tabular-nums">
+                                                    {product.quantityLabel}×{' '}
+                                                </span>
+                                                {product.name}
+                                            </p>
+                                            {product.isLateDelivery ||
+                                            product.isRemoved ? (
+                                                <p className="text-muted-foreground mt-0.5 text-xs">
+                                                    {[
+                                                        product.isLateDelivery
+                                                            ? 'Late delivery'
+                                                            : null,
+                                                        product.isRemoved
+                                                            ? 'Removed'
+                                                            : null,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(' · ')}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <p
+                                            className={
+                                                product.isRemoved
+                                                    ? 'text-muted-foreground shrink-0 text-sm font-medium tabular-nums line-through'
+                                                    : 'text-foreground shrink-0 text-sm font-medium tabular-nums'
+                                            }
+                                        >
+                                            {product.priceLabel}
+                                        </p>
+                                    </div>
+                                    {product.canCollectLate ||
+                                    product.canRemoveLate ? (
+                                        <div className="flex items-center justify-end gap-2">
+                                            {product.canCollectLate ? (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    disabled={
+                                                        pendingAction !== null
+                                                    }
+                                                    onClick={() =>
+                                                        collectLateItem(
+                                                            product.id,
+                                                            product.name,
+                                                        )
+                                                    }
+                                                >
+                                                    Collect
+                                                </Button>
+                                            ) : null}
+                                            {product.canRemoveLate ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    disabled={
+                                                        pendingAction !== null
+                                                    }
+                                                    onClick={() =>
+                                                        removeLateItem(
+                                                            product.id,
+                                                            product.name,
+                                                        )
+                                                    }
+                                                >
+                                                    <Trash2 data-icon="inline-start" />
+                                                    Remove
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
                                 </div>
                             </li>
                         ))}

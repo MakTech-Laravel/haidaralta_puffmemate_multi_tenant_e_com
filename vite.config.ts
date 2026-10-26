@@ -28,7 +28,28 @@ export default defineConfig({
             formVariants: true,
         }),
     ]),
+    resolve: {
+        // Keep a single React instance so React Compiler's useMemoCache
+        // (and every other hook) shares the same dispatcher as react-dom.
+        dedupe: ['react', 'react-dom'],
+    },
+    optimizeDeps: {
+        include: ['react', 'react-dom', 'react/compiler-runtime'],
+    },
     server: {
+        // Pin IPv4 so assets/HMR never flip between localhost and [::1].
+        // Mixing those (or stale ?v= hashes across them) leaves React's
+        // dispatcher null → Cannot read properties of null (reading 'useMemoCache').
+        // Keep the app on http://127.0.0.1:8000 to match.
+        host: '127.0.0.1',
+        port: 5173,
+        strictPort: true,
+        origin: 'http://127.0.0.1:5173',
+        hmr: {
+            host: '127.0.0.1',
+            protocol: 'ws',
+            clientPort: 5173,
+        },
         watch: {
             ignored: [
                 '**/.agents/**',

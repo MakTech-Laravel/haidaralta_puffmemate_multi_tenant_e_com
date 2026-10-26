@@ -248,12 +248,15 @@ class OrderController extends Controller
             'date' => $order->created_at->format('d M Y'),
             'products' => $order->items->map(function ($item): array {
                 $snapshot = is_array($item->product_snapshot) ? $item->product_snapshot : [];
+                $removed = $item->removed_at !== null;
 
                 return [
                     'name' => $item->product_name_snapshot,
                     'image' => MediaUrl::resolve($snapshot['image'] ?? null),
                     'quantityLabel' => 'Quantity x '.$item->quantity,
                     'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
+                    'isLateDelivery' => (bool) $item->is_late_delivery,
+                    'isRemoved' => $removed,
                 ];
             })->all(),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
