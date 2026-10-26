@@ -280,90 +280,88 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                 {index > 0 ? (
                                     <Separator className="my-2.5" />
                                 ) : null}
-                                <div className="flex items-start justify-between gap-3">
-                                    <div className="min-w-0 flex-1">
-                                        <p
-                                            className={
-                                                product.isRemoved
-                                                    ? 'text-muted-foreground text-sm font-medium line-through'
-                                                    : 'text-foreground text-sm font-medium'
-                                            }
-                                        >
-                                            <span className="text-muted-foreground tabular-nums">
-                                                {product.quantityLabel}×{' '}
-                                            </span>
-                                            {product.name}
-                                        </p>
-                                        {product.isLateDelivery ||
-                                        product.isRemoved ? (
-                                            <p className="text-muted-foreground mt-0.5 text-xs">
-                                                {[
-                                                    product.isLateDelivery
-                                                        ? 'Late delivery'
-                                                        : null,
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <p
+                                                className={
                                                     product.isRemoved
-                                                        ? 'Removed'
-                                                        : null,
-                                                ]
-                                                    .filter(Boolean)
-                                                    .join(' · ')}
+                                                        ? 'text-muted-foreground text-sm font-medium line-through'
+                                                        : 'text-foreground text-sm font-medium'
+                                                }
+                                            >
+                                                <span className="text-muted-foreground tabular-nums">
+                                                    {product.quantityLabel}×{' '}
+                                                </span>
+                                                {product.name}
                                             </p>
-                                        ) : null}
-                                    </div>
-                                    <div className="flex shrink-0 flex-col items-end gap-2">
+                                            {product.isLateDelivery ||
+                                            product.isRemoved ? (
+                                                <p className="text-muted-foreground mt-0.5 text-xs">
+                                                    {[
+                                                        product.isLateDelivery
+                                                            ? 'Late delivery'
+                                                            : null,
+                                                        product.isRemoved
+                                                            ? 'Removed'
+                                                            : null,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(' · ')}
+                                                </p>
+                                            ) : null}
+                                        </div>
                                         <p
                                             className={
                                                 product.isRemoved
-                                                    ? 'text-muted-foreground text-sm font-medium tabular-nums line-through'
-                                                    : 'text-foreground text-sm font-medium tabular-nums'
+                                                    ? 'text-muted-foreground shrink-0 text-sm font-medium tabular-nums line-through'
+                                                    : 'text-foreground shrink-0 text-sm font-medium tabular-nums'
                                             }
                                         >
                                             {product.priceLabel}
                                         </p>
-                                        {product.canCollectLate ||
-                                        product.canRemoveLate ? (
-                                            <div className="flex items-center gap-2">
-                                                {product.canCollectLate ? (
-                                                    <Button
-                                                        type="button"
-                                                        size="sm"
-                                                        disabled={
-                                                            pendingAction !==
-                                                            null
-                                                        }
-                                                        onClick={() =>
-                                                            collectLateItem(
-                                                                product.id,
-                                                                product.name,
-                                                            )
-                                                        }
-                                                    >
-                                                        Collect
-                                                    </Button>
-                                                ) : null}
-                                                {product.canRemoveLate ? (
-                                                    <Button
-                                                        type="button"
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        disabled={
-                                                            pendingAction !==
-                                                            null
-                                                        }
-                                                        onClick={() =>
-                                                            removeLateItem(
-                                                                product.id,
-                                                                product.name,
-                                                            )
-                                                        }
-                                                    >
-                                                        <Trash2 data-icon="inline-start" />
-                                                        Remove
-                                                    </Button>
-                                                ) : null}
-                                            </div>
-                                        ) : null}
                                     </div>
+                                    {product.canCollectLate ||
+                                    product.canRemoveLate ? (
+                                        <div className="flex items-center justify-end gap-2">
+                                            {product.canCollectLate ? (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    disabled={
+                                                        pendingAction !== null
+                                                    }
+                                                    onClick={() =>
+                                                        collectLateItem(
+                                                            product.id,
+                                                            product.name,
+                                                        )
+                                                    }
+                                                >
+                                                    Collect
+                                                </Button>
+                                            ) : null}
+                                            {product.canRemoveLate ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    disabled={
+                                                        pendingAction !== null
+                                                    }
+                                                    onClick={() =>
+                                                        removeLateItem(
+                                                            product.id,
+                                                            product.name,
+                                                        )
+                                                    }
+                                                >
+                                                    <Trash2 data-icon="inline-start" />
+                                                    Remove
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
                                 </div>
                             </li>
                         ))}
