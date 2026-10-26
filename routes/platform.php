@@ -59,24 +59,26 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function () {
-    Route::get('dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
-    Route::get('notifications', [PlatformNotificationController::class, 'index'])->name('platform.notifications.index');
-    Route::get('notifications/{userNotification}', [PlatformNotificationController::class, 'show'])->name('platform.notifications.show');
-    Route::post('notifications/{userNotification}/read', [PlatformNotificationController::class, 'read'])->name('platform.notifications.read');
-    Route::delete('notifications/{userNotification}', [PlatformNotificationController::class, 'destroy'])->name('platform.notifications.destroy');
+    Route::middleware(['permission:view-dashboard'])->group(function () {
+        Route::get('dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+        Route::get('notifications', [PlatformNotificationController::class, 'index'])->name('platform.notifications.index');
+        Route::get('notifications/{userNotification}', [PlatformNotificationController::class, 'show'])->name('platform.notifications.show');
+        Route::post('notifications/{userNotification}/read', [PlatformNotificationController::class, 'read'])->name('platform.notifications.read');
+        Route::delete('notifications/{userNotification}', [PlatformNotificationController::class, 'destroy'])->name('platform.notifications.destroy');
+
+        Route::get('realtime', [PlatformRealtimeController::class, 'index'])->name('platform.realtime.index');
+        Route::get('realtime/ping', [PlatformRealtimeController::class, 'ping'])->name('platform.realtime.ping');
+        Route::get('realtime/health', [PlatformRealtimeController::class, 'health'])->name('platform.realtime.health');
+        Route::post('realtime/test-notification', [PlatformRealtimeController::class, 'testNotification'])->name('platform.realtime.test-notification');
+
+        Route::get('fcm', [PlatformFcmController::class, 'index'])->name('platform.fcm.index');
+        Route::post('fcm/test', [PlatformFcmController::class, 'test'])->middleware('throttle:10,1')->name('platform.fcm.test');
+    });
 
     Route::middleware(['permission:view-horizon|view-pulse'])->group(function () {
         Route::get('observability', [PlatformObservabilityController::class, 'index'])
             ->name('platform.observability.index');
     });
-
-    Route::get('realtime', [PlatformRealtimeController::class, 'index'])->name('platform.realtime.index');
-    Route::get('realtime/ping', [PlatformRealtimeController::class, 'ping'])->name('platform.realtime.ping');
-    Route::get('realtime/health', [PlatformRealtimeController::class, 'health'])->name('platform.realtime.health');
-    Route::post('realtime/test-notification', [PlatformRealtimeController::class, 'testNotification'])->name('platform.realtime.test-notification');
-
-    Route::get('fcm', [PlatformFcmController::class, 'index'])->name('platform.fcm.index');
-    Route::post('fcm/test', [PlatformFcmController::class, 'test'])->middleware('throttle:10,1')->name('platform.fcm.test');
 
     Route::middleware(['permission:manage-roles'])->group(function () {
         Route::get('roles/export', [PlatformRoleController::class, 'export'])->name('platform.roles.export');
@@ -274,7 +276,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::get('branch-shift-assignments/{user_shift_assignment}/edit', [PlatformBranchShiftAssignmentController::class, 'edit'])->name('platform.branch-shift-assignments.edit');
     });
 
-    Route::middleware(['permission:create-branches'])->group(function () {
+    Route::middleware(['permission:create-branches|manage-branches'])->group(function () {
         Route::get('branches/create', [PlatformBranchController::class, 'create'])->name('platform.branches.create');
         Route::post('branches', [PlatformBranchController::class, 'store'])
             ->middleware('precognitive')
@@ -286,7 +288,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.branches.super-admin.store');
     });
 
-    Route::middleware(['permission:view-branches'])->group(function () {
+    Route::middleware(['permission:view-branches|manage-branches'])->group(function () {
         Route::get('branches', [PlatformBranchController::class, 'index'])->name('platform.branches.index');
         Route::get('branches/{branch}', [PlatformBranchController::class, 'show'])->name('platform.branches.show');
         Route::get('branch-areas', [PlatformBranchAreasController::class, 'index'])
@@ -297,7 +299,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.branches.areas.index');
     });
 
-    Route::middleware(['permission:edit-branches'])->group(function () {
+    Route::middleware(['permission:edit-branches|manage-branches'])->group(function () {
         Route::get('branches/{branch}/edit', [PlatformBranchController::class, 'edit'])->name('platform.branches.edit');
         Route::put('branches/{branch}', [PlatformBranchController::class, 'update'])
             ->middleware('precognitive')
@@ -331,14 +333,14 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.branches.areas.destroy');
     });
 
-    Route::middleware(['permission:view-branches'])->group(function () {
+    Route::middleware(['permission:view-branches|manage-branches'])->group(function () {
         Route::get('branch-areas/{area}', [PlatformBranchAreasController::class, 'show'])
             ->name('platform.branch-areas.show');
         Route::get('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'show'])
             ->name('platform.branches.areas.show');
     });
 
-    Route::middleware(['permission:delete-branches'])->group(function () {
+    Route::middleware(['permission:delete-branches|manage-branches'])->group(function () {
         Route::delete('branches/{branch}', [PlatformBranchController::class, 'destroy'])->name('platform.branches.destroy');
     });
 
@@ -366,20 +368,6 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
         Route::get('stock/price', fn (Request $request) => ProductManageRedirect::platform($request))
             ->name('platform.stock.price');
-        Route::get('reports/order-reports', [PlatformOrderReportController::class, 'index'])
-            ->name('platform.reports.order-reports');
-        Route::get('reports/order-reports/export', [PlatformOrderReportController::class, 'export'])
-            ->name('platform.reports.order-reports.export');
-        Route::redirect('reports/order-operations', '/platform/reports/order-reports', 301);
-        Route::redirect('reports/order-operations/export', '/platform/reports/order-reports/export', 301);
-        Route::get('reports/order-assign-history', [PlatformOrderAssignHistoryController::class, 'index'])
-            ->name('platform.reports.order-assign-history');
-        Route::get('reports/order-assign-history/export', [PlatformOrderAssignHistoryController::class, 'export'])
-            ->name('platform.reports.order-assign-history.export');
-        Route::get('reports/order-assign-history/driver-options', [PlatformOrderAssignHistoryController::class, 'driverOptions'])
-            ->name('platform.reports.order-assign-history.driver-options');
-        Route::get('reports/order-assign-history/branch-options', [PlatformOrderAssignHistoryController::class, 'branchOptions'])
-            ->name('platform.reports.order-assign-history.branch-options');
         Route::get('reports/stock-transactions', [PlatformStockTransactionController::class, 'index'])
             ->name('platform.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [PlatformStockTransactionController::class, 'export'])
@@ -600,6 +588,21 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.announcements.recipients');
         Route::post('announcements', [PlatformAnnouncementController::class, 'store'])
             ->name('platform.announcements.store');
+
+        Route::get('reports/order-reports', [PlatformOrderReportController::class, 'index'])
+            ->name('platform.reports.order-reports');
+        Route::get('reports/order-reports/export', [PlatformOrderReportController::class, 'export'])
+            ->name('platform.reports.order-reports.export');
+        Route::redirect('reports/order-operations', '/platform/reports/order-reports', 301);
+        Route::redirect('reports/order-operations/export', '/platform/reports/order-reports/export', 301);
+        Route::get('reports/order-assign-history', [PlatformOrderAssignHistoryController::class, 'index'])
+            ->name('platform.reports.order-assign-history');
+        Route::get('reports/order-assign-history/export', [PlatformOrderAssignHistoryController::class, 'export'])
+            ->name('platform.reports.order-assign-history.export');
+        Route::get('reports/order-assign-history/driver-options', [PlatformOrderAssignHistoryController::class, 'driverOptions'])
+            ->name('platform.reports.order-assign-history.driver-options');
+        Route::get('reports/order-assign-history/branch-options', [PlatformOrderAssignHistoryController::class, 'branchOptions'])
+            ->name('platform.reports.order-assign-history.branch-options');
     });
 
     Route::middleware(['permission:manage-pages'])->group(function () {
