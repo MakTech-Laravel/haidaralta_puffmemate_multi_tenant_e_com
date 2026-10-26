@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Driver;
 
+use App\Actions\Order\CollectLateOrderItemAction;
+use App\Actions\Order\RemoveLateOrderItemAction;
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderReturnType;
@@ -10,6 +12,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\OrderItem;
 use App\Services\Conversation\ConversationService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\OrderPlacementNotifier;
@@ -56,6 +59,8 @@ class OrderController extends Controller
         private ConversationService $conversations,
         private OrderReturnService $returns,
         private OrderPlacementNotifier $placements,
+        private RemoveLateOrderItemAction $removeLateItems,
+        private CollectLateOrderItemAction $collectLateItems,
     ) {}
 
     /**
@@ -196,6 +201,30 @@ class OrderController extends Controller
 
         $this->conversations->sendMessage($this->thread($order), $request->user(), $validated['body']);
         Toast::success('Message sent.');
+
+        return back();
+    }
+
+    public function removeLateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
+    {
+        $fulfillment = $this->owned($request, $order);
+        abort_unless($item->order_id === $order->id && $item->fulfillment_id === $fulfillment->id, 404);
+
+        $this->removeLateItems->handle($item, $request->user());
+
+        Toast::success('Late item removed.');
+
+        return back();
+    }
+
+    public function collectLateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
+    {
+        $fulfillment = $this->owned($request, $order);
+        abort_unless($item->order_id === $order->id && $item->fulfillment_id === $fulfillment->id, 404);
+
+        $this->collectLateItems->handle($item, $request->user());
+
+        Toast::success('Late item collected and reserved.');
 
         return back();
     }
@@ -400,11 +429,38 @@ class OrderController extends Controller
                 'postalCode' => $snapshot['postal_code'] ?? '',
                 'country' => 'Australia',
             ],
-            'products' => $order->items->map(fn ($item): array => [
-                'name' => $item->product_name_snapshot,
-                'quantityLabel' => (string) $item->quantity,
-                'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
-            ])->all(),
+            'products' => $order->items->map(function ($item) use ($fulfillment): array {
+                $removed = $item->removed_at !== null;
+
+                return [
+                    'id' => $item->id,
+                    'name' => $item->product_name_snapshot,
+                    'quantityLabel' => (string) $item->quantity,
+                    'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
+                    'isLateDelivery' => (bool) $item->is_late_delivery,
+                    'isRemoved' => $removed,
+                    'canRemoveLate' => ! $removed
+                        && (bool) $item->is_late_delivery
+                        && in_array($fulfillment->status, [
+                            FulfillmentStatus::Pending,
+                            FulfillmentStatus::Hold,
+                            FulfillmentStatus::Placed,
+                            FulfillmentStatus::Processing,
+                            FulfillmentStatus::Ready,
+                            FulfillmentStatus::Assigned,
+                        ], true),
+                    'canCollectLate' => ! $removed
+                        && (bool) $item->is_late_delivery
+                        && in_array($fulfillment->status, [
+                            FulfillmentStatus::Pending,
+                            FulfillmentStatus::Hold,
+                            FulfillmentStatus::Placed,
+                            FulfillmentStatus::Processing,
+                            FulfillmentStatus::Ready,
+                            FulfillmentStatus::Assigned,
+                        ], true),
+                ];
+            })->all(),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
             'discountLabel' => (float) $order->discount > 0
                 ? '$'.number_format((float) $order->discount, 2)

@@ -171,6 +171,11 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.placement-code');
         Route::post('orders/{fulfillment}/cancel', [BranchOrderController::class, 'cancel'])
             ->name('branch.orders.cancel');
+        Route::post('orders/{fulfillment}/items/{item}/remove-late', [BranchOrderController::class, 'removeLateItem'])
+            ->name('branch.orders.items.remove-late');
+        Route::post('orders/{fulfillment}/items/{item}/collect-late', [BranchOrderController::class, 'collectLateItem'])
+            ->name('branch.orders.items.collect-late');
+
         Route::post('orders/{fulfillment}/retry-delivery', [BranchOrderController::class, 'retryDelivery'])
             ->name('branch.orders.retry-delivery');
         Route::post('orders/{fulfillment}/reschedule-delivery', [BranchOrderController::class, 'rescheduleDelivery'])

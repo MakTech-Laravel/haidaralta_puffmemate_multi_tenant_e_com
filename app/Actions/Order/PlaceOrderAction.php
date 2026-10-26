@@ -180,6 +180,7 @@ class PlaceOrderAction
                     'unit_price' => $unit,
                     'subtotal' => $unit * $line['quantity'],
                     'is_late_delivery' => (bool) ($line['is_late_delivery'] ?? false),
+                    'local_reserved_quantity' => (int) ($line['local_quantity'] ?? 0),
                 ]);
             }
 

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Platform;
 
+use App\Actions\Order\CollectLateOrderItemAction;
+use App\Actions\Order\RemoveLateOrderItemAction;
 use App\DataTables\OrderDataTable;
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
@@ -15,6 +17,7 @@ use App\Http\Requests\Order\MarkOrderPaymentRequest;
 use App\Http\Requests\Order\UpdateFulfillmentStatusRequest;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\OrderItem;
 use App\Models\OrderReturn;
 use App\Models\StockTransfer;
 use App\Models\WholesaleInquiry;
@@ -44,6 +47,8 @@ class OrderController extends Controller
         private DriverDeliveryService $deliveries,
         private OrderPlacementNotifier $placements,
         private OrderReturnService $returns,
+        private RemoveLateOrderItemAction $removeLateItems,
+        private CollectLateOrderItemAction $collectLateItems,
     ) {}
 
     /**
@@ -115,6 +120,28 @@ class OrderController extends Controller
         $this->statusService->cancel($this->requireFulfillment($order), $request->user());
 
         Toast::success('Order cancelled.');
+
+        return redirect()->route('platform.orders.show', $order);
+    }
+
+    public function removeLateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
+    {
+        abort_unless($item->order_id === $order->id, 404);
+
+        $this->removeLateItems->handle($item, $request->user());
+
+        Toast::success('Late item removed.');
+
+        return redirect()->route('platform.orders.show', $order);
+    }
+
+    public function collectLateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
+    {
+        abort_unless($item->order_id === $order->id, 404);
+
+        $this->collectLateItems->handle($item, $request->user());
+
+        Toast::success('Late item collected and reserved.');
 
         return redirect()->route('platform.orders.show', $order);
     }
@@ -304,15 +331,24 @@ class OrderController extends Controller
                 'canReschedule' => false,
                 'canReturn' => $row->status === FulfillmentStatus::DeliveryFailed,
                 'canConfirmReturn' => $row->status === FulfillmentStatus::Returning,
-                'items' => $row->items->map(function ($item): array {
+                'items' => $row->items->map(function ($item) use ($row): array {
                     $snapshot = is_array($item->product_snapshot) ? $item->product_snapshot : [];
+                    $removed = $item->removed_at !== null;
 
                     return [
+                        'id' => $item->id,
                         'name' => $item->product_name_snapshot,
                         'image' => MediaUrl::resolve($snapshot['image'] ?? null),
                         'quantity' => $item->quantity,
                         'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
                         'isLateDelivery' => (bool) $item->is_late_delivery,
+                        'isRemoved' => $removed,
+                        'canRemoveLate' => ! $removed
+                            && (bool) $item->is_late_delivery
+                            && $this->canRemoveLateItem($row->status),
+                        'canCollectLate' => ! $removed
+                            && (bool) $item->is_late_delivery
+                            && $this->canRemoveLateItem($row->status),
                     ];
                 })->all(),
                 'transfers' => $row->stockTransfers->map(fn (StockTransfer $transfer): array => [
@@ -343,6 +379,19 @@ class OrderController extends Controller
         abort_if($order->fulfillment === null, 404);
 
         return $order->fulfillment;
+    }
+
+    private function canRemoveLateItem(FulfillmentStatus $status): bool
+    {
+        return match ($status) {
+            FulfillmentStatus::Pending,
+            FulfillmentStatus::Hold,
+            FulfillmentStatus::Placed,
+            FulfillmentStatus::Processing,
+            FulfillmentStatus::Ready,
+            FulfillmentStatus::Assigned => true,
+            default => false,
+        };
     }
 
     /**

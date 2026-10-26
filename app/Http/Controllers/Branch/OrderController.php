@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers\Branch;
 
+use App\Actions\Order\CollectLateOrderItemAction;
+use App\Actions\Order\RemoveLateOrderItemAction;
 use App\DataTables\BranchOrderFulfillmentDataTable;
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
@@ -12,6 +14,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\UpdateFulfillmentStatusRequest;
 use App\Models\Branch;
 use App\Models\OrderFulfillment;
+use App\Models\OrderItem;
 use App\Models\OrderReturn;
 use App\Models\StockTransfer;
 use App\Services\Order\DriverDeliveryService;
@@ -40,6 +43,8 @@ class OrderController extends Controller
         private DriverDeliveryService $deliveries,
         private OrderPlacementNotifier $placements,
         private OrderReturnService $returns,
+        private RemoveLateOrderItemAction $removeLateItems,
+        private CollectLateOrderItemAction $collectLateItems,
     ) {}
 
     /**
@@ -214,6 +219,40 @@ class OrderController extends Controller
         return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
     }
 
+    public function removeLateItem(
+        Request $request,
+        string $branch,
+        OrderFulfillment $fulfillment,
+        OrderItem $item,
+    ): RedirectResponse {
+        $branch = $this->currentBranch();
+        $fulfillment = $this->resolveForBranch($fulfillment, $branch);
+        abort_unless($item->fulfillment_id === $fulfillment->id, 404);
+
+        $this->removeLateItems->handle($item, $request->user());
+
+        Toast::success('Late item removed.');
+
+        return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
+    }
+
+    public function collectLateItem(
+        Request $request,
+        string $branch,
+        OrderFulfillment $fulfillment,
+        OrderItem $item,
+    ): RedirectResponse {
+        $branch = $this->currentBranch();
+        $fulfillment = $this->resolveForBranch($fulfillment, $branch);
+        abort_unless($item->fulfillment_id === $fulfillment->id, 404);
+
+        $this->collectLateItems->handle($item, $request->user());
+
+        Toast::success('Late item collected and reserved.');
+
+        return redirect()->route('branch.orders.show', [$branch, $fulfillment]);
+    }
+
     public function retryDelivery(Request $request, string $branch, OrderFulfillment $fulfillment): RedirectResponse
     {
         $branch = $this->currentBranch();
@@ -324,14 +363,26 @@ class OrderController extends Controller
                 'returnRequest' => $order ? $this->returns->payload($order) : null,
                 'shippingAddress' => $order->shipping_address_snapshot,
             ],
-            'items' => $fulfillment->items->map(fn ($item): array => [
-                'name' => $item->product_name_snapshot,
-                'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
-                'quantity' => $item->quantity,
-                'unitPriceLabel' => '$'.number_format((float) $item->unit_price, 2),
-                'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
-                'isLateDelivery' => (bool) $item->is_late_delivery,
-            ])->all(),
+            'items' => $fulfillment->items->map(function ($item) use ($fulfillment): array {
+                $removed = $item->removed_at !== null;
+
+                return [
+                    'id' => $item->id,
+                    'name' => $item->product_name_snapshot,
+                    'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
+                    'quantity' => $item->quantity,
+                    'unitPriceLabel' => '$'.number_format((float) $item->unit_price, 2),
+                    'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),
+                    'isLateDelivery' => (bool) $item->is_late_delivery,
+                    'isRemoved' => $removed,
+                    'canRemoveLate' => ! $removed
+                        && (bool) $item->is_late_delivery
+                        && $this->canRemoveLateItem($fulfillment->status),
+                    'canCollectLate' => ! $removed
+                        && (bool) $item->is_late_delivery
+                        && $this->canRemoveLateItem($fulfillment->status),
+                ];
+            })->all(),
             'timeline' => OrderStatusTimeline::steps($fulfillment->status, $fulfillment->statusHistories),
             'timelinePrevious' => OrderStatusTimeline::previousAttemptRails($fulfillment->statusHistories),
             'timelineActivity' => OrderStatusTimeline::activitySections($fulfillment->statusHistories),
@@ -357,6 +408,19 @@ class OrderController extends Controller
         abort_unless($fulfillment->branch_id === $branch->id, 404);
 
         return $fulfillment;
+    }
+
+    private function canRemoveLateItem(FulfillmentStatus $status): bool
+    {
+        return match ($status) {
+            FulfillmentStatus::Pending,
+            FulfillmentStatus::Hold,
+            FulfillmentStatus::Placed,
+            FulfillmentStatus::Processing,
+            FulfillmentStatus::Ready,
+            FulfillmentStatus::Assigned => true,
+            default => false,
+        };
     }
 
     private function currentBranch(): Branch
