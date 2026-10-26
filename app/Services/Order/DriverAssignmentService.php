@@ -201,6 +201,15 @@ class DriverAssignmentService
                 continue;
             }
 
+            if (
+                $step === FulfillmentStatus::PickedUp
+                && $fulfillment->hasUnresolvedLateItems()
+            ) {
+                throw ValidationException::withMessages([
+                    'advance' => DriverDeliveryService::LATE_ITEMS_BLOCK_PICKUP_MESSAGE,
+                ]);
+            }
+
             $comment = match ($step) {
                 FulfillmentStatus::Assigned => 'Driver assigned',
                 FulfillmentStatus::PickedUp => 'Picked up',

@@ -28,6 +28,7 @@ export type DriverOrderNextActionKey =
 export type DriverOrderNextAction = {
     key: DriverOrderNextActionKey;
     label: string;
+    disabled?: boolean;
 };
 
 export type DriverAssignedOrder = {
@@ -63,6 +64,8 @@ export type DriverOrderDetail = DriverAssignedOrder & {
     demoOtpHint: string;
     canChat?: boolean;
     canPickUp?: boolean;
+    hasUnresolvedLateItems?: boolean;
+    lateItemsBlockMessage?: string | null;
     canStart?: boolean;
     canArrive?: boolean;
     canDeliver?: boolean;
