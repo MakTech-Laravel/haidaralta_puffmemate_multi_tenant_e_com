@@ -35,11 +35,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{branch}')->group(function () {
-    Route::get('dashboard', [BranchDashboardController::class, 'index'])->name('branch.dashboard');
-    Route::get('notifications', [BranchNotificationController::class, 'index'])->name('branch.notifications.index');
-    Route::get('notifications/{userNotification}', [BranchNotificationController::class, 'show'])->name('branch.notifications.show');
-    Route::post('notifications/{userNotification}/read', [BranchNotificationController::class, 'read'])->name('branch.notifications.read');
-    Route::delete('notifications/{userNotification}', [BranchNotificationController::class, 'destroy'])->name('branch.notifications.destroy');
+    Route::middleware(['permission:view-branch-dashboard'])->group(function () {
+        Route::get('dashboard', [BranchDashboardController::class, 'index'])->name('branch.dashboard');
+        Route::get('notifications', [BranchNotificationController::class, 'index'])->name('branch.notifications.index');
+        Route::get('notifications/{userNotification}', [BranchNotificationController::class, 'show'])->name('branch.notifications.show');
+        Route::post('notifications/{userNotification}/read', [BranchNotificationController::class, 'read'])->name('branch.notifications.read');
+        Route::delete('notifications/{userNotification}', [BranchNotificationController::class, 'destroy'])->name('branch.notifications.destroy');
+    });
 
     Route::middleware(['permission:manage-branch-products'])->group(function () {
         Route::get('categories/options', [BranchCategoryController::class, 'options'])
@@ -107,11 +109,6 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.stock.price');
-        Route::get('reports/order-reports', [BranchOrderReportController::class, 'index'])
-            ->name('branch.reports.order-reports');
-        Route::get('reports/order-operations', function (string $branch) {
-            return redirect()->route('branch.reports.order-reports', ['branch' => $branch], 301);
-        });
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
@@ -125,6 +122,12 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     });
 
     Route::middleware(['permission:manage-branch-orders'])->group(function () {
+        Route::get('reports/order-reports', [BranchOrderReportController::class, 'index'])
+            ->name('branch.reports.order-reports');
+        Route::get('reports/order-operations', function (string $branch) {
+            return redirect()->route('branch.reports.order-reports', ['branch' => $branch], 301);
+        });
+
         Route::get('customers', [BranchCustomerController::class, 'index'])->name('branch.customers.index');
         Route::get('customers/{user}', [BranchCustomerController::class, 'show'])
             ->whereNumber('user')

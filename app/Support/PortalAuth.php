@@ -52,6 +52,23 @@ final class PortalAuth
     ];
 
     /**
+     * Relative path suffixes under `/branch/{slug}` when the user lacks view-branch-dashboard.
+     *
+     * @var list<array{0: list<string>, 1: string}>
+     */
+    private const BRANCH_FALLBACK_LANDINGS = [
+        [[PermissionEnum::MANAGE_BRANCH_ORDERS->value, PermissionEnum::COMPLETE_BRANCH_ORDERS_WITHOUT_CODE->value], '/orders'],
+        [[PermissionEnum::MANAGE_BRANCH_PRODUCTS->value], '/products'],
+        [[PermissionEnum::MANAGE_BRANCH_DRIVERS->value], '/drivers'],
+        [[PermissionEnum::MANAGE_BRANCH_STAFF->value], '/staff'],
+        [[PermissionEnum::MANAGE_BRANCH_ROLES->value], '/permissions'],
+        [[PermissionEnum::MANAGE_BRANCH_CONVERSATIONS->value], '/conversations'],
+        [[PermissionEnum::MANAGE_BRANCH_SHIFTS->value], '/shifts'],
+        [[PermissionEnum::MANAGE_BRANCH_SETTINGS->value], '/settings/general'],
+        [[PermissionEnum::VIEW_BRANCH_ACTIVITY_LOGS->value], '/activity-logs'],
+    ];
+
+    /**
      * The name of the portal guard currently authenticated, if any.
      */
     public static function activeGuard(): ?string
@@ -72,7 +89,7 @@ final class PortalAuth
     {
         return match ($user->user_type) {
             UserType::PLATFORM => self::platformLandingPath($user),
-            UserType::BRANCH => '/branch/'.$user->branch?->slug.'/dashboard',
+            UserType::BRANCH => self::branchLandingPath($user),
             UserType::DRIVER => '/driver/dashboard',
             UserType::CUSTOMER => '/dashboard',
         };
@@ -105,5 +122,41 @@ final class PortalAuth
 
         // Authenticated platform user with no matching permissions — still land in the portal shell.
         return '/platform/dashboard';
+    }
+
+    /**
+     * Prefer the branch dashboard when allowed; otherwise the first permitted nav destination.
+     */
+    public static function branchLandingPath(User $user): string
+    {
+        $user->loadMissing('branch');
+        $slug = $user->branch?->slug;
+        $prefix = $slug !== null && $slug !== '' ? '/branch/'.$slug : '/branch';
+
+        if ($user->branch_id === null) {
+            return $prefix.'/dashboard';
+        }
+
+        $registrar = app(PermissionRegistrar::class);
+        $previousTeamId = $registrar->getPermissionsTeamId();
+        $registrar->setPermissionsTeamId($user->branch_id);
+
+        try {
+            if ($user->can(PermissionEnum::VIEW_BRANCH_DASHBOARD->value)) {
+                return $prefix.'/dashboard';
+            }
+
+            foreach (self::BRANCH_FALLBACK_LANDINGS as [$permissions, $suffix]) {
+                foreach ($permissions as $permission) {
+                    if ($user->can($permission)) {
+                        return $prefix.$suffix;
+                    }
+                }
+            }
+        } finally {
+            $registrar->setPermissionsTeamId($previousTeamId);
+        }
+
+        return $prefix.'/dashboard';
     }
 }
