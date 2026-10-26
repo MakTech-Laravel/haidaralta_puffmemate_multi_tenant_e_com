@@ -11,7 +11,10 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
+import { AddressSuggestInput } from '@/components/storefront/wholesale/address-suggest-input';
 import { cn } from '@/lib/utils';
+
+const AU_COUNTRY = 'au';
 import type {
     StorefrontDeliveryMethod,
     StorefrontPaymentMethod,
@@ -202,21 +205,65 @@ export function CheckoutForm({
                             <Label htmlFor="checkout-address">
                                 Address <RequiredMark />
                             </Label>
-                            <Input
+                            <AddressSuggestInput
                                 id="checkout-address"
+                                name="address"
                                 value={details.address}
-                                onChange={(event) =>
-                                    onChange('address', event.target.value)
-                                }
-                                placeholder="Street address"
-                                autoComplete="street-address"
+                                countrycodes={AU_COUNTRY}
+                                placeholder="Start typing an Australian address"
                                 className={fieldClass}
+                                onSelect={({
+                                    address,
+                                    latitude,
+                                    longitude,
+                                    city,
+                                    postalCode,
+                                }) => {
+                                    onChange('address', address);
+                                    if (city) {
+                                        onChange('city', city);
+                                    }
+                                    if (postalCode) {
+                                        onChange('postalCode', postalCode);
+                                    }
+
+                                    if (onPinSelect) {
+                                        onPinSelect(
+                                            latitude,
+                                            longitude,
+                                            address,
+                                        );
+                                        return;
+                                    }
+
+                                    onChange('latitude', latitude);
+                                    onChange('longitude', longitude);
+                                }}
+                                onClear={() => {
+                                    onChange('address', '');
+                                    onChange('latitude', '');
+                                    onChange('longitude', '');
+                                }}
                             />
                         </div>
                         <CheckoutMapDialog
                             latitude={details.latitude}
                             longitude={details.longitude}
-                            onSelect={({ latitude, longitude, address }) => {
+                            countrycodes={AU_COUNTRY}
+                            onSelect={({
+                                latitude,
+                                longitude,
+                                address,
+                                city,
+                                postalCode,
+                            }) => {
+                                if (city) {
+                                    onChange('city', city);
+                                }
+                                if (postalCode) {
+                                    onChange('postalCode', postalCode);
+                                }
+
                                 if (onPinSelect) {
                                     onPinSelect(latitude, longitude, address);
                                     return;

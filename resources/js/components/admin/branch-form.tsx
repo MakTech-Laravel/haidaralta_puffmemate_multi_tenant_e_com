@@ -1,7 +1,7 @@
 import { Link, useForm } from '@inertiajs/react';
-import { MapPin } from 'lucide-react';
+import { MapPin, Search } from 'lucide-react';
 import type { FormEvent } from 'react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
     BranchLocationPicker,
     type BranchLocationCoords,
@@ -23,6 +23,12 @@ type FormAction = {
     method?: string;
 };
 
+type AreaOption = {
+    id: number;
+    name: string;
+    branch_names: string[];
+};
+
 interface BranchFormDefaults {
     name?: string;
     slug?: string;
@@ -38,6 +44,7 @@ interface BranchFormDefaults {
     opening_time?: string | null;
     closing_time?: string | null;
     status?: boolean;
+    area_ids?: number[];
 }
 
 interface BranchFormProps {
@@ -50,6 +57,8 @@ interface BranchFormProps {
     includeSuperAdmin?: boolean;
     /** Hide slug, code, and Active — branch portal settings keep identity platform-owned. */
     hideIdentityFields?: boolean;
+    /** Platform create/edit only — optional multi-select of existing areas. */
+    areaOptions?: AreaOption[];
 }
 
 const LOGO_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
@@ -93,7 +102,27 @@ export function BranchForm({
     submitLabel,
     includeSuperAdmin = false,
     hideIdentityFields = false,
+    areaOptions = [],
 }: BranchFormProps) {
+    const showAreaAssign = !hideIdentityFields && areaOptions.length > 0;
+
+    const [areaSearch, setAreaSearch] = useState('');
+    const filteredAreas = useMemo(() => {
+        const q = areaSearch.trim().toLowerCase();
+
+        if (q === '') {
+            return areaOptions;
+        }
+
+        return areaOptions.filter(
+            (area) =>
+                area.name.toLowerCase().includes(q) ||
+                area.branch_names.some((name) =>
+                    name.toLowerCase().includes(q),
+                ),
+        );
+    }, [areaOptions, areaSearch]);
+
     const [slugTouched, setSlugTouched] = useState(isEdit || hideIdentityFields);
     const [mapPickerOpen, setMapPickerOpen] = useState(false);
     const [existingLogo, setExistingLogo] = useState<ExistingFile[]>(() =>
@@ -153,6 +182,9 @@ export function BranchForm({
         opening_time: defaults?.opening_time ?? '',
         closing_time: defaults?.closing_time ?? '',
         status: defaults?.status ?? true,
+        ...(!hideIdentityFields
+            ? { area_ids: defaults?.area_ids ?? [] }
+            : {}),
         ...(includeSuperAdmin
             ? { super_admin: { ...SUPER_ADMIN_DEFAULTS } }
             : {}),
@@ -634,6 +666,102 @@ export function BranchForm({
                     ) : null}
                 </div>
             </section>
+
+            {showAreaAssign ? (
+                <section
+                    className={cn(
+                        'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
+                        'sm:p-6',
+                    )}
+                >
+                    <div className="mb-5 space-y-1">
+                        <h2 className="text-base font-semibold tracking-tight">
+                            Service areas
+                        </h2>
+                        <p className="text-muted-foreground text-sm">
+                            Optional. Link existing areas to this branch. An
+                            area can belong to many branches — selecting does
+                            not remove it from others. Deselecting does not
+                            unlink an area already on this branch.
+                        </p>
+                    </div>
+
+                    <div className="relative mb-3">
+                        <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                        <Input
+                            value={areaSearch}
+                            onChange={(event) =>
+                                setAreaSearch(event.target.value)
+                            }
+                            placeholder="Search areas or branches…"
+                            className="pl-9"
+                            autoComplete="off"
+                        />
+                    </div>
+
+                    {filteredAreas.length === 0 ? (
+                        <p className="text-muted-foreground rounded-lg border border-dashed py-8 text-center text-sm">
+                            {areaSearch.trim() === ''
+                                ? 'No areas available.'
+                                : `No areas match “${areaSearch.trim()}”.`}
+                        </p>
+                    ) : (
+                        <div className="flex max-h-64 flex-col gap-2 overflow-y-auto pr-1">
+                            {filteredAreas.map((area) => {
+                                const selectedIds =
+                                    'area_ids' in data &&
+                                    Array.isArray(data.area_ids)
+                                        ? data.area_ids
+                                        : [];
+                                const checked = selectedIds.includes(area.id);
+                                const branchLabel =
+                                    area.branch_names.length > 0
+                                        ? area.branch_names.join(', ')
+                                        : 'Unassigned';
+
+                                return (
+                                    <label
+                                        key={area.id}
+                                        htmlFor={`area-${area.id}`}
+                                        className="border-border/70 hover:bg-muted/40 flex cursor-pointer items-start gap-3 rounded-lg border px-3 py-2.5"
+                                    >
+                                        <Checkbox
+                                            id={`area-${area.id}`}
+                                            checked={checked}
+                                            onCheckedChange={(value) => {
+                                                const next =
+                                                    value === true
+                                                        ? [
+                                                              ...selectedIds,
+                                                              area.id,
+                                                          ]
+                                                        : selectedIds.filter(
+                                                              (id) =>
+                                                                  id !==
+                                                                  area.id,
+                                                          );
+                                                setData('area_ids', next);
+                                            }}
+                                            className="mt-0.5"
+                                        />
+                                        <span className="flex min-w-0 flex-col gap-0.5">
+                                            <span className="text-sm font-medium">
+                                                {area.name}
+                                            </span>
+                                            <span className="text-muted-foreground text-xs">
+                                                Branches: {branchLabel}
+                                            </span>
+                                        </span>
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    )}
+                    <InputError
+                        message={fieldError(formErrors, 'area_ids')}
+                    />
+                </section>
+            ) : null}
 
             {includeSuperAdmin && 'super_admin' in data ? (
                 <section

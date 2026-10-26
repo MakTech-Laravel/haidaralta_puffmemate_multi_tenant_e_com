@@ -15,6 +15,15 @@ type AppliedCoupon = {
     formattedDiscount: string;
 } | null;
 
+export type CheckoutShortfallLine = {
+    productId: number;
+    variantId: number | null;
+    productName: string;
+    quantity: number;
+    localQuantity: number;
+    shortfall: number;
+};
+
 type CheckoutOrderSummaryProps = {
     items: StorefrontCartItem[];
     itemCount: number;
@@ -30,6 +39,12 @@ type CheckoutOrderSummaryProps = {
     termsError?: string;
     processing?: boolean;
     canPlaceOrder?: boolean;
+    requiresLateDelivery?: boolean;
+    shortfallLines?: CheckoutShortfallLine[];
+    acceptLateDelivery?: boolean;
+    acceptLateError?: string;
+    cartUrl?: string;
+    onAcceptLateDeliveryChange?: (accepted: boolean) => void;
     onCouponChange: (value: string) => void;
     onApplyCoupon: () => void;
     onRemoveCoupon: () => void;
@@ -52,6 +67,12 @@ export function CheckoutOrderSummary({
     termsError,
     processing = false,
     canPlaceOrder = true,
+    requiresLateDelivery = false,
+    shortfallLines = [],
+    acceptLateDelivery = false,
+    acceptLateError,
+    cartUrl = '/cart',
+    onAcceptLateDeliveryChange,
     onCouponChange,
     onApplyCoupon,
     onRemoveCoupon,
@@ -229,6 +250,57 @@ export function CheckoutOrderSummary({
                 </span>
             </div>
 
+            {requiresLateDelivery && shortfallLines.length > 0 ? (
+                <div className="border-border bg-background mt-5 space-y-3 border p-3">
+                    <p className="text-foreground text-sm font-semibold">
+                        Some items may arrive later
+                    </p>
+                    <p className="text-muted-foreground text-xs leading-relaxed">
+                        Your delivery branch does not have enough stock for
+                        these items right now. Remove them from your cart, or
+                        accept that they may be delivered later once stock is
+                        collected.
+                    </p>
+                    <ul className="text-muted-foreground space-y-1 text-xs">
+                        {shortfallLines.map((line) => (
+                            <li key={`${line.productId}:${line.variantId ?? 0}`}>
+                                {line.productName}
+                                {line.shortfall < line.quantity
+                                    ? ` (${line.shortfall} of ${line.quantity} later)`
+                                    : ` (×${line.shortfall})`}
+                            </li>
+                        ))}
+                    </ul>
+                    <a
+                        href={cartUrl}
+                        className="text-foreground text-xs font-medium underline underline-offset-2"
+                    >
+                        Edit cart
+                    </a>
+                    <div className="flex items-start gap-2.5">
+                        <Checkbox
+                            id="checkout-accept-late"
+                            checked={acceptLateDelivery}
+                            onCheckedChange={(checked) =>
+                                onAcceptLateDeliveryChange?.(checked === true)
+                            }
+                            className="mt-0.5"
+                        />
+                        <Label
+                            htmlFor="checkout-accept-late"
+                            className="text-foreground text-xs leading-relaxed font-normal"
+                        >
+                            I accept late delivery for these items
+                        </Label>
+                    </div>
+                    {acceptLateError ? (
+                        <p className="text-destructive text-xs">
+                            {acceptLateError}
+                        </p>
+                    ) : null}
+                </div>
+            ) : null}
+
             <Button
                 type="submit"
                 size="lg"
@@ -244,8 +316,9 @@ export function CheckoutOrderSummary({
             </Button>
             {!canPlaceOrder && !processing ? (
                 <p className="text-muted-foreground mt-2 text-xs">
-                    Fill every required field, including an Express time
-                    slot when Express is selected, then place your order.
+                    {requiresLateDelivery && !acceptLateDelivery
+                        ? 'Accept late delivery for unavailable items, or remove them from your cart, then place your order.'
+                        : 'Fill every required field, including an Express time slot when Express is selected, then place your order.'}
                 </p>
             ) : null}
 

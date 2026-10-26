@@ -88,9 +88,14 @@ export type DriverOrderDetail = DriverAssignedOrder & {
         country: string;
     };
     products: Array<{
+        id: number;
         name: string;
         quantityLabel: string;
         priceLabel: string;
+        isLateDelivery?: boolean;
+        isRemoved?: boolean;
+        canRemoveLate?: boolean;
+        canCollectLate?: boolean;
     }>;
     subtotalLabel: string;
     discountLabel: string | null;

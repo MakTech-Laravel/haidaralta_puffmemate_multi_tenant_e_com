@@ -7,6 +7,7 @@ use App\Models\BranchArea;
 use App\Models\BranchAreaTransferHistory;
 use App\Models\User;
 use App\Support\BranchMap;
+use App\Support\Geo\Polygon;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +20,7 @@ class BranchAreaService
      *     address: string,
      *     latitude: float|string,
      *     longitude: float|string,
+     *     polygon: list<array{lat: float|int|string, lng: float|int|string}>,
      *     city: string,
      *     state: string,
      *     postal_code?: string|null,
@@ -28,7 +30,12 @@ class BranchAreaService
      */
     public function create(Branch $branch, array $data): BranchArea
     {
-        return $branch->areas()->create($this->normalizedAttributes($data));
+        return DB::transaction(function () use ($branch, $data): BranchArea {
+            $area = BranchArea::query()->create($this->normalizedAttributes($data));
+            $area->branches()->attach($branch->id);
+
+            return $area;
+        });
     }
 
     /**
@@ -37,6 +44,7 @@ class BranchAreaService
      *     address: string,
      *     latitude: float|string,
      *     longitude: float|string,
+     *     polygon: list<array{lat: float|int|string, lng: float|int|string}>,
      *     city: string,
      *     state: string,
      *     postal_code?: string|null,
@@ -56,45 +64,51 @@ class BranchAreaService
         $area->delete();
     }
 
-    public function transfer(
+    public function detach(Branch $branch, BranchArea $area): void
+    {
+        if (! $area->branches()->whereKey($branch->id)->exists()) {
+            throw ValidationException::withMessages([
+                'branch_id' => 'This area is not linked to that branch.',
+            ]);
+        }
+
+        $area->branches()->detach($branch->id);
+    }
+
+    /**
+     * Attach an area to another branch without removing existing memberships.
+     */
+    public function attach(
         BranchArea $area,
         Branch $to,
         Carbon|string $effectiveDate,
         string $reason,
         User $actor,
     ): BranchAreaTransferHistory {
-        if ($to->id === $area->branch_id) {
+        if ($area->branches()->whereKey($to->id)->exists()) {
             throw ValidationException::withMessages([
-                'to_branch_id' => 'Choose a different branch than the current owner.',
+                'to_branch_id' => 'This area is already linked to that branch.',
             ]);
         }
 
         if (! $to->status) {
             throw ValidationException::withMessages([
-                'to_branch_id' => 'Cannot transfer an area to an inactive branch.',
+                'to_branch_id' => 'Cannot add an area to an inactive branch.',
             ]);
         }
 
-        $name = trim($area->name);
+        $fromBranchId = $area->branches()->orderBy('name')->value('branches.id');
 
-        $nameTaken = BranchArea::query()
-            ->where('branch_id', $to->id)
-            ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
-            ->exists();
-
-        if ($nameTaken) {
-            throw ValidationException::withMessages([
-                'to_branch_id' => 'That branch already has an area with this name.',
-            ]);
+        if ($fromBranchId === null) {
+            $fromBranchId = $to->id;
         }
 
-        $fromBranchId = $area->branch_id;
         $effective = $effectiveDate instanceof Carbon
             ? $effectiveDate->copy()->startOfDay()
             : Carbon::parse($effectiveDate)->startOfDay();
 
         return DB::transaction(function () use ($area, $to, $fromBranchId, $effective, $reason, $actor): BranchAreaTransferHistory {
-            $area->update(['branch_id' => $to->id]);
+            $area->branches()->attach($to->id);
 
             return BranchAreaTransferHistory::query()->create([
                 'branch_area_id' => $area->id,
@@ -108,12 +122,26 @@ class BranchAreaService
     }
 
     /**
+     * @deprecated Use attach() — kept for call-site clarity during rename.
+     */
+    public function transfer(
+        BranchArea $area,
+        Branch $to,
+        Carbon|string $effectiveDate,
+        string $reason,
+        User $actor,
+    ): BranchAreaTransferHistory {
+        return $this->attach($area, $to, $effectiveDate, $reason, $actor);
+    }
+
+    /**
      * @return array{
      *     id: int,
      *     name: string,
      *     address: string,
      *     latitude: string,
      *     longitude: string,
+     *     polygon: list<array{lat: float, lng: float}>,
      *     map: ?array{google: string, open_street_map: string, embed: string},
      *     city: string,
      *     state: string,
@@ -121,6 +149,7 @@ class BranchAreaService
      *     notes: ?string,
      *     is_active: bool,
      *     created_at: ?string,
+     *     branches: list<array{id: int, name: string, slug: string}>,
      *     transfers: list<array{
      *         id: int,
      *         from_branch_id: int,
@@ -137,6 +166,7 @@ class BranchAreaService
     public function detail(BranchArea $area): array
     {
         $area->loadMissing([
+            'branches:id,name,slug',
             'transferHistories.fromBranch:id,name',
             'transferHistories.toBranch:id,name',
             'transferHistories.transferredBy:id,name',
@@ -148,6 +178,7 @@ class BranchAreaService
             'address' => $area->address,
             'latitude' => (string) $area->latitude,
             'longitude' => (string) $area->longitude,
+            'polygon' => is_array($area->polygon) ? $area->polygon : [],
             'map' => BranchMap::links($area->latitude, $area->longitude),
             'city' => $area->city,
             'state' => $area->state,
@@ -155,6 +186,15 @@ class BranchAreaService
             'notes' => $area->notes,
             'is_active' => $area->is_active,
             'created_at' => $area->created_at?->toIso8601String(),
+            'branches' => $area->branches
+                ->sortBy('name')
+                ->values()
+                ->map(fn (Branch $branch): array => [
+                    'id' => $branch->id,
+                    'name' => $branch->name,
+                    'slug' => $branch->slug,
+                ])
+                ->all(),
             'transfers' => $area->transferHistories
                 ->map(fn (BranchAreaTransferHistory $transfer): array => [
                     'id' => $transfer->id,
@@ -165,7 +205,7 @@ class BranchAreaService
                     'effective_date' => $transfer->effective_date?->toDateString(),
                     'reason' => $transfer->reason,
                     'transferred_by_name' => $transfer->transferredBy?->name,
-                    'transfer_type_label' => 'Branch change',
+                    'transfer_type_label' => 'Added to branch',
                 ])
                 ->values()
                 ->all(),
@@ -179,6 +219,7 @@ class BranchAreaService
      *     address: string,
      *     latitude: string,
      *     longitude: string,
+     *     polygon: list<array{lat: float, lng: float}>,
      *     city: string,
      *     state: string,
      *     postal_code: ?string,
@@ -188,11 +229,28 @@ class BranchAreaService
      */
     private function normalizedAttributes(array $data): array
     {
+        /** @var list<array{lat?: mixed, lng?: mixed}> $rawPolygon */
+        $rawPolygon = is_array($data['polygon'] ?? null) ? $data['polygon'] : [];
+        $polygon = Polygon::normalize($rawPolygon);
+
+        $latitude = filled($data['latitude'] ?? null) ? (float) $data['latitude'] : null;
+        $longitude = filled($data['longitude'] ?? null) ? (float) $data['longitude'] : null;
+
+        if (($latitude === null || $longitude === null) && $polygon !== []) {
+            $centroid = Polygon::centroid($polygon);
+
+            if ($centroid !== null) {
+                $latitude = $centroid['lat'];
+                $longitude = $centroid['lng'];
+            }
+        }
+
         return [
             'name' => trim((string) $data['name']),
             'address' => trim((string) $data['address']),
-            'latitude' => number_format((float) $data['latitude'], 7, '.', ''),
-            'longitude' => number_format((float) $data['longitude'], 7, '.', ''),
+            'latitude' => number_format((float) $latitude, 7, '.', ''),
+            'longitude' => number_format((float) $longitude, 7, '.', ''),
+            'polygon' => $polygon,
             'city' => trim((string) $data['city']),
             'state' => trim((string) $data['state']),
             'postal_code' => filled($data['postal_code'] ?? null)

@@ -15,6 +15,10 @@ paths:
 
 Branch create/edit: Address then Map location block with Set on map (BranchLocationPicker dialog) plus optional manual Latitude|Longitude, then optional Delivery radius (km). Null/empty radius means deliver anywhere; a value is stored for future distance checks from the pin. Do not put an inline live map on the form. Future Mapbox/Google belongs only inside the dialog body; keep onConfirm → form latitude/longitude. Phase 1 confirm stays disabled until a provider can set a pin.
 
+## Branch form optional area multi-select
+
+Platform branch create/edit may link existing BranchAreas via optional `area_ids[]` (many-to-many pivot). Options show name and linked branch names; client search filters by area or branch name without changing hidden selections. Selecting attaches without removing other branches. Deselecting does not detach — unlink only via explicit remove/manage-areas UI. Branch portal settings (`hideIdentityFields`) omit area assign.
+
 ## DriverForm layout matches BranchForm
 
 DriverForm follows BranchForm: 2-col field rows (not 3-col), placeholders on every Input/Textarea/Select, SelectTrigger className w-full (component default is w-fit).

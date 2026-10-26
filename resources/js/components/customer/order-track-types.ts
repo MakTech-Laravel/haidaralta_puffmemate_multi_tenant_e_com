@@ -3,6 +3,8 @@ export type OrderTrackProduct = {
     image: string;
     quantityLabel: string;
     priceLabel: string;
+    isLateDelivery?: boolean;
+    isRemoved?: boolean;
 };
 
 export type OrderTrackShippingAddress = {

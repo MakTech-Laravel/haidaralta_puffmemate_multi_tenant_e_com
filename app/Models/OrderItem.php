@@ -21,6 +21,11 @@ class OrderItem extends Model
         'quantity',
         'unit_price',
         'subtotal',
+        'is_late_delivery',
+        'local_reserved_quantity',
+        'removed_at',
+        'removed_by',
+        'removal_note',
     ];
 
     /**
@@ -33,7 +38,23 @@ class OrderItem extends Model
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'is_late_delivery' => 'boolean',
+            'local_reserved_quantity' => 'integer',
+            'removed_at' => 'datetime',
         ];
+    }
+
+    public function isRemoved(): bool
+    {
+        return $this->removed_at !== null;
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function removedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'removed_by');
     }
 
     /**

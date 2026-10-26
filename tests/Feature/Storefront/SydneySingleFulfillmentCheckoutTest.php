@@ -5,6 +5,7 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\UserType;
 use App\Models\Branch;
+use App\Models\BranchArea;
 use App\Models\Conversation;
 use App\Models\DriverBranchAssignment;
 use App\Models\DriverProfile;
@@ -20,8 +21,8 @@ use App\Services\Catalog\DeliverySettingsService;
 use App\Services\Order\DriverAssignmentService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
-use App\Services\Order\StockTransferService;
 use App\Services\Sms\FakeSmsSender;
+use App\Support\Geo\Polygon;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
 
@@ -31,12 +32,12 @@ beforeEach(function () {
     app(DeliverySettingsService::class)->ensureDefaults();
 });
 
-test('a sydney customer with mixed sydney and melbourne stock gets one fulfillment and one transfer', function () {
+test('a sydney customer with a late line gets one area fulfillment without a stock transfer', function () {
     $user = User::factory()->create();
     $productA = Product::factory()->create(['slug' => 'sydney-a', 'selling_price' => 20, 'status' => true]);
     $productB = Product::factory()->create(['slug' => 'sydney-b', 'selling_price' => 20, 'status' => true]);
     $productC = Product::factory()->create(['slug' => 'sydney-c', 'selling_price' => 20, 'status' => true]);
-    $productD = Product::factory()->create(['slug' => 'melbourne-d', 'selling_price' => 20, 'status' => true]);
+    $productD = Product::factory()->create(['slug' => 'late-d', 'selling_price' => 20, 'status' => true]);
 
     $sydney = Branch::factory()->create([
         'name' => 'Sydney CBD',
@@ -46,13 +47,11 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
         'status' => true,
         'fulfillment_priority' => 1,
     ]);
-    $melbourne = Branch::factory()->create([
-        'name' => 'Melbourne Collins',
-        'latitude' => -37.8136,
-        'longitude' => 144.9631,
-        'delivery_radius_km' => null,
-        'status' => true,
-        'fulfillment_priority' => 50,
+    BranchArea::factory()->forBranch($sydney)->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
     ]);
 
     foreach ([$productA, $productB, $productC] as $product) {
@@ -63,13 +62,6 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
             'status' => true,
         ]);
     }
-
-    Inventory::factory()->create([
-        'branch_id' => $melbourne->id,
-        'product_id' => $productD->id,
-        'quantity' => 5,
-        'status' => true,
-    ]);
 
     foreach ([$productA, $productB, $productC, $productD] as $product) {
         $this->actingAs($user, 'customer')
@@ -90,40 +82,35 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
             'longitude' => 151.2093,
             'delivery_method' => 'regular',
             'payment_method' => PaymentGatewaySetting::KEY_COD,
+            'accept_late_delivery' => true,
             'terms' => true,
         ])
         ->assertRedirect();
 
     $order = Order::query()->firstOrFail();
+    $lateItem = $order->items->firstWhere('product_id', $productD->id);
 
     expect($order->fulfillments)->toHaveCount(1)
         ->and($order->fulfillment->branch_id)->toBe($sydney->id)
         ->and($order->items)->toHaveCount(4)
+        ->and($order->accepts_late_delivery)->toBeTrue()
+        ->and($lateItem?->is_late_delivery)->toBeTrue()
         ->and($order->payments)->toHaveCount(1)
         ->and($order->payment->status)->toBe(PaymentStatus::PendingCollection)
+        ->and(StockTransfer::query()->where('order_id', $order->id)->count())->toBe(0)
         ->and(Conversation::query()->where('order_id', $order->id)->count())->toBe(0);
-
-    $transfer = StockTransfer::query()->where('order_id', $order->id)->firstOrFail();
-
-    expect($transfer->source_branch_id)->toBe($melbourne->id)
-        ->and($transfer->destination_branch_id)->toBe($sydney->id)
-        ->and($transfer->items)->toHaveCount(1)
-        ->and($transfer->items->first()->product_id)->toBe($productD->id);
 
     $this->actingAs($user, 'customer')
         ->get(route('checkout.confirmation', $order))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/checkout-confirmation')
+            ->where('order.hasLateDeliveryItems', true)
             ->missing('order.branch')
             ->missing('order.fulfillments')
             ->missing('order.transfers')
             ->missing('order.branchName'));
 
-    $melbourneStaff = User::factory()->create([
-        'user_type' => UserType::BRANCH,
-        'branch_id' => $melbourne->id,
-    ]);
     $sydneyStaff = User::factory()->create([
         'user_type' => UserType::BRANCH,
         'branch_id' => $sydney->id,
@@ -140,12 +127,6 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
         'status' => DriverAssignmentStatus::Active,
     ]);
     scheduleDriverOnDuty($driver, $sydney);
-
-    $transfers = app(StockTransferService::class);
-    $transfers->approve($transfer, $melbourneStaff);
-    $transfers->pick($transfer->refresh(), $melbourneStaff);
-    $transfers->dispatch($transfer->refresh(), $melbourneStaff);
-    $transfers->receive($transfer->refresh(), $sydneyStaff);
 
     $fulfillment = $order->fulfillment->refresh();
     $statuses = app(FulfillmentStatusService::class);
@@ -165,7 +146,6 @@ test('a sydney customer with mixed sydney and melbourne stock gets one fulfillme
         ->and($order->fulfillment->driver_id)->toBe($driver->id)
         ->and($order->fulfillment->status)->toBe(FulfillmentStatus::Delivered)
         ->and($order->payment->refresh()->status)->toBe(PaymentStatus::Collected)
-        ->and($order->delivery_fee)->not->toBe((float) $transfer->estimated_cost)
         ->and(Conversation::query()->where('order_id', $order->id)->count())->toBe(1)
         ->and(Payment::query()->where('order_id', $order->id)->count())->toBe(1);
 

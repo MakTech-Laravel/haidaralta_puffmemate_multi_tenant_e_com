@@ -210,8 +210,13 @@ class FulfillmentStatusService
         $destQty = [];
 
         foreach ($order->items as $item) {
+            if ($item->removed_at !== null) {
+                continue;
+            }
+
             $key = $item->product_id.':'.($item->variant_id ?? '0');
-            $destQty[$key] = $item->quantity;
+            $reserved = (int) $item->local_reserved_quantity;
+            $destQty[$key] = $reserved > 0 ? $reserved : $item->quantity;
         }
 
         foreach ($fulfillment->stockTransfers as $transfer) {

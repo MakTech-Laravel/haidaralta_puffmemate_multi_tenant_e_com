@@ -26,6 +26,8 @@ type AddressSuggestInputProps = {
     value: string;
     placeholder?: string;
     className?: string;
+    /** ISO country filter for Nominatim (e.g. "au"). */
+    countrycodes?: string;
     onSelect: (selection: AddressSuggestSelection) => void;
     onClear: () => void;
 };
@@ -36,6 +38,7 @@ export function AddressSuggestInput({
     value,
     placeholder,
     className,
+    countrycodes,
     onSelect,
     onClear,
 }: AddressSuggestInputProps) {
@@ -77,7 +80,9 @@ export function AddressSuggestInput({
             setLoading(true);
             setError(null);
 
-            void searchPlaces(trimmed, controller.signal)
+            void searchPlaces(trimmed, controller.signal, {
+                countrycodes,
+            })
                 .then((places) => {
                     setResults(places);
                     setOpen(true);
@@ -102,7 +107,7 @@ export function AddressSuggestInput({
             controller.abort();
             window.clearTimeout(timer);
         };
-    }, [query]);
+    }, [query, countrycodes]);
 
     const showList =
         open &&

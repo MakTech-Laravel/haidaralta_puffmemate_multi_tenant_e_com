@@ -14,8 +14,8 @@ Before planning or editing, find the row whose globs match the file's path and r
 | resources/js/pages/platform/announcements/** | .ai/rules/announcements.md |
 | app/Http/Middleware/EnsureAnyPortalGuard.php,routes/settings.php | .ai/rules/app-http-middleware.md |
 | app/Services/Application/ApplicationSettingsService.php,resources/js/hooks/use-app-brand.ts | .ai/rules/application-js-hooks.md |
-| app/Models/BranchArea.php,app/Services/Branch/BranchAreaService.php,app/Http/Controllers/{Platform,Branch}/*Area*Controller.php,resources/js/pages/{platform,branch}/**/areas/**,resources/js/components/admin/branch-area-form.tsx | .ai/rules/areas-js-components-admin.md |
-| resources/js/components/admin/branch-area-detail.tsx,app/Services/Branch/BranchAreaService.php,resources/js/pages/{platform,branch}/**/areas/** | .ai/rules/areas.md |
+| app/Models/BranchArea.php,app/Services/Branch/BranchAreaService.php,app/Http/Controllers/{Platform,Branch}/*Area*Controller.php,app/Support/Geo/Polygon.php,resources/js/lib/{nominatim,geo-polygon}.ts,resources/js/pages/{platform,branch}/**/areas/**,resources/js/components/admin/branch-area-{form,polygon-map}.tsx,resources/js/components/admin/boundary-place-suggest-input.tsx | .ai/rules/areas-js-components-admin.md |
+| resources/js/components/admin/branch-area-{detail,polygon-map}.tsx,app/Services/Branch/BranchAreaService.php,resources/js/pages/{platform,branch}/**/areas/** | .ai/rules/areas.md |
 | resources/js/pages/auth/**,app/Actions/Fortify/CreateNewUser.php,app/Http/Requests/Auth/StoreRegisteredUserRequest.php,resources/js/layouts/auth/** | .ai/rules/auth.md |
 | app/Services/Backup/**, config/backup.php, config/scout.php, config/catalog.php, config/shifts.php | .ai/rules/backup.md |
 | resources/js/components/{platform,branch}/nav.ts,resources/js/pages/platform/branch-areas/**,app/Http/Controllers/Platform/BranchAreasController.php | .ai/rules/branch-areas-http-controllers-platform.md |
@@ -118,7 +118,7 @@ Before planning or editing, find the row whose globs match the file's path and r
 | app/Models/**.php | .ai/rules/models.md |
 | resources/js/components/{navigation,platform,branch,customer,driver}/** | .ai/rules/navigationplatformbranchcustomerdriver.md |
 | app/Services/Notifications/** | .ai/rules/notifications.md |
-| app/Services/Order/OrderAllocationEngine.php, app/Actions/Order/PlaceOrderAction.php, app/Actions/Order/PlaceDriverOrderAction.php | .ai/rules/order.md |
+| app/Services/Order/OrderAllocationEngine.php, app/Services/Order/Allocation/Area{BranchResolver,CheckoutAllocator}.php, app/Actions/Order/PlaceOrderAction.php, app/Actions/Order/PlaceDriverOrderAction.php, app/Actions/Order/{Remove,Collect}LateOrderItemAction.php | .ai/rules/order.md |
 | app/Http/Controllers/Customer/OrderController.php,resources/js/pages/customer/orders/show.tsx,resources/js/components/customer/order-track-*.tsx | .ai/rules/orders-js-components-customer.md |
 | resources/js/pages/driver/orders/**,resources/js/components/driver/driver-order-card.tsx | .ai/rules/orders-js-components-driver.md |
 | resources/js/components/driver/driver-order-chat-panel.tsx,resources/js/pages/driver/orders/chat.tsx,resources/js/pages/customer/orders/chat.tsx,resources/js/components/conversation/order-chat-body.tsx | .ai/rules/orders.md |

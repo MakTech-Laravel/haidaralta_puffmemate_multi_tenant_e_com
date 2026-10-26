@@ -5,6 +5,7 @@ use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\BranchArea;
 use App\Models\User;
+use App\Support\Geo\Polygon;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
@@ -29,6 +30,7 @@ function branchAreaPayload(array $overrides = []): array
         'address' => '100 Crown St, Surry Hills NSW 2010',
         'latitude' => -33.8845,
         'longitude' => 151.2140,
+        'polygon' => Polygon::squareAround(-33.8845, 151.2140),
         'city' => 'Sydney',
         'state' => 'NSW',
         'postal_code' => '2010',
@@ -51,11 +53,16 @@ test('branch admin can list create update show and delete areas', function () {
         ->post(route('branch.areas.store', $this->branch), branchAreaPayload())
         ->assertRedirect();
 
-    $area = BranchArea::query()->where('branch_id', $this->branch->id)->firstOrFail();
+    $area = BranchArea::query()
+        ->where('name', 'Surry Hills')
+        ->whereHas('branches', fn ($query) => $query->where('branches.id', $this->branch->id))
+        ->firstOrFail();
 
     expect($area->name)->toBe('Surry Hills')
         ->and((float) $area->latitude)->toBe(-33.8845)
-        ->and($area->is_active)->toBeTrue();
+        ->and($area->is_active)->toBeTrue()
+        ->and($area->polygon)->toBeArray()
+        ->and(Polygon::uniqueVertexCount($area->polygon))->toBeGreaterThanOrEqual(3);
 
     $this->actingAs($this->admin, 'branch')
         ->get(route('branch.areas.show', [$this->branch, $area]))
@@ -63,6 +70,7 @@ test('branch admin can list create update show and delete areas', function () {
         ->assertInertia(fn ($page) => $page
             ->component('branch/areas/show')
             ->where('area.name', 'Surry Hills')
+            ->has('area.polygon')
             ->has('area.map.google')
             ->has('area.map.open_street_map')
             ->has('area.map.embed'));
@@ -98,7 +106,7 @@ test('branch staff without manage-branch-settings cannot access areas', function
 
 test('branch cannot mutate an area that belongs to another branch', function () {
     $otherBranch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
-    $area = BranchArea::factory()->create(['branch_id' => $otherBranch->id]);
+    $area = BranchArea::factory()->forBranch($otherBranch)->create();
 
     $this->actingAs($this->admin, 'branch')
         ->get(route('branch.areas.show', [$this->branch, $area]))
@@ -130,9 +138,8 @@ test('branch manager with settings permission can open areas index', function ()
         ->assertInertia(fn ($page) => $page->component('branch/areas/index'));
 });
 
-test('branch rejects duplicate area names within the same branch', function () {
-    BranchArea::factory()->create([
-        'branch_id' => $this->branch->id,
+test('branch rejects duplicate area names globally', function () {
+    BranchArea::factory()->forBranch($this->branch)->create([
         'name' => 'Surry Hills',
     ]);
 

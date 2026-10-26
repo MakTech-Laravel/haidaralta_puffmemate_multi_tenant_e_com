@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Branch;
 use App\Models\BranchArea;
+use App\Support\Geo\Polygon;
 use Database\Seeders\Concerns\ReportsSeedProgress;
 use Illuminate\Database\Seeder;
 
@@ -24,7 +25,7 @@ class BranchAreaSeeder extends Seeder
     public const MELBOURNE_FITZROY = 'Fitzroy';
 
     /**
-     * Seed delivery zones (areas) per branch. Idempotent by (branch_id, name).
+     * Seed delivery zones (areas) and attach them to branches. Idempotent by area name.
      */
     public function run(): void
     {
@@ -42,23 +43,26 @@ class BranchAreaSeeder extends Seeder
                 continue;
             }
 
-            foreach ($areas as $area) {
-                BranchArea::query()->updateOrCreate(
+            foreach ($areas as $areaData) {
+                $area = BranchArea::query()->updateOrCreate(
+                    ['name' => $areaData['name']],
                     [
-                        'branch_id' => $branch->id,
-                        'name' => $area['name'],
-                    ],
-                    [
-                        'address' => $area['address'],
-                        'latitude' => $area['latitude'],
-                        'longitude' => $area['longitude'],
-                        'city' => $area['city'],
-                        'state' => $area['state'],
-                        'postal_code' => $area['postal_code'],
-                        'notes' => $area['notes'],
+                        'address' => $areaData['address'],
+                        'latitude' => $areaData['latitude'],
+                        'longitude' => $areaData['longitude'],
+                        'polygon' => Polygon::squareAround(
+                            (float) $areaData['latitude'],
+                            (float) $areaData['longitude'],
+                        ),
+                        'city' => $areaData['city'],
+                        'state' => $areaData['state'],
+                        'postal_code' => $areaData['postal_code'],
+                        'notes' => $areaData['notes'],
                         'is_active' => true,
                     ],
                 );
+
+                $branch->areas()->syncWithoutDetaching([$area->id]);
 
                 $this->advanceSeedProgress();
             }
@@ -190,114 +194,26 @@ class BranchAreaSeeder extends Seeder
                     'notes' => 'Business district fringe',
                 ],
             ],
-            BranchSeeder::ADELAIDE_RUNDLE => [
+            BranchSeeder::IPSWICH_BRISBANE_ST => [
                 [
-                    'name' => 'North Adelaide',
-                    'address' => '90 O\'Connell Street, North Adelaide SA 5006',
-                    'latitude' => -34.9065000,
-                    'longitude' => 138.5958000,
-                    'city' => 'Adelaide',
-                    'state' => 'SA',
-                    'postal_code' => '5006',
-                    'notes' => 'North of river zone',
-                ],
-                [
-                    'name' => 'Unley',
-                    'address' => '180 Unley Road, Unley SA 5061',
-                    'latitude' => -34.9502000,
-                    'longitude' => 138.6075000,
-                    'city' => 'Adelaide',
-                    'state' => 'SA',
-                    'postal_code' => '5061',
-                    'notes' => 'Southern suburbs zone',
-                ],
-            ],
-            BranchSeeder::GOLD_COAST_SURFERS => [
-                [
-                    'name' => 'Broadbeach',
-                    'address' => '20 Victorialand Avenue, Broadbeach QLD 4218',
-                    'latitude' => -28.0285000,
-                    'longitude' => 153.4312000,
-                    'city' => 'Gold Coast',
+                    'name' => 'Ipswich CBD',
+                    'address' => '20 Bell Street, Ipswich QLD 4305',
+                    'latitude' => -27.6128000,
+                    'longitude' => 152.7602000,
+                    'city' => 'Ipswich',
                     'state' => 'QLD',
-                    'postal_code' => '4218',
-                    'notes' => 'Beach strip zone',
+                    'postal_code' => '4305',
+                    'notes' => 'Town centre zone',
                 ],
                 [
-                    'name' => 'Southport',
-                    'address' => '55 Nerang Street, Southport QLD 4215',
-                    'latitude' => -27.9678000,
-                    'longitude' => 153.4135000,
-                    'city' => 'Gold Coast',
+                    'name' => 'Booval',
+                    'address' => '85 Brisbane Road, Booval QLD 4304',
+                    'latitude' => -27.6095000,
+                    'longitude' => 152.7898000,
+                    'city' => 'Ipswich',
                     'state' => 'QLD',
-                    'postal_code' => '4215',
-                    'notes' => 'CBD adjacent zone',
-                ],
-            ],
-            BranchSeeder::CANBERRA_CIVIC => [
-                [
-                    'name' => 'Braddon',
-                    'address' => '10 Lonsdale Street, Braddon ACT 2612',
-                    'latitude' => -35.2718000,
-                    'longitude' => 149.1325000,
-                    'city' => 'Canberra',
-                    'state' => 'ACT',
-                    'postal_code' => '2612',
-                    'notes' => 'Inner north zone',
-                ],
-                [
-                    'name' => 'Kingston',
-                    'address' => '25 Giles Street, Kingston ACT 2604',
-                    'latitude' => -35.3155000,
-                    'longitude' => 149.1448000,
-                    'city' => 'Canberra',
-                    'state' => 'ACT',
-                    'postal_code' => '2604',
-                    'notes' => 'Foreshore zone',
-                ],
-            ],
-            BranchSeeder::NEWCASTLE_HUNTER => [
-                [
-                    'name' => 'Hamilton',
-                    'address' => '40 Beaumont Street, Hamilton NSW 2303',
-                    'latitude' => -32.9235000,
-                    'longitude' => 151.7478000,
-                    'city' => 'Newcastle',
-                    'state' => 'NSW',
-                    'postal_code' => '2303',
-                    'notes' => 'Inner west zone',
-                ],
-                [
-                    'name' => 'Merewether',
-                    'address' => '15 Ridge Street, Merewether NSW 2291',
-                    'latitude' => -32.9458000,
-                    'longitude' => 151.7502000,
-                    'city' => 'Newcastle',
-                    'state' => 'NSW',
-                    'postal_code' => '2291',
-                    'notes' => 'Coastal zone',
-                ],
-            ],
-            BranchSeeder::PARRAMATTA_CHURCH => [
-                [
-                    'name' => 'Harris Park',
-                    'address' => '30 Wigram Street, Harris Park NSW 2150',
-                    'latitude' => -33.8225000,
-                    'longitude' => 151.0078000,
-                    'city' => 'Parramatta',
-                    'state' => 'NSW',
-                    'postal_code' => '2150',
-                    'notes' => 'Station precinct zone',
-                ],
-                [
-                    'name' => 'Westmead',
-                    'address' => '12 Darcy Road, Westmead NSW 2145',
-                    'latitude' => -33.8088000,
-                    'longitude' => 150.9875000,
-                    'city' => 'Parramatta',
-                    'state' => 'NSW',
-                    'postal_code' => '2145',
-                    'notes' => 'Hospital corridor zone',
+                    'postal_code' => '4304',
+                    'notes' => 'Eastern corridor zone',
                 ],
             ],
         ];
