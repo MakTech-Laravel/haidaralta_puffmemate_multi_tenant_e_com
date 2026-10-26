@@ -421,49 +421,66 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
 
                 {hasActionBar ? (
                     <>
-                        <div aria-hidden className="h-20 xl:hidden" />
+                        <div
+                            aria-hidden
+                            className={
+                                order.lateItemsBlockMessage
+                                    ? 'h-32 xl:hidden'
+                                    : 'h-20 xl:hidden'
+                            }
+                        />
                         <div
                             className="border-border bg-background/95 fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t px-4 py-3 backdrop-blur-sm xl:sticky xl:bottom-6 xl:rounded-xl xl:border xl:shadow-lg"
                             data-test="driver-order-action-bar"
                         >
-                            <div className="mx-auto flex w-full max-w-5xl gap-2">
-                                {stepAction ? (
-                                    <div className="min-w-0 flex-1">
-                                        <DriverOrderNextAction
-                                            orderId={order.id}
-                                            action={stepAction}
-                                            className="h-12"
-                                        />
-                                    </div>
+                            <div className="mx-auto flex w-full max-w-5xl flex-col gap-2">
+                                {order.lateItemsBlockMessage ? (
+                                    <p
+                                        className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-sm"
+                                        data-test="driver-late-items-block"
+                                    >
+                                        {order.lateItemsBlockMessage}
+                                    </p>
                                 ) : null}
-                                {order.canDeliver ? (
-                                    <>
-                                        {order.canFail ? (
-                                            <div className="w-2/5 shrink-0">
-                                                <DriverOrderUnavailableSheet
+                                <div className="flex gap-2">
+                                    {stepAction ? (
+                                        <div className="min-w-0 flex-1">
+                                            <DriverOrderNextAction
+                                                orderId={order.id}
+                                                action={stepAction}
+                                                className="h-12"
+                                            />
+                                        </div>
+                                    ) : null}
+                                    {order.canDeliver ? (
+                                        <>
+                                            {order.canFail ? (
+                                                <div className="w-2/5 shrink-0">
+                                                    <DriverOrderUnavailableSheet
+                                                        orderId={order.id}
+                                                        reasons={
+                                                            order.failureReasons ??
+                                                            []
+                                                        }
+                                                    />
+                                                </div>
+                                            ) : null}
+                                            <div className="min-w-0 flex-1">
+                                                <DriverDeliverOtpForm
                                                     orderId={order.id}
-                                                    reasons={
-                                                        order.failureReasons ??
-                                                        []
+                                                    label={
+                                                        collectsPayment
+                                                            ? `Collect ${order.totalLabel}`
+                                                            : 'Complete delivery'
+                                                    }
+                                                    icon={
+                                                        <KeyRound data-icon="inline-start" />
                                                     }
                                                 />
                                             </div>
-                                        ) : null}
-                                        <div className="min-w-0 flex-1">
-                                            <DriverDeliverOtpForm
-                                                orderId={order.id}
-                                                label={
-                                                    collectsPayment
-                                                        ? `Collect ${order.totalLabel}`
-                                                        : 'Complete delivery'
-                                                }
-                                                icon={
-                                                    <KeyRound data-icon="inline-start" />
-                                                }
-                                            />
-                                        </div>
-                                    </>
-                                ) : null}
+                                        </>
+                                    ) : null}
+                                </div>
                             </div>
                         </div>
                     </>

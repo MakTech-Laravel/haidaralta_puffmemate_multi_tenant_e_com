@@ -360,7 +360,7 @@ class OrderController extends Controller
             'status' => $fulfillment->status->value,
             'statusLabel' => $fulfillment->status->label(),
             'canChat' => $fulfillment->status->allowsOrderChat(),
-            'nextAction' => $fulfillment->status->driverNextAction(),
+            'nextAction' => $this->driverNextAction($fulfillment),
             'customerName' => $snapshot['name'] ?? ($order->customer?->name ?? 'Customer'),
             'company' => $snapshot['company'] ?? null,
             'source' => $order->source->value,
@@ -402,10 +402,19 @@ class OrderController extends Controller
         $snapshot = $order->shipping_address_snapshot ?? [];
         $card = $this->card($fulfillment);
 
+        $hasUnresolvedLateItems = $fulfillment->hasUnresolvedLateItems();
+        $canPickUp = $fulfillment->status === FulfillmentStatus::Assigned
+            && ! $hasUnresolvedLateItems;
+
         return [
             ...$card,
             'demoOtpHint' => '',
-            'canPickUp' => $fulfillment->status === FulfillmentStatus::Assigned,
+            'canPickUp' => $canPickUp,
+            'hasUnresolvedLateItems' => $hasUnresolvedLateItems,
+            'lateItemsBlockMessage' => $fulfillment->status === FulfillmentStatus::Assigned
+                && $hasUnresolvedLateItems
+                ? DriverDeliveryService::LATE_ITEMS_BLOCK_PICKUP_MESSAGE
+                : null,
             'canStart' => $fulfillment->status === FulfillmentStatus::PickedUp,
             'canArrive' => $fulfillment->status === FulfillmentStatus::OutForDelivery,
             'canDeliver' => $fulfillment->status === FulfillmentStatus::Arrived,
@@ -468,6 +477,27 @@ class OrderController extends Controller
             'couponCode' => $order->coupon_code,
             'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
         ];
+    }
+
+    /**
+     * @return array{key: string, label: string, disabled?: bool}|null
+     */
+    private function driverNextAction(OrderFulfillment $fulfillment): ?array
+    {
+        $action = $fulfillment->status->driverNextAction();
+
+        if ($action === null) {
+            return null;
+        }
+
+        if (
+            $action['key'] === 'pick_up'
+            && $fulfillment->hasUnresolvedLateItems()
+        ) {
+            $action['disabled'] = true;
+        }
+
+        return $action;
     }
 
     private function thread(Order $order): Conversation
