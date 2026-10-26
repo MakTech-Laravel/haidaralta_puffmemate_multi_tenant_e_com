@@ -10,6 +10,7 @@ import {
     Phone,
     ReceiptText,
     Store,
+    Trash2,
     Truck,
     UserRound,
 } from 'lucide-react';
@@ -68,11 +69,15 @@ type FulfillmentSummary = {
     canReturn: boolean;
     canConfirmReturn: boolean;
     items: {
+        id: number;
         name: string;
         image: string;
         quantity: number;
         subtotalLabel: string;
         isLateDelivery?: boolean;
+        isRemoved?: boolean;
+        canRemoveLate?: boolean;
+        canCollectLate?: boolean;
     }[];
     transfers: {
         id: number;
@@ -197,7 +202,8 @@ function FulfillmentCard({
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [assignOpen, setAssignOpen] = useState(false);
     const processing = pendingAction !== null;
-    const itemCount = fulfillment.items.length;
+    const itemCount = fulfillment.items.filter((item) => !item.isRemoved)
+        .length;
 
     const spinnerFor = (key: string) =>
         pendingAction === key ? <Spinner /> : null;
@@ -211,6 +217,42 @@ function FulfillmentCard({
                 preserveScroll: true,
                 onFinish: () => setPendingAction(null),
             },
+        );
+    };
+
+    const removeLateItem = (itemId: number, itemName: string) => {
+        if (
+            !confirm(
+                `Remove “${itemName}” from this order? The customer will be notified.`,
+            )
+        ) {
+            return;
+        }
+
+        post(
+            `remove-late-${itemId}`,
+            OrderController.removeLateItem.url({
+                order: orderId,
+                item: itemId,
+            }),
+        );
+    };
+
+    const collectLateItem = (itemId: number, itemName: string) => {
+        if (
+            !confirm(
+                `Collect stock for “${itemName}” and reserve it for this order? Remove will no longer be available for this line.`,
+            )
+        ) {
+            return;
+        }
+
+        post(
+            `collect-late-${itemId}`,
+            OrderController.collectLateItem.url({
+                order: orderId,
+                item: itemId,
+            }),
         );
     };
 
@@ -327,9 +369,9 @@ function FulfillmentCard({
                     </span>
                 </div>
                 <ul className="divide-border max-h-[26rem] divide-y overflow-y-auto">
-                    {fulfillment.items.map((item, index) => (
+                    {fulfillment.items.map((item) => (
                         <li
-                            key={`${item.name}-${index}`}
+                            key={item.id}
                             className="flex items-center gap-3 py-3"
                         >
                             <div className="bg-muted size-14 shrink-0 overflow-hidden rounded-lg border">
@@ -339,7 +381,13 @@ function FulfillmentCard({
                                 />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-foreground line-clamp-2 text-sm font-medium">
+                                <p
+                                    className={
+                                        item.isRemoved
+                                            ? 'text-muted-foreground line-clamp-2 text-sm font-medium line-through'
+                                            : 'text-foreground line-clamp-2 text-sm font-medium'
+                                    }
+                                >
                                     {item.name}
                                 </p>
                                 <p className="text-muted-foreground mt-0.5 text-xs">
@@ -347,11 +395,62 @@ function FulfillmentCard({
                                     {item.isLateDelivery
                                         ? ' · Late delivery'
                                         : ''}
+                                    {item.isRemoved ? ' · Removed' : ''}
                                 </p>
                             </div>
-                            <p className="text-foreground shrink-0 text-sm font-semibold tabular-nums">
-                                {item.subtotalLabel}
-                            </p>
+                            <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+                                <p
+                                    className={
+                                        item.isRemoved
+                                            ? 'text-muted-foreground text-sm font-semibold tabular-nums line-through'
+                                            : 'text-foreground text-sm font-semibold tabular-nums'
+                                    }
+                                >
+                                    {item.subtotalLabel}
+                                </p>
+                                {item.canCollectLate || item.canRemoveLate ? (
+                                    <div className="flex items-center gap-2">
+                                        {item.canCollectLate ? (
+                                            <Button
+                                                type="button"
+                                                size="sm"
+                                                disabled={processing}
+                                                onClick={() =>
+                                                    collectLateItem(
+                                                        item.id,
+                                                        item.name,
+                                                    )
+                                                }
+                                            >
+                                                {spinnerFor(
+                                                    `collect-late-${item.id}`,
+                                                )}
+                                                Collect
+                                            </Button>
+                                        ) : null}
+                                        {item.canRemoveLate ? (
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="sm"
+                                                disabled={processing}
+                                                onClick={() =>
+                                                    removeLateItem(
+                                                        item.id,
+                                                        item.name,
+                                                    )
+                                                }
+                                            >
+                                                {spinnerFor(
+                                                    `remove-late-${item.id}`,
+                                                )}
+                                                <Trash2 data-icon="inline-start" />
+                                                Remove
+                                            </Button>
+                                        ) : null}
+                                    </div>
+                                ) : null}
+                            </div>
                         </li>
                     ))}
                 </ul>

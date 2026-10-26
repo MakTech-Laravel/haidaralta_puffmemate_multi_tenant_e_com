@@ -43,15 +43,33 @@ export function OrderTrackProducts({
                                 />
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="text-foreground truncate text-sm font-semibold">
+                                <p
+                                    className={
+                                        product.isRemoved
+                                            ? 'text-muted-foreground truncate text-sm font-semibold line-through'
+                                            : 'text-foreground truncate text-sm font-semibold'
+                                    }
+                                >
                                     {product.name}
                                 </p>
                                 <p className="text-muted-foreground text-xs">
                                     {product.quantityLabel}
+                                    {product.isLateDelivery
+                                        ? ' · Late delivery'
+                                        : ''}
+                                    {product.isRemoved ? ' · Removed' : ''}
                                 </p>
                             </div>
-                            <p className="text-foreground shrink-0 text-sm font-bold">
-                                {product.priceLabel}
+                            <p
+                                className={
+                                    product.isRemoved
+                                        ? 'text-muted-foreground shrink-0 text-sm font-bold line-through'
+                                        : 'text-foreground shrink-0 text-sm font-bold'
+                                }
+                            >
+                                {product.isRemoved
+                                    ? 'Removed'
+                                    : product.priceLabel}
                             </p>
                         </li>
                     ))}

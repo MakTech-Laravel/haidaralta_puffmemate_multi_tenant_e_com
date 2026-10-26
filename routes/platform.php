@@ -519,6 +519,11 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.orders.placement-code');
         Route::post('orders/{order}/cancel', [PlatformOrderController::class, 'cancel'])
             ->name('platform.orders.cancel');
+        Route::post('orders/{order}/items/{item}/remove-late', [PlatformOrderController::class, 'removeLateItem'])
+            ->name('platform.orders.items.remove-late');
+        Route::post('orders/{order}/items/{item}/collect-late', [PlatformOrderController::class, 'collectLateItem'])
+            ->name('platform.orders.items.collect-late');
+
         Route::post('orders/{order}/retry-delivery', [PlatformOrderController::class, 'retryDelivery'])
             ->name('platform.orders.retry-delivery');
         Route::post('orders/{order}/reschedule-delivery', [PlatformOrderController::class, 'rescheduleDelivery'])

@@ -9,6 +9,7 @@ import {
     Package,
     Phone,
     ReceiptText,
+    Trash2,
     Truck,
     UserRound,
 } from 'lucide-react';
@@ -128,12 +129,16 @@ type FulfillmentDetail = {
         } | null;
     };
     items: {
+        id: number;
         name: string;
         image: string;
         quantity: number;
         unitPriceLabel: string;
         subtotalLabel: string;
         isLateDelivery?: boolean;
+        isRemoved?: boolean;
+        canRemoveLate?: boolean;
+        canCollectLate?: boolean;
     }[];
     timeline: {
         key: string;
@@ -221,13 +226,60 @@ export default function BranchOrderShow({
         .filter(Boolean)
         .join(' ');
     const hasStreetAddress = Boolean(address?.address || cityLine);
-    const itemCount = fulfillment.items.reduce(
-        (sum, item) => sum + item.quantity,
-        0,
-    );
+    const itemCount = fulfillment.items
+        .filter((item) => !item.isRemoved)
+        .reduce((sum, item) => sum + item.quantity, 0);
 
     const spinnerFor = (key: string) =>
         pendingAction === key ? <Spinner /> : null;
+
+    const removeLateItem = (itemId: number, itemName: string) => {
+        if (
+            !confirm(
+                `Remove “${itemName}” from this order? The customer will be notified.`,
+            )
+        ) {
+            return;
+        }
+
+        setPendingAction(`remove-late-${itemId}`);
+        router.post(
+            OrderController.removeLateItem.url([
+                branch.slug,
+                fulfillment.id,
+                itemId,
+            ]),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setPendingAction(null),
+            },
+        );
+    };
+
+    const collectLateItem = (itemId: number, itemName: string) => {
+        if (
+            !confirm(
+                `Collect stock for “${itemName}” and reserve it for this order? Remove will no longer be available for this line.`,
+            )
+        ) {
+            return;
+        }
+
+        setPendingAction(`collect-late-${itemId}`);
+        router.post(
+            OrderController.collectLateItem.url([
+                branch.slug,
+                fulfillment.id,
+                itemId,
+            ]),
+            {},
+            {
+                preserveScroll: true,
+                onFinish: () => setPendingAction(null),
+            },
+        );
+    };
 
     const post = (key: string, url: string) => {
         setPendingAction(key);
@@ -452,9 +504,9 @@ export default function BranchOrderShow({
                                     </span>
                                 </div>
                                 <ul className="divide-border max-h-[26rem] divide-y overflow-y-auto">
-                                    {fulfillment.items.map((item, index) => (
+                                    {fulfillment.items.map((item) => (
                                         <li
-                                            key={`${item.name}-${index}`}
+                                            key={item.id}
                                             className="flex items-center gap-3 py-3"
                                         >
                                             <div className="bg-muted size-14 shrink-0 overflow-hidden rounded-lg border">
@@ -464,7 +516,13 @@ export default function BranchOrderShow({
                                                 />
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <p className="text-foreground line-clamp-2 text-sm font-medium">
+                                                <p
+                                                    className={
+                                                        item.isRemoved
+                                                            ? 'text-muted-foreground line-clamp-2 text-sm font-medium line-through'
+                                                            : 'text-foreground line-clamp-2 text-sm font-medium'
+                                                    }
+                                                >
                                                     {item.name}
                                                 </p>
                                                 <p className="text-muted-foreground mt-0.5 text-xs">
@@ -473,11 +531,69 @@ export default function BranchOrderShow({
                                                     {item.isLateDelivery
                                                         ? ' · Late delivery'
                                                         : ''}
+                                                    {item.isRemoved
+                                                        ? ' · Removed'
+                                                        : ''}
                                                 </p>
                                             </div>
-                                            <p className="text-foreground shrink-0 text-sm font-semibold tabular-nums">
-                                                {item.subtotalLabel}
-                                            </p>
+                                            <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
+                                                <p
+                                                    className={
+                                                        item.isRemoved
+                                                            ? 'text-muted-foreground text-sm font-semibold tabular-nums line-through'
+                                                            : 'text-foreground text-sm font-semibold tabular-nums'
+                                                    }
+                                                >
+                                                    {item.subtotalLabel}
+                                                </p>
+                                                {item.canCollectLate ||
+                                                item.canRemoveLate ? (
+                                                    <div className="flex items-center gap-2">
+                                                        {item.canCollectLate ? (
+                                                            <Button
+                                                                type="button"
+                                                                size="sm"
+                                                                disabled={
+                                                                    processing
+                                                                }
+                                                                onClick={() =>
+                                                                    collectLateItem(
+                                                                        item.id,
+                                                                        item.name,
+                                                                    )
+                                                                }
+                                                            >
+                                                                {spinnerFor(
+                                                                    `collect-late-${item.id}`,
+                                                                )}
+                                                                Collect
+                                                            </Button>
+                                                        ) : null}
+                                                        {item.canRemoveLate ? (
+                                                            <Button
+                                                                type="button"
+                                                                variant="destructive"
+                                                                size="sm"
+                                                                disabled={
+                                                                    processing
+                                                                }
+                                                                onClick={() =>
+                                                                    removeLateItem(
+                                                                        item.id,
+                                                                        item.name,
+                                                                    )
+                                                                }
+                                                            >
+                                                                {spinnerFor(
+                                                                    `remove-late-${item.id}`,
+                                                                )}
+                                                                <Trash2 data-icon="inline-start" />
+                                                                Remove
+                                                            </Button>
+                                                        ) : null}
+                                                    </div>
+                                                ) : null}
+                                            </div>
                                         </li>
                                     ))}
                                 </ul>
