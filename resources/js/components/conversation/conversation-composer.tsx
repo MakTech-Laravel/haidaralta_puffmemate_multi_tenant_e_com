@@ -122,7 +122,7 @@ export function ConversationComposer({
                     onKeyDown={onKeyDown}
                     rows={1}
                     maxLength={5000}
-                    placeholder="Write a message…  (Enter to send, Shift+Enter for a new line)"
+                    placeholder="Write a message…"
                     className="max-h-40 min-h-10 flex-1 resize-none"
                 />
                 <Button
