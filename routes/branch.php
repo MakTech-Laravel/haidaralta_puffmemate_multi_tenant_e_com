@@ -7,6 +7,7 @@ use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
 use App\Http\Controllers\Branch\CustomerController as BranchCustomerController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
+use App\Http\Controllers\Branch\DriverChatController as BranchDriverChatController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
 use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
@@ -15,6 +16,7 @@ use App\Http\Controllers\Branch\OrderAssignController as BranchOrderAssignContro
 use App\Http\Controllers\Branch\OrderController as BranchOrderController;
 use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
+use App\Http\Controllers\Branch\PlatformChatController as BranchPlatformChatController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\ProductReviewController as BranchProductReviewController;
 use App\Http\Controllers\Branch\Reports\OrderAssignHistoryController as BranchOrderAssignHistoryController;
@@ -237,6 +239,62 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('conversations/{conversation}/close', [BranchConversationController::class, 'close'])
             ->whereNumber('conversation')
             ->name('branch.conversations.close');
+    });
+
+    Route::middleware(['permission:manage-branch-driver-chat'])->group(function () {
+        Route::get('driver-chats', [BranchDriverChatController::class, 'index'])
+            ->name('branch.driver-chats.index');
+        Route::get('driver-chats/driver-options', [BranchDriverChatController::class, 'driverOptions'])
+            ->name('branch.driver-chats.driver-options');
+        Route::post('driver-chats', [BranchDriverChatController::class, 'store'])
+            ->name('branch.driver-chats.store');
+        Route::get('driver-chats/{conversation}', [BranchDriverChatController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.show');
+        Route::get('driver-chats/{conversation}/messages', [BranchDriverChatController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.messages');
+        Route::post('driver-chats/{conversation}/messages', [BranchDriverChatController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('branch.driver-chats.messages.store');
+        Route::post('driver-chats/{conversation}/delivered', [BranchDriverChatController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.delivered');
+        Route::post('driver-chats/{conversation}/read', [BranchDriverChatController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.read');
+        Route::post('driver-chats/{conversation}/close', [BranchDriverChatController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.close');
+    });
+
+    Route::middleware(['permission:manage-branch-platform-chat'])->group(function () {
+        Route::get('platform-chats', [BranchPlatformChatController::class, 'index'])
+            ->name('branch.platform-chats.index');
+        Route::get('platform-chats/platform-options', [BranchPlatformChatController::class, 'platformOptions'])
+            ->name('branch.platform-chats.platform-options');
+        Route::post('platform-chats', [BranchPlatformChatController::class, 'store'])
+            ->name('branch.platform-chats.store');
+        Route::get('platform-chats/{conversation}', [BranchPlatformChatController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.show');
+        Route::get('platform-chats/{conversation}/messages', [BranchPlatformChatController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.messages');
+        Route::post('platform-chats/{conversation}/messages', [BranchPlatformChatController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('branch.platform-chats.messages.store');
+        Route::post('platform-chats/{conversation}/delivered', [BranchPlatformChatController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.delivered');
+        Route::post('platform-chats/{conversation}/read', [BranchPlatformChatController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.read');
+        Route::post('platform-chats/{conversation}/close', [BranchPlatformChatController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.close');
     });
 
     Route::middleware(['permission:view-branch-activity-logs'])->group(function () {

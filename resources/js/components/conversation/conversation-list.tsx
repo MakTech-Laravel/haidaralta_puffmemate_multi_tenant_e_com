@@ -221,7 +221,7 @@ function ConversationListItem({
                             unread ? 'font-semibold' : 'font-medium',
                         )}
                     >
-                        {row.order_number}
+                        {row.title ?? row.order_number ?? 'Chat'}
                     </span>
                     <span className="text-muted-foreground ml-auto shrink-0 text-xs">
                         {relativeTime(row.last_message_at)}

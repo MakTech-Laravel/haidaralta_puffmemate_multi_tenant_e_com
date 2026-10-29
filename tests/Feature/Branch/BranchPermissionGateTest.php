@@ -92,6 +92,14 @@ dataset('branchPermissionCanonicalRoutes', function () {
             PermissionEnum::MANAGE_BRANCH_CONVERSATIONS,
             fn (): string => route('branch.conversations.index', branchProbeBranch()),
         ],
+        'manage-branch-driver-chat' => [
+            PermissionEnum::MANAGE_BRANCH_DRIVER_CHAT,
+            fn (): string => route('branch.driver-chats.index', branchProbeBranch()),
+        ],
+        'manage-branch-platform-chat' => [
+            PermissionEnum::MANAGE_BRANCH_PLATFORM_CHAT,
+            fn (): string => route('branch.platform-chats.index', branchProbeBranch()),
+        ],
         'manage-branch-settings' => [
             PermissionEnum::MANAGE_BRANCH_SETTINGS,
             fn (): string => route('branch.settings.general.edit', branchProbeBranch()),
@@ -130,6 +138,8 @@ test('every branch permission is covered by the gate matrix', function () {
         PermissionEnum::MANAGE_BRANCH_DRIVERS,
         PermissionEnum::MANAGE_BRANCH_SHIFTS,
         PermissionEnum::MANAGE_BRANCH_CONVERSATIONS,
+        PermissionEnum::MANAGE_BRANCH_DRIVER_CHAT,
+        PermissionEnum::MANAGE_BRANCH_PLATFORM_CHAT,
         PermissionEnum::MANAGE_BRANCH_SETTINGS,
     ])->map(fn (PermissionEnum $permission) => $permission->value)->sort()->values();
 

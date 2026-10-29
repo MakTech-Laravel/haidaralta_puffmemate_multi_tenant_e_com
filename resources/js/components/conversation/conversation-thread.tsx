@@ -102,7 +102,9 @@ export function ConversationThread({
     canClose,
     endpoints,
     backUrl,
+    showSenderRole = false,
     incomingMessage = null,
+    headerTitle,
 }: {
     conversation: ConversationSummary;
     messages: ConversationMessage[];
@@ -113,12 +115,15 @@ export function ConversationThread({
     canClose: boolean;
     endpoints: ConversationEndpoints;
     backUrl: string;
+    showSenderRole?: boolean;
     /**
      * Inbox-channel fallback. Presence MessageCreated is still the primary
      * path; this covers the case where the operator is in the thread but the
      * presence join never completed.
      */
     incomingMessage?: ConversationMessage | null;
+    /** Optional override for the thread heading (portal-specific labels). */
+    headerTitle?: string;
 }) {
     const [messages, setMessages] = useState(initialMessages);
     const [hasMore, setHasMore] = useState(initialHasMore);
@@ -407,8 +412,19 @@ export function ConversationThread({
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             <h2 className="truncate font-semibold">
-                                Order{' '}
-                                {conversation.order?.order_number ?? 'unknown'}
+                                {headerTitle ??
+                                    (conversation.type === 'driver_ops'
+                                        ? conversation.driver?.id === viewerId
+                                            ? (conversation.branch?.name ??
+                                              'Branch chat')
+                                            : (conversation.driver?.name ??
+                                              conversation.branch?.name ??
+                                              'Driver chat')
+                                        : conversation.type ===
+                                            'platform_branch'
+                                          ? (conversation.branch?.name ??
+                                            'Branch chat')
+                                          : `Order ${conversation.order?.order_number ?? 'unknown'}`)}
                             </h2>
                             <Badge variant={isClosed ? 'secondary' : 'default'}>
                                 {isClosed ? 'Closed' : 'Open'}
@@ -430,9 +446,12 @@ export function ConversationThread({
                                             {online.length} online ·
                                         </span>
                                     ) : null}
-                                    {conversation.branch?.name ?? 'No branch'} ·{' '}
-                                    {conversation.order?.status_label ?? '—'} ·{' '}
-                                    {conversation.participants.length}{' '}
+                                    {conversation.branch?.name ?? 'No branch'}
+                                    {conversation.type === 'driver_ops' ||
+                                    conversation.type === 'platform_branch'
+                                        ? null
+                                        : ` · ${conversation.order?.status_label ?? '—'}`}{' '}
+                                    · {conversation.participants.length}{' '}
                                     participant
                                     {conversation.participants.length === 1
                                         ? ''
@@ -514,6 +533,7 @@ export function ConversationThread({
                                         isOwn={isOwn}
                                         showHeader={showHeader}
                                         receipt={receipt}
+                                        showSenderRole={showSenderRole}
                                         onRetry={() => retry(message.id)}
                                         onDiscard={() => discard(message.id)}
                                     />

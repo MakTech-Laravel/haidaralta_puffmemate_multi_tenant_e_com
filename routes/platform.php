@@ -5,6 +5,7 @@ use App\Http\Controllers\Platform\AdminController as PlatformAdminController;
 use App\Http\Controllers\Platform\AnnouncementController as PlatformAnnouncementController;
 use App\Http\Controllers\Platform\BranchAreaController as PlatformBranchAreaController;
 use App\Http\Controllers\Platform\BranchAreasController as PlatformBranchAreasController;
+use App\Http\Controllers\Platform\BranchChatController as PlatformBranchChatController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
@@ -574,6 +575,34 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('conversations/{conversation}/close', [PlatformConversationController::class, 'close'])
             ->whereNumber('conversation')
             ->name('platform.conversations.close');
+    });
+
+    Route::middleware(['permission:manage-platform-branch-chat'])->group(function () {
+        Route::get('branch-chats', [PlatformBranchChatController::class, 'index'])
+            ->name('platform.branch-chats.index');
+        Route::get('branch-chats/branch-options', [PlatformBranchChatController::class, 'branchOptions'])
+            ->name('platform.branch-chats.branch-options');
+        Route::post('branch-chats', [PlatformBranchChatController::class, 'store'])
+            ->name('platform.branch-chats.store');
+        Route::get('branch-chats/{conversation}', [PlatformBranchChatController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.show');
+        Route::get('branch-chats/{conversation}/messages', [PlatformBranchChatController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.messages');
+        Route::post('branch-chats/{conversation}/messages', [PlatformBranchChatController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('platform.branch-chats.messages.store');
+        Route::post('branch-chats/{conversation}/delivered', [PlatformBranchChatController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.delivered');
+        Route::post('branch-chats/{conversation}/read', [PlatformBranchChatController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.read');
+        Route::post('branch-chats/{conversation}/close', [PlatformBranchChatController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.close');
     });
 
     Route::middleware(['permission:view-activity-logs'])->group(function () {

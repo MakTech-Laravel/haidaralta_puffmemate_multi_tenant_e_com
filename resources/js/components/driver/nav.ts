@@ -2,12 +2,14 @@ import {
     ClipboardPen,
     LayoutDashboard,
     LogOut,
+    MessageCircle,
     Navigation,
     Package,
     Wallet,
     type LucideIcon,
 } from 'lucide-react';
 import { dashboard } from '@/routes/driver';
+import { index as chatsIndex } from '@/routes/driver/chats';
 import { index as earningsIndex } from '@/routes/driver/earnings';
 import { index as historyIndex } from '@/routes/driver/history';
 import { index as ordersIndex } from '@/routes/driver/orders';
@@ -36,8 +38,8 @@ function matchesPath(url: string, path: string, nested = false): boolean {
 }
 
 /**
- * Five field tabs. Notifications live on the header bell, not the tab bar.
- * Route stays center; account options live in the header sheet; chat stays on the order.
+ * Field tabs + desktop sidebar. Order chat stays on the order; branch ops
+ * chat lives under Chats.
  */
 export const driverNavItems: DriverNavItem[] = [
     {
@@ -57,6 +59,14 @@ export const driverNavItems: DriverNavItem[] = [
         match: (url) =>
             matchesPath(url, ordersIndex.url(), true) ||
             matchesPath(url, historyIndex.url(), true),
+    },
+    {
+        id: 'chats',
+        label: 'Chats',
+        icon: MessageCircle,
+        href: chatsIndex.url(),
+        tab: false,
+        match: (url) => matchesPath(url, chatsIndex.url(), true),
     },
     {
         id: 'route',
