@@ -46,6 +46,7 @@ function platformNavDestinations(): array
         ['path' => '/platform/orders', 'permissions' => ['manage-orders']],
         ['path' => '/platform/stock-transfers', 'permissions' => ['manage-orders']],
         ['path' => '/platform/conversations', 'permissions' => ['manage-conversations']],
+        ['path' => '/platform/branch-chats', 'permissions' => ['manage-platform-branch-chat']],
         ['path' => '/platform/pages', 'permissions' => ['manage-pages']],
         ['path' => '/platform/home-banners', 'permissions' => ['manage-pages']],
         ['path' => '/platform/coupons', 'permissions' => ['manage-catalog']],

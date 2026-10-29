@@ -1,6 +1,12 @@
 import { router } from '@inertiajs/react';
 import { MessagesSquare } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type ReactNode,
+} from 'react';
 
 import { useConversationInboxRealtime } from '@/hooks/use-conversation-inbox-realtime';
 import { acknowledgeDelivery } from '@/lib/conversation';
@@ -51,6 +57,7 @@ export function ConversationWorkspace({
     canClose = true,
     optionField = 'order_id',
     threadTitle,
+    hideInbox = false,
 }: {
     conversations: ConversationRow[];
     inboxMeta: InboxMeta;
@@ -73,9 +80,17 @@ export function ConversationWorkspace({
     optionField?: 'order_id' | 'driver_id' | 'branch_id';
     /** Optional thread header override (e.g. “Platform” on branch portal). */
     threadTitle?: string;
+    /** Single-thread portals (driver / branch↔platform) skip the inbox pane. */
+    hideInbox?: boolean;
 }) {
+    const isOpsChat = kind === 'driver_ops' || kind === 'platform_branch';
+    const allowClose = canClose && !isOpsChat;
+    const showStatusFilter = !isOpsChat;
+
     const [search, setSearch] = useState(inboxMeta.filters.search);
-    const [status, setStatus] = useState(inboxMeta.filters.status);
+    const [status, setStatus] = useState(
+        isOpsChat ? 'all' : inboxMeta.filters.status,
+    );
     const [branchId, setBranchId] = useState(inboxMeta.filters.branch_id);
     const [loading, setLoading] = useState(false);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -234,63 +249,72 @@ export function ConversationWorkspace({
         matchesInboxFilters(row, { status, search, branchId }),
     );
 
+    const newChatDialog = (
+        <NewConversationDialog
+            optionsUrl={orderOptionsUrl}
+            storeUrl={storeUrl}
+            optionField={optionField}
+            dialogTitle={
+                kind === 'driver_ops'
+                    ? 'New driver chat'
+                    : kind === 'platform_branch'
+                      ? 'New platform chat'
+                      : 'New conversation'
+            }
+            dialogDescription={
+                kind === 'driver_ops'
+                    ? 'Pick someone to open a shared chat with.'
+                    : kind === 'platform_branch'
+                      ? 'Open a shared chat between platform HQ and the branch.'
+                      : 'Pick an order that does not have a conversation yet.'
+            }
+        />
+    );
+
     return (
         <div className="flex h-full min-h-0 gap-4">
-            <aside
-                className={cn(
-                    'bg-card min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-xl border lg:flex lg:w-80 xl:w-96',
-                    thread === null ? 'flex' : 'hidden',
-                )}
-            >
-                <div className="flex items-center justify-between gap-2 border-b px-3 py-2.5">
-                    <h1 className="text-base font-semibold">{title}</h1>
-                    <NewConversationDialog
-                        optionsUrl={orderOptionsUrl}
-                        storeUrl={storeUrl}
-                        optionField={optionField}
-                        dialogTitle={
-                            kind === 'driver_ops'
-                                ? 'New driver chat'
-                                : kind === 'platform_branch'
-                                  ? 'New platform chat'
-                                  : 'New conversation'
-                        }
-                        dialogDescription={
-                            kind === 'driver_ops'
-                                ? 'Pick someone to open a shared chat with.'
-                                : kind === 'platform_branch'
-                                  ? 'Open a shared chat between platform HQ and the branch.'
-                                  : 'Pick an order that does not have a conversation yet.'
-                        }
+            {hideInbox ? null : (
+                <aside
+                    className={cn(
+                        'bg-card min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-xl border lg:flex lg:w-80 xl:w-96',
+                        thread === null ? 'flex' : 'hidden',
+                    )}
+                >
+                    <div className="flex items-center justify-between gap-2 border-b px-3 py-2.5">
+                        <h1 className="text-base font-semibold">{title}</h1>
+                        {newChatDialog}
+                    </div>
+                    <ConversationList
+                        rows={rows}
+                        activeId={activeId}
+                        search={search}
+                        status={status}
+                        branchId={branchId}
+                        branchLabel={inboxMeta.branchLabel}
+                        branchOptionsUrl={branchOptionsUrl}
+                        loading={loading}
+                        loadingMore={loadingMore}
+                        hasMore={inboxMeta.hasMore}
+                        hrefFor={hrefFor}
+                        onSearchChange={setSearch}
+                        onStatusChange={setStatus}
+                        onBranchChange={setBranchId}
+                        onLoadMore={loadMore}
+                        showStatusFilter={showStatusFilter}
                     />
-                </div>
-                <ConversationList
-                    rows={rows}
-                    activeId={activeId}
-                    search={search}
-                    status={status}
-                    branchId={branchId}
-                    branchLabel={inboxMeta.branchLabel}
-                    branchOptionsUrl={branchOptionsUrl}
-                    loading={loading}
-                    loadingMore={loadingMore}
-                    hasMore={inboxMeta.hasMore}
-                    hrefFor={hrefFor}
-                    onSearchChange={setSearch}
-                    onStatusChange={setStatus}
-                    onBranchChange={setBranchId}
-                    onLoadMore={loadMore}
-                />
-            </aside>
+                </aside>
+            )}
 
             <section
                 className={cn(
-                    'min-h-0 min-w-0 flex-1 lg:block',
-                    thread === null ? 'hidden' : 'block',
+                    'min-h-0 min-w-0 flex-1',
+                    hideInbox
+                        ? 'block'
+                        : cn('lg:block', thread === null ? 'hidden' : 'block'),
                 )}
             >
                 {thread === null ? (
-                    <EmptyThread kind={kind} />
+                    <EmptyThread kind={kind} action={hideInbox ? newChatDialog : null} />
                 ) : (
                     <ConversationThread
                         key={thread.conversation.id}
@@ -300,8 +324,10 @@ export function ConversationWorkspace({
                         backUrl={indexUrl}
                         incomingMessage={incomingMessage}
                         showSenderRole={showSenderRole}
-                        canClose={canClose && thread.canClose}
+                        canClose={allowClose && thread.canClose}
                         headerTitle={threadTitle}
+                        showBackLink={!hideInbox}
+                        showStatusBadge={!isOpsChat}
                     />
                 )}
             </section>
@@ -376,13 +402,19 @@ function sortKey(row: ConversationRow): number {
 
 function EmptyThread({
     kind,
+    action = null,
 }: {
     kind: 'order' | 'driver_ops' | 'platform_branch';
+    action?: ReactNode;
 }) {
     const hint =
-        kind === 'order'
-            ? 'Pick a thread on the left, or open one for an order.'
-            : 'Pick a thread on the left, or start a new chat.';
+        action !== null
+            ? kind === 'platform_branch'
+                ? 'Start a chat with platform headquarters.'
+                : 'Start a chat with your branch.'
+            : kind === 'order'
+              ? 'Pick a thread on the left, or open one for an order.'
+              : 'Pick a thread on the left, or start a new chat.';
 
     return (
         <div className="bg-card flex h-full flex-col items-center justify-center gap-3 rounded-xl border px-6 text-center">
@@ -390,9 +422,14 @@ function EmptyThread({
                 <MessagesSquare className="text-muted-foreground size-7" />
             </div>
             <div>
-                <p className="font-medium">No conversation selected</p>
+                <p className="font-medium">
+                    {action !== null
+                        ? 'No chat yet'
+                        : 'No conversation selected'}
+                </p>
                 <p className="text-muted-foreground text-sm">{hint}</p>
             </div>
+            {action}
         </div>
     );
 }

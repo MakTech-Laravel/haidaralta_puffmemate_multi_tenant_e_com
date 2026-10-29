@@ -43,6 +43,10 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::post('place-order', [DriverPlaceOrderController::class, 'store'])->name('driver.place-order.store');
     Route::get('orders/{order:order_number}/chat', [DriverOrderController::class, 'chat'])->name('driver.orders.chat');
     Route::post('orders/{order:order_number}/messages', [DriverOrderController::class, 'storeMessage'])->name('driver.orders.messages.store');
+    Route::post('orders/{order:order_number}/chat/delivered', [DriverOrderController::class, 'delivered'])
+        ->name('driver.orders.chat.delivered');
+    Route::post('orders/{order:order_number}/chat/read', [DriverOrderController::class, 'read'])
+        ->name('driver.orders.chat.read');
     Route::post('orders/{order:order_number}/items/{item}/remove-late', [DriverOrderController::class, 'removeLateItem'])->name('driver.orders.items.remove-late');
     Route::post('orders/{order:order_number}/items/{item}/collect-late', [DriverOrderController::class, 'collectLateItem'])->name('driver.orders.items.collect-late');
     Route::post('orders/{order:order_number}/pick-up', [DriverOrderController::class, 'pickUp'])->name('driver.orders.pick-up');

@@ -30,6 +30,10 @@ Route::middleware(['ensure.guard:customer', 'phone.verified'])->group(function (
     Route::post('orders/{order:order_number}/messages', [CustomerOrderController::class, 'storeMessage'])
         ->middleware('throttle:conversation-messages')
         ->name('customer.orders.messages.store');
+    Route::post('orders/{order:order_number}/chat/delivered', [CustomerOrderController::class, 'delivered'])
+        ->name('customer.orders.chat.delivered');
+    Route::post('orders/{order:order_number}/chat/read', [CustomerOrderController::class, 'read'])
+        ->name('customer.orders.chat.read');
     Route::get('wholesale-requests', [CustomerWholesaleRequestController::class, 'index'])
         ->name('customer.wholesale-requests.index');
     Route::get('wholesale-requests/{wholesaleInquiry}', [CustomerWholesaleRequestController::class, 'show'])

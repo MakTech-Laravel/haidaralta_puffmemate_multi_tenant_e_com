@@ -103,13 +103,21 @@ export default function CustomerOrderShow({ order }: CustomerOrderShowProps) {
                                 {order.statusLabel ?? statusLabel[order.status]}
                             </Badge>
                             {order.canChat ? (
-                                <Button size="sm" asChild>
+                                <Button size="sm" className="relative" asChild>
                                     <Link
                                         href={orderChat.url(order.orderNumber)}
                                         prefetch
                                     >
                                         <MessageCircle />
                                         Chat with driver
+                                        {(order.chatUnreadCount ?? 0) > 0 ? (
+                                            <span className="bg-primary-foreground text-primary ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums">
+                                                {(order.chatUnreadCount ?? 0) >
+                                                99
+                                                    ? '99+'
+                                                    : order.chatUnreadCount}
+                                            </span>
+                                        ) : null}
                                     </Link>
                                 </Button>
                             ) : null}

@@ -35,6 +35,7 @@ export function ConversationList({
     onStatusChange,
     onBranchChange,
     onLoadMore,
+    showStatusFilter = true,
 }: {
     rows: ConversationRow[];
     activeId: number | null;
@@ -51,6 +52,7 @@ export function ConversationList({
     onStatusChange: (value: string) => void;
     onBranchChange: (value: string) => void;
     onLoadMore: () => void;
+    showStatusFilter?: boolean;
 }) {
     const sentinel = useRef<HTMLDivElement>(null);
 
@@ -89,29 +91,31 @@ export function ConversationList({
                         aria-label="Search conversations"
                     />
                 </div>
-                <div
-                    role="tablist"
-                    aria-label="Filter conversations"
-                    className="bg-muted flex gap-1 rounded-lg p-1"
-                >
-                    {STATUS_TABS.map((tab) => (
-                        <button
-                            key={tab.value}
-                            type="button"
-                            role="tab"
-                            aria-selected={status === tab.value}
-                            onClick={() => onStatusChange(tab.value)}
-                            className={cn(
-                                'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
-                                status === tab.value
-                                    ? 'bg-background text-foreground shadow-sm'
-                                    : 'text-muted-foreground hover:text-foreground',
-                            )}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
-                </div>
+                {showStatusFilter ? (
+                    <div
+                        role="tablist"
+                        aria-label="Filter conversations"
+                        className="bg-muted flex gap-1 rounded-lg p-1"
+                    >
+                        {STATUS_TABS.map((tab) => (
+                            <button
+                                key={tab.value}
+                                type="button"
+                                role="tab"
+                                aria-selected={status === tab.value}
+                                onClick={() => onStatusChange(tab.value)}
+                                className={cn(
+                                    'flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors',
+                                    status === tab.value
+                                        ? 'bg-background text-foreground shadow-sm'
+                                        : 'text-muted-foreground hover:text-foreground',
+                                )}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
+                ) : null}
 
                 {/* Branch operators are already scoped by route, so the URL is
                     only supplied on the platform portal. Options page in as you
@@ -250,7 +254,9 @@ function ConversationListItem({
                     {[row.branch?.name, row.order_status_label]
                         .filter(Boolean)
                         .join(' · ')}
-                    {row.status === 'closed' ? ' · Closed' : ''}
+                    {row.type === 'order' && row.status === 'closed'
+                        ? ' · Closed'
+                        : ''}
                 </p>
             </div>
         </Link>

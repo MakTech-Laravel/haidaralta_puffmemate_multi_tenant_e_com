@@ -42,7 +42,9 @@ final class ConversationInbox
     public function toArray(): array
     {
         $search = trim((string) $this->request->string('search'));
-        $status = (string) $this->request->string('status', 'open');
+        // Ops chats have no open/closed workflow — default to the full inbox.
+        $defaultStatus = $this->type === ConversationType::Order ? 'open' : 'all';
+        $status = (string) $this->request->string('status', $defaultStatus);
         $cursor = trim((string) $this->request->string('cursor'));
 
         // Branch operators are scoped by route; only the platform picker sends this.

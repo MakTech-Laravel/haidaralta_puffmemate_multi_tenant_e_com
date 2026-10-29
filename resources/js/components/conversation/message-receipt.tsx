@@ -7,8 +7,8 @@ import type { ParticipantReceipt, ReceiptState } from './types';
 /**
  * Resolve a message's tick from the participant markers.
  *
- * Read wins over delivered, and both need *every* / *any* other participant
- * respectively — the sender's own markers are ignored.
+ * Delivered / read when *any* other participant has the marker (shared staff
+ * threads never reach "everyone read"). The sender's own markers are ignored.
  */
 export function receiptStateFor(
     messageId: number,
@@ -21,11 +21,11 @@ export function receiptStateFor(
         return 'sent';
     }
 
-    const allRead = others.every(
+    const anyRead = others.some(
         (receipt) => receipt.last_read_message_id >= messageId,
     );
 
-    if (allRead) {
+    if (anyRead) {
         return 'read';
     }
 
@@ -41,7 +41,7 @@ const LABELS: Record<ReceiptState, string> = {
     failed: 'Failed to send',
     sent: 'Sent',
     delivered: 'Delivered',
-    read: 'Read by everyone',
+    read: 'Read',
 };
 
 export function MessageReceipt({ state }: { state: ReceiptState }) {
