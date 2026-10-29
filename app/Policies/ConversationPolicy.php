@@ -70,14 +70,9 @@ class ConversationPolicy
 
     public function close(User $user, Conversation $conversation): bool
     {
-        if ($conversation->isDriverOps()) {
-            return $user->isBranch()
-                && $user->branch_id === $conversation->branch_id
-                && $this->hasDriverOpsPermission($user);
-        }
-
-        if ($conversation->isPlatformBranch()) {
-            return $this->canAccessPlatformBranch($user, $conversation);
+        // Ops chats stay open permanently — no Open/Closed workflow.
+        if ($conversation->isDriverOps() || $conversation->isPlatformBranch()) {
+            return false;
         }
 
         return $this->isOrderOperatorFor($user, $conversation);

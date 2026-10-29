@@ -133,6 +133,8 @@ export type ConversationThreadProps = {
     canSend: boolean;
     canClose: boolean;
     endpoints: ConversationEndpoints;
+    /** Captured before markRead; null/undefined skips the Unread divider. */
+    viewerLastReadMessageId?: number | null;
 };
 
 /** A participant currently subscribed to the thread's presence channel. */

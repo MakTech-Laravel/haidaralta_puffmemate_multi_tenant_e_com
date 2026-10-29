@@ -66,6 +66,7 @@ export type CustomerOrderDetail = {
     canResendCode?: boolean;
     canCancel?: boolean;
     canChat?: boolean;
+    chatUnreadCount?: number;
     canRequestReturn?: boolean;
     returnRequest?: {
         id: number;

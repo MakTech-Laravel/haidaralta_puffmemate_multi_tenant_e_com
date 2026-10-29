@@ -50,6 +50,7 @@ export default function PlatformBranchChats({
                     kind="platform_branch"
                     title="Branch chat"
                     showSenderRole
+                    canClose={false}
                     optionField="branch_id"
                     orderOptionsUrl={BranchChatController.branchOptions.url()}
                     storeUrl={BranchChatController.store.url()}

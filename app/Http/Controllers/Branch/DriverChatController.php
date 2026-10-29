@@ -89,11 +89,12 @@ class DriverChatController extends Controller
         $viewer = $this->viewer($request);
         $this->authorizeConversation($conversation, $viewer);
         $this->conversations->joinOperator($conversation, $viewer);
+        $lastRead = $this->viewerLastReadMessageId($conversation, $viewer);
         $this->conversations->markRead($conversation, $viewer);
 
         return Inertia::render(
             $this->conversationPageComponent(),
-            $this->workspacePayload($request, $viewer, $conversation),
+            $this->workspacePayload($request, $viewer, $conversation, $lastRead),
         );
     }
 

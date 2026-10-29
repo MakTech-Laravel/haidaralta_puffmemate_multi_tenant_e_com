@@ -10,6 +10,7 @@ import type {
 
 /**
  * Driver-side shared chat with branch staff (no order / customer).
+ * Single branch → no inbox list; index redirects to the open thread when one exists.
  */
 export default function DriverChats({
     conversations,
@@ -40,7 +41,7 @@ export default function DriverChats({
                 }
             />
 
-            <div className="flex h-[calc(100svh-8rem)] flex-col p-3 sm:p-4">
+            <div className="flex h-[calc(100svh-8.5rem)] flex-col p-3 sm:h-[calc(100svh-9rem)] sm:p-4 xl:h-[calc(100svh-8rem)]">
                 <ConversationWorkspace
                     conversations={conversations}
                     inboxMeta={inboxMeta}
@@ -53,12 +54,16 @@ export default function DriverChats({
                     title="Branch chats"
                     showSenderRole={false}
                     canClose={false}
+                    hideInbox
                     optionField="branch_id"
                     orderOptionsUrl={DriverChatController.branchOptions.url()}
                     storeUrl={storeUrl}
                     hrefFor={(row) => DriverChatController.show.url(row.id)}
                     deliveredUrlFor={(id) =>
                         DriverChatController.delivered.url(id)
+                    }
+                    threadTitle={
+                        thread?.conversation.branch?.name ?? undefined
                     }
                 />
             </div>

@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\PermissionEnum;
+use App\Models\Branch;
+use App\Support\BranchPermissionProbe;
 use App\Support\PlatformPermissionProbe;
 use App\Support\PortalAuth;
 use Database\Seeders\BranchSeeder;
@@ -36,4 +38,27 @@ test('orders probe users land on orders when they lack view-dashboard', function
     $user = PlatformPermissionProbe::ensureUser(PermissionEnum::MANAGE_ORDERS);
 
     expect(PortalAuth::dashboardPath($user))->toBe('/platform/orders');
+});
+
+test('platform branch chat-only probe users land on branch chats', function () {
+    $user = PlatformPermissionProbe::ensureUser(PermissionEnum::MANAGE_PLATFORM_BRANCH_CHAT);
+
+    expect(PortalAuth::dashboardPath($user))->toBe('/platform/branch-chats');
+});
+
+test('branch driver and platform chat-only probe users land on the matching chat inbox', function () {
+    $this->seed(BranchSeeder::class);
+    $branch = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
+
+    $driverChatUser = BranchPermissionProbe::ensureUser(
+        $branch,
+        PermissionEnum::MANAGE_BRANCH_DRIVER_CHAT,
+    );
+    $platformChatUser = BranchPermissionProbe::ensureUser(
+        $branch,
+        PermissionEnum::MANAGE_BRANCH_PLATFORM_CHAT,
+    );
+
+    expect(PortalAuth::dashboardPath($driverChatUser))->toBe('/branch/'.$branch->slug.'/driver-chats')
+        ->and(PortalAuth::dashboardPath($platformChatUser))->toBe('/branch/'.$branch->slug.'/platform-chats');
 });

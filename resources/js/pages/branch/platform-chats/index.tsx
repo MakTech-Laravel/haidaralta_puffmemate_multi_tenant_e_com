@@ -47,6 +47,8 @@ export default function BranchPlatformChats({
                     kind="platform_branch"
                     title="Platform chat"
                     showSenderRole
+                    canClose={false}
+                    hideInbox
                     optionField="branch_id"
                     orderOptionsUrl={PlatformChatController.platformOptions.url(
                         branch.slug,

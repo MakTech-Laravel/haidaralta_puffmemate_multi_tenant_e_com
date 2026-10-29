@@ -6,6 +6,7 @@ use App\Models\Message;
 use App\Models\Order;
 use App\Models\User;
 use App\Services\Conversation\ConversationService;
+use App\Support\ConversationUnreadCounts;
 use Inertia\Testing\AssertableInertia as Assert;
 
 /**
@@ -117,4 +118,66 @@ test('delivered order chat is read-only for the customer', function () {
     $this->actingAs($customer, 'customer')
         ->post(route('customer.orders.messages.store', $order), ['body' => 'Thanks!'])
         ->assertNotFound();
+});
+
+test('customer chat page exposes receipts and delivery ack urls', function () {
+    [$customer, , $order] = customerChatOrder();
+
+    $this->actingAs($customer, 'customer')
+        ->get(route('customer.orders.chat', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('receipts')
+            ->has('deliveredUrl')
+            ->has('readUrl')
+            ->has('viewerLastReadMessageId'));
+});
+
+test('customer can acknowledge delivery and read on order chat', function () {
+    [$customer, $driver, $order] = customerChatOrder();
+    $conversation = $order->conversation;
+    $message = app(ConversationService::class)
+        ->sendMessage($conversation, $driver, 'Almost there.');
+
+    $this->actingAs($customer, 'customer')
+        ->postJson(route('customer.orders.chat.delivered', $order), [
+            'message_id' => $message->id,
+        ])
+        ->assertOk();
+
+    $this->actingAs($customer, 'customer')
+        ->postJson(route('customer.orders.chat.read', $order), [
+            'message_id' => $message->id,
+        ])
+        ->assertOk();
+
+    $participant = $conversation->participants()->where('user_id', $customer->id)->firstOrFail();
+
+    expect($participant->last_delivered_message_id)->toBe($message->id)
+        ->and($participant->last_read_message_id)->toBe($message->id);
+});
+
+test('customer order list and detail expose unread chat counts', function () {
+    [$customer, $driver, $order] = customerChatOrder();
+    $conversation = $order->conversation;
+    app(ConversationService::class)->sendMessage($conversation, $driver, 'Hello from the road.');
+    ConversationUnreadCounts::forget($customer->id);
+
+    $this->actingAs($customer, 'customer')
+        ->get(route('customer.orders.index'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where(
+                'orders.0.chatUnreadCount',
+                fn ($count): bool => is_int($count) && $count >= 1,
+            ));
+
+    $this->actingAs($customer, 'customer')
+        ->get(route('customer.orders.show', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where(
+                'order.chatUnreadCount',
+                fn ($count): bool => is_int($count) && $count >= 1,
+            ));
 });

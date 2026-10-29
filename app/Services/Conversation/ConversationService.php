@@ -21,10 +21,13 @@ use App\Models\Order;
 use App\Models\User;
 use App\Support\ConversationUnreadCounts;
 use App\Support\PlatformTeamResolver;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\PermissionRegistrar;
 
@@ -433,17 +436,13 @@ class ConversationService
             $registrar->setPermissionsTeamId($conversation->branch_id);
 
             try {
-                $permission = Permission::findByName(
+                $staffIds = $this->userIdsWithPermission(
                     PermissionEnum::MANAGE_BRANCH_DRIVER_CHAT->value,
                     'branch',
+                    fn (Builder $query): Builder => $query
+                        ->where('user_type', UserType::BRANCH)
+                        ->where('branch_id', $conversation->branch_id),
                 );
-
-                $staffIds = User::query()
-                    ->where('is_active', true)
-                    ->where('user_type', UserType::BRANCH)
-                    ->where('branch_id', $conversation->branch_id)
-                    ->permission($permission)
-                    ->pluck('id');
             } finally {
                 $registrar->setPermissionsTeamId($previousTeamId);
             }
@@ -464,27 +463,20 @@ class ConversationService
 
             try {
                 $registrar->setPermissionsTeamId($conversation->branch_id);
-                $branchPermission = Permission::findByName(
+                $branchStaffIds = $this->userIdsWithPermission(
                     PermissionEnum::MANAGE_BRANCH_PLATFORM_CHAT->value,
                     'branch',
+                    fn (Builder $query): Builder => $query
+                        ->where('user_type', UserType::BRANCH)
+                        ->where('branch_id', $conversation->branch_id),
                 );
-                $branchStaffIds = User::query()
-                    ->where('is_active', true)
-                    ->where('user_type', UserType::BRANCH)
-                    ->where('branch_id', $conversation->branch_id)
-                    ->permission($branchPermission)
-                    ->pluck('id');
 
                 $registrar->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
-                $platformPermission = Permission::findByName(
+                $platformStaffIds = $this->userIdsWithPermission(
                     PermissionEnum::MANAGE_PLATFORM_BRANCH_CHAT->value,
                     'platform',
+                    fn (Builder $query): Builder => $query->where('user_type', UserType::PLATFORM),
                 );
-                $platformStaffIds = User::query()
-                    ->where('is_active', true)
-                    ->where('user_type', UserType::PLATFORM)
-                    ->permission($platformPermission)
-                    ->pluck('id');
             } finally {
                 $registrar->setPermissionsTeamId($previousTeamId);
             }
@@ -516,6 +508,26 @@ class ConversationService
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * Staff user ids that hold a Spatie permission, or empty when the permission
+     * row has not been seeded yet (avoids crashing inbox broadcasts).
+     *
+     * @param  callable(Builder): Builder  $scope
+     * @return Collection<int, int>
+     */
+    private function userIdsWithPermission(string $permissionName, string $guard, callable $scope): Collection
+    {
+        try {
+            $permission = Permission::findByName($permissionName, $guard);
+        } catch (PermissionDoesNotExist) {
+            return collect();
+        }
+
+        return $scope(User::query()->where('is_active', true))
+            ->permission($permission)
+            ->pluck('id');
     }
 
     /**

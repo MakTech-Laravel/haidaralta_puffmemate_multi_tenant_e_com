@@ -25,9 +25,20 @@ class DriverChatController extends Controller
 
     public function __construct(private ConversationService $conversations) {}
 
-    public function index(Request $request): Response
+    public function index(Request $request): Response|RedirectResponse
     {
         $viewer = $this->viewer($request);
+
+        $existing = Conversation::query()
+            ->where('type', ConversationType::DriverOps)
+            ->where('driver_id', $viewer->id)
+            ->orderByDesc('last_message_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($existing !== null) {
+            return redirect()->route('driver.chats.show', $existing);
+        }
 
         return Inertia::render(
             $this->conversationPageComponent(),
@@ -63,12 +74,13 @@ class DriverChatController extends Controller
         $viewer = $this->viewer($request);
         $this->authorizeConversation($conversation, $viewer);
         $this->conversations->joinOperator($conversation, $viewer);
+        $lastRead = $this->viewerLastReadMessageId($conversation, $viewer);
         $this->conversations->markRead($conversation, $viewer);
 
         return Inertia::render(
             $this->conversationPageComponent(),
             [
-                ...$this->workspacePayload($request, $viewer, $conversation),
+                ...$this->workspacePayload($request, $viewer, $conversation, $lastRead),
                 'storeUrl' => route('driver.chats.store'),
             ],
         );
