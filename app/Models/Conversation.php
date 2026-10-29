@@ -89,6 +89,11 @@ class Conversation extends Model implements ScoutSearchable
         return $this->type === ConversationType::DriverOps;
     }
 
+    public function isPlatformBranch(): bool
+    {
+        return $this->type === ConversationType::PlatformBranch;
+    }
+
     /**
      * @return BelongsTo<Order, $this>
      */

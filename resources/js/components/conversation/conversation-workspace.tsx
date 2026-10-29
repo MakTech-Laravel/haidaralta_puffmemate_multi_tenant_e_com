@@ -50,6 +50,7 @@ export function ConversationWorkspace({
     showSenderRole = false,
     canClose = true,
     optionField = 'order_id',
+    threadTitle,
 }: {
     conversations: ConversationRow[];
     inboxMeta: InboxMeta;
@@ -64,12 +65,14 @@ export function ConversationWorkspace({
     deliveredUrlFor: (conversationId: number) => string;
     /** Platform only; branch operators cannot widen their scope. */
     branchOptionsUrl?: string | null;
-    kind?: 'order' | 'driver_ops';
+    kind?: 'order' | 'driver_ops' | 'platform_branch';
     title?: string;
     showSenderRole?: boolean;
     canClose?: boolean;
     /** POST body field for NewConversationDialog (`order_id` or `driver_id` / `branch_id`). */
     optionField?: 'order_id' | 'driver_id' | 'branch_id';
+    /** Optional thread header override (e.g. “Platform” on branch portal). */
+    threadTitle?: string;
 }) {
     const [search, setSearch] = useState(inboxMeta.filters.search);
     const [status, setStatus] = useState(inboxMeta.filters.status);
@@ -248,12 +251,16 @@ export function ConversationWorkspace({
                         dialogTitle={
                             kind === 'driver_ops'
                                 ? 'New driver chat'
-                                : 'New conversation'
+                                : kind === 'platform_branch'
+                                  ? 'New platform chat'
+                                  : 'New conversation'
                         }
                         dialogDescription={
                             kind === 'driver_ops'
                                 ? 'Pick someone to open a shared chat with.'
-                                : 'Pick an order that does not have a conversation yet.'
+                                : kind === 'platform_branch'
+                                  ? 'Open a shared chat between platform HQ and the branch.'
+                                  : 'Pick an order that does not have a conversation yet.'
                         }
                     />
                 </div>
@@ -283,7 +290,7 @@ export function ConversationWorkspace({
                 )}
             >
                 {thread === null ? (
-                    <EmptyThread />
+                    <EmptyThread kind={kind} />
                 ) : (
                     <ConversationThread
                         key={thread.conversation.id}
@@ -294,6 +301,7 @@ export function ConversationWorkspace({
                         incomingMessage={incomingMessage}
                         showSenderRole={showSenderRole}
                         canClose={canClose && thread.canClose}
+                        headerTitle={threadTitle}
                     />
                 )}
             </section>
@@ -366,7 +374,16 @@ function sortKey(row: ConversationRow): number {
     return row.last_message_at ? Date.parse(row.last_message_at) : 0;
 }
 
-function EmptyThread() {
+function EmptyThread({
+    kind,
+}: {
+    kind: 'order' | 'driver_ops' | 'platform_branch';
+}) {
+    const hint =
+        kind === 'order'
+            ? 'Pick a thread on the left, or open one for an order.'
+            : 'Pick a thread on the left, or start a new chat.';
+
     return (
         <div className="bg-card flex h-full flex-col items-center justify-center gap-3 rounded-xl border px-6 text-center">
             <div className="bg-muted flex size-14 items-center justify-center rounded-full">
@@ -374,9 +391,7 @@ function EmptyThread() {
             </div>
             <div>
                 <p className="font-medium">No conversation selected</p>
-                <p className="text-muted-foreground text-sm">
-                    Pick a thread on the left, or open one for an order.
-                </p>
+                <p className="text-muted-foreground text-sm">{hint}</p>
             </div>
         </div>
     );

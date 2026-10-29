@@ -74,9 +74,11 @@ export type ConversationOrder = {
     status_label: string;
 };
 
+export type ConversationKind = 'order' | 'driver_ops' | 'platform_branch';
+
 export type ConversationSummary = {
     id: number;
-    type?: 'order' | 'driver_ops';
+    type?: ConversationKind;
     status: ConversationStatus;
     closed_at: string | null;
     last_message_at: string | null;
@@ -97,7 +99,7 @@ export type InboxParticipant = {
 
 export type ConversationRow = {
     id: number;
-    type?: 'order' | 'driver_ops';
+    type?: ConversationKind;
     title?: string;
     order_number: string | null;
     order_status_label: string | null;

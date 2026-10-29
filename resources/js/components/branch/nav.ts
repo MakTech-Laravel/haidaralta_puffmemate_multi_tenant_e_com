@@ -241,6 +241,7 @@ export function buildBranchNav(
                 permissions: [
                     'manage-branch-conversations',
                     'manage-branch-driver-chat',
+                    'manage-branch-platform-chat',
                 ],
                 items: [
                     navLink({
@@ -254,6 +255,12 @@ export function buildBranchNav(
                         href: `/branch/${slug}/driver-chats`,
                         icon: MessageCircle,
                         permissions: ['manage-branch-driver-chat'],
+                    }),
+                    navLink({
+                        title: 'Platform chat',
+                        href: `/branch/${slug}/platform-chats`,
+                        icon: MessageCircle,
+                        permissions: ['manage-branch-platform-chat'],
                     }),
                 ],
             }),

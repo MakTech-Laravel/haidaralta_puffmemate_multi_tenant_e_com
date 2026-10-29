@@ -26,6 +26,7 @@ enum PermissionEnum: string
     case MANAGE_SHIFTS = 'manage-shifts';
     case VIEW_TRANSFERS = 'view-transfers';
     case MANAGE_CONVERSATIONS = 'manage-conversations';
+    case MANAGE_PLATFORM_BRANCH_CHAT = 'manage-platform-branch-chat';
     case MANAGE_ORDERS = 'manage-orders';
     case MANAGE_WHOLESALE = 'manage-wholesale';
     case COMPLETE_ORDERS_WITHOUT_CODE = 'complete-orders-without-code';
@@ -41,6 +42,7 @@ enum PermissionEnum: string
     case MANAGE_BRANCH_SHIFTS = 'manage-branch-shifts';
     case MANAGE_BRANCH_CONVERSATIONS = 'manage-branch-conversations';
     case MANAGE_BRANCH_DRIVER_CHAT = 'manage-branch-driver-chat';
+    case MANAGE_BRANCH_PLATFORM_CHAT = 'manage-branch-platform-chat';
     case MANAGE_BRANCH_SETTINGS = 'manage-branch-settings';
 
     /**
@@ -71,6 +73,7 @@ enum PermissionEnum: string
             self::MANAGE_SHIFTS,
             self::VIEW_TRANSFERS,
             self::MANAGE_CONVERSATIONS,
+            self::MANAGE_PLATFORM_BRANCH_CHAT,
             self::MANAGE_ORDERS,
             self::MANAGE_WHOLESALE,
             self::COMPLETE_ORDERS_WITHOUT_CODE => 'platform',
@@ -86,6 +89,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_SHIFTS,
             self::MANAGE_BRANCH_CONVERSATIONS,
             self::MANAGE_BRANCH_DRIVER_CHAT,
+            self::MANAGE_BRANCH_PLATFORM_CHAT,
             self::MANAGE_BRANCH_SETTINGS => 'branch',
         };
     }
@@ -135,8 +139,10 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_SHIFTS => 'Shifts',
             self::VIEW_TRANSFERS => 'Transfer history',
             self::MANAGE_CONVERSATIONS,
+            self::MANAGE_PLATFORM_BRANCH_CHAT,
             self::MANAGE_BRANCH_CONVERSATIONS,
-            self::MANAGE_BRANCH_DRIVER_CHAT => 'Conversations',
+            self::MANAGE_BRANCH_DRIVER_CHAT,
+            self::MANAGE_BRANCH_PLATFORM_CHAT => 'Conversations',
         };
     }
 
@@ -168,6 +174,7 @@ enum PermissionEnum: string
             self::MANAGE_SHIFTS => 'Manage shifts',
             self::VIEW_TRANSFERS => 'View transfer history',
             self::MANAGE_CONVERSATIONS => 'Manage conversations',
+            self::MANAGE_PLATFORM_BRANCH_CHAT => 'Chat with branches',
             self::MANAGE_ORDERS => 'Manage orders',
             self::MANAGE_WHOLESALE => 'Manage wholesale',
             self::COMPLETE_ORDERS_WITHOUT_CODE => 'Complete orders without delivery code',
@@ -182,6 +189,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_SHIFTS => 'Manage branch shifts',
             self::MANAGE_BRANCH_CONVERSATIONS => 'Manage branch conversations',
             self::MANAGE_BRANCH_DRIVER_CHAT => 'Chat with branch drivers',
+            self::MANAGE_BRANCH_PLATFORM_CHAT => 'Chat with platform',
             self::MANAGE_BRANCH_SETTINGS => 'Manage branch settings',
         };
     }

@@ -100,11 +100,11 @@ final class ConversationPayload
             'participants.user.media',
         ]);
 
-        $isOps = $conversation->type === ConversationType::DriverOps;
-
         $title = match (true) {
-            $isOps && $viewer?->isDriver() => $conversation->branch?->name ?? 'Branch',
-            $isOps => $conversation->driver?->name ?? 'Driver',
+            $conversation->type === ConversationType::DriverOps && $viewer?->isDriver() => $conversation->branch?->name ?? 'Branch',
+            $conversation->type === ConversationType::DriverOps => $conversation->driver?->name ?? 'Driver',
+            $conversation->type === ConversationType::PlatformBranch && $viewer?->isBranch() => 'Platform',
+            $conversation->type === ConversationType::PlatformBranch => $conversation->branch?->name ?? 'Branch',
             default => $conversation->order?->order_number ?? 'Order',
         };
 
