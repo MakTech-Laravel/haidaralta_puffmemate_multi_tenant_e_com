@@ -45,6 +45,11 @@ export function ConversationWorkspace({
     hrefFor,
     deliveredUrlFor,
     branchOptionsUrl = null,
+    kind = 'order',
+    title = 'Conversations',
+    showSenderRole = false,
+    canClose = true,
+    optionField = 'order_id',
 }: {
     conversations: ConversationRow[];
     inboxMeta: InboxMeta;
@@ -59,6 +64,12 @@ export function ConversationWorkspace({
     deliveredUrlFor: (conversationId: number) => string;
     /** Platform only; branch operators cannot widen their scope. */
     branchOptionsUrl?: string | null;
+    kind?: 'order' | 'driver_ops';
+    title?: string;
+    showSenderRole?: boolean;
+    canClose?: boolean;
+    /** POST body field for NewConversationDialog (`order_id` or `driver_id` / `branch_id`). */
+    optionField?: 'order_id' | 'driver_id' | 'branch_id';
 }) {
     const [search, setSearch] = useState(inboxMeta.filters.search);
     const [status, setStatus] = useState(inboxMeta.filters.status);
@@ -229,10 +240,21 @@ export function ConversationWorkspace({
                 )}
             >
                 <div className="flex items-center justify-between gap-2 border-b px-3 py-2.5">
-                    <h1 className="text-base font-semibold">Conversations</h1>
+                    <h1 className="text-base font-semibold">{title}</h1>
                     <NewConversationDialog
                         optionsUrl={orderOptionsUrl}
                         storeUrl={storeUrl}
+                        optionField={optionField}
+                        dialogTitle={
+                            kind === 'driver_ops'
+                                ? 'New driver chat'
+                                : 'New conversation'
+                        }
+                        dialogDescription={
+                            kind === 'driver_ops'
+                                ? 'Pick someone to open a shared chat with.'
+                                : 'Pick an order that does not have a conversation yet.'
+                        }
                     />
                 </div>
                 <ConversationList
@@ -270,6 +292,8 @@ export function ConversationWorkspace({
                         viewerName={viewerName}
                         backUrl={indexUrl}
                         incomingMessage={incomingMessage}
+                        showSenderRole={showSenderRole}
+                        canClose={canClose && thread.canClose}
                     />
                 )}
             </section>
@@ -330,7 +354,10 @@ function matchesInboxFilters(
     }
 
     return (
-        row.order_number.toLowerCase().includes(needle) ||
+        (row.title ?? row.order_number ?? '')
+            .toLowerCase()
+            .includes(needle) ||
+        (row.order_number ?? '').toLowerCase().includes(needle) ||
         (row.last_message_preview ?? '').toLowerCase().includes(needle)
     );
 }

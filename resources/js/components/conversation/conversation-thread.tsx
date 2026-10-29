@@ -102,6 +102,7 @@ export function ConversationThread({
     canClose,
     endpoints,
     backUrl,
+    showSenderRole = false,
     incomingMessage = null,
 }: {
     conversation: ConversationSummary;
@@ -113,6 +114,7 @@ export function ConversationThread({
     canClose: boolean;
     endpoints: ConversationEndpoints;
     backUrl: string;
+    showSenderRole?: boolean;
     /**
      * Inbox-channel fallback. Presence MessageCreated is still the primary
      * path; this covers the case where the operator is in the thread but the
@@ -407,8 +409,11 @@ export function ConversationThread({
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             <h2 className="truncate font-semibold">
-                                Order{' '}
-                                {conversation.order?.order_number ?? 'unknown'}
+                                {conversation.type === 'driver_ops'
+                                    ? (conversation.driver?.name ??
+                                      conversation.branch?.name ??
+                                      'Driver chat')
+                                    : `Order ${conversation.order?.order_number ?? 'unknown'}`}
                             </h2>
                             <Badge variant={isClosed ? 'secondary' : 'default'}>
                                 {isClosed ? 'Closed' : 'Open'}
@@ -430,9 +435,11 @@ export function ConversationThread({
                                             {online.length} online ·
                                         </span>
                                     ) : null}
-                                    {conversation.branch?.name ?? 'No branch'} ·{' '}
-                                    {conversation.order?.status_label ?? '—'} ·{' '}
-                                    {conversation.participants.length}{' '}
+                                    {conversation.branch?.name ?? 'No branch'}
+                                    {conversation.type === 'driver_ops'
+                                        ? null
+                                        : ` · ${conversation.order?.status_label ?? '—'}`}{' '}
+                                    · {conversation.participants.length}{' '}
                                     participant
                                     {conversation.participants.length === 1
                                         ? ''
@@ -514,6 +521,7 @@ export function ConversationThread({
                                         isOwn={isOwn}
                                         showHeader={showHeader}
                                         receipt={receipt}
+                                        showSenderRole={showSenderRole}
                                         onRetry={() => retry(message.id)}
                                         onDiscard={() => discard(message.id)}
                                     />

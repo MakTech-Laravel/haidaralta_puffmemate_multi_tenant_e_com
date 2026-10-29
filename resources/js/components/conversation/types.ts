@@ -12,6 +12,7 @@ export type MessageSender = {
     id: number;
     name: string;
     avatar_url: string | null;
+    role_label?: string | null;
 };
 
 export type MessageAttachment = {
@@ -75,11 +76,13 @@ export type ConversationOrder = {
 
 export type ConversationSummary = {
     id: number;
+    type?: 'order' | 'driver_ops';
     status: ConversationStatus;
     closed_at: string | null;
     last_message_at: string | null;
     channel: string;
     order: ConversationOrder | null;
+    driver?: { id: number; name: string; avatar_url: string | null } | null;
     branch: { id: number; name: string; slug: string } | null;
     participants: ConversationParticipant[];
     receipts: ParticipantReceipt[];
@@ -94,10 +97,13 @@ export type InboxParticipant = {
 
 export type ConversationRow = {
     id: number;
-    order_number: string;
-    order_status_label: string;
+    type?: 'order' | 'driver_ops';
+    title?: string;
+    order_number: string | null;
+    order_status_label: string | null;
     status: ConversationStatus;
     branch: { id: number; name: string; slug: string } | null;
+    driver?: { id: number; name: string; avatar_url: string | null } | null;
     last_message_preview: string | null;
     last_message_at: string | null;
     unread_count: number;

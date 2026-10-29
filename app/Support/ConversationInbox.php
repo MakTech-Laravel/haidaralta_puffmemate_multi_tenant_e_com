@@ -3,6 +3,7 @@
 namespace App\Support;
 
 use App\Enums\ConversationStatus;
+use App\Enums\ConversationType;
 use App\Models\Branch;
 use App\Models\Conversation;
 use App\Models\User;
@@ -26,6 +27,7 @@ final class ConversationInbox
         private Request $request,
         private User $viewer,
         private ?int $scopedBranchId = null,
+        private ConversationType $type = ConversationType::Order,
     ) {}
 
     /**
@@ -49,12 +51,20 @@ final class ConversationInbox
             : 0;
 
         $query = Conversation::query()
+            ->where('type', $this->type)
             ->with([
                 'order:id,order_number,status',
                 'branch:id,name,slug',
+                'driver:id,name',
+                'driver.media',
                 'participants.user:id,name',
                 'participants.user.media',
+                'participants.user.roles',
             ])
+            ->when(
+                $this->type === ConversationType::DriverOps && $this->viewer->isDriver(),
+                fn (Builder $builder) => $builder->where('driver_id', $this->viewer->id),
+            )
             ->when(
                 $this->scopedBranchId !== null,
                 fn (Builder $builder) => $builder->where('branch_id', $this->scopedBranchId),
@@ -166,7 +176,7 @@ final class ConversationInbox
 
         foreach ($rows as $conversation) {
             $items[] = [
-                ...ConversationPayload::inboxRow($conversation),
+                ...ConversationPayload::inboxRow($conversation, $this->viewer),
                 'unread_count' => $unread[$conversation->id] ?? 0,
             ];
         }

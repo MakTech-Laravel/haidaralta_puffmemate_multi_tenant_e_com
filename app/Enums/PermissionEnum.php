@@ -40,6 +40,7 @@ enum PermissionEnum: string
     case MANAGE_BRANCH_DRIVERS = 'manage-branch-drivers';
     case MANAGE_BRANCH_SHIFTS = 'manage-branch-shifts';
     case MANAGE_BRANCH_CONVERSATIONS = 'manage-branch-conversations';
+    case MANAGE_BRANCH_DRIVER_CHAT = 'manage-branch-driver-chat';
     case MANAGE_BRANCH_SETTINGS = 'manage-branch-settings';
 
     /**
@@ -84,6 +85,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_DRIVERS,
             self::MANAGE_BRANCH_SHIFTS,
             self::MANAGE_BRANCH_CONVERSATIONS,
+            self::MANAGE_BRANCH_DRIVER_CHAT,
             self::MANAGE_BRANCH_SETTINGS => 'branch',
         };
     }
@@ -133,7 +135,8 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_SHIFTS => 'Shifts',
             self::VIEW_TRANSFERS => 'Transfer history',
             self::MANAGE_CONVERSATIONS,
-            self::MANAGE_BRANCH_CONVERSATIONS => 'Conversations',
+            self::MANAGE_BRANCH_CONVERSATIONS,
+            self::MANAGE_BRANCH_DRIVER_CHAT => 'Conversations',
         };
     }
 
@@ -178,6 +181,7 @@ enum PermissionEnum: string
             self::MANAGE_BRANCH_DRIVERS => 'Manage branch drivers',
             self::MANAGE_BRANCH_SHIFTS => 'Manage branch shifts',
             self::MANAGE_BRANCH_CONVERSATIONS => 'Manage branch conversations',
+            self::MANAGE_BRANCH_DRIVER_CHAT => 'Chat with branch drivers',
             self::MANAGE_BRANCH_SETTINGS => 'Manage branch settings',
         };
     }

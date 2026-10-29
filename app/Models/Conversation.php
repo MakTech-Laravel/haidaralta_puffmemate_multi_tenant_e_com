@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Contracts\ScoutSearchable;
 use App\Enums\ConversationStatus;
+use App\Enums\ConversationType;
 use App\Models\Concerns\AuditsChanges;
 use App\Support\SearchableTimestamp;
 use Database\Factories\ConversationFactory;
@@ -17,15 +18,18 @@ use Laravel\Scout\Searchable;
 
 /**
  * @property int $id
- * @property int $order_id
+ * @property ConversationType $type
+ * @property int|null $order_id
  * @property int $branch_id
+ * @property int|null $driver_id
  * @property ConversationStatus $status
  * @property string|null $last_message_preview
  * @property int|null $last_message_sender_id
  * @property Carbon|null $last_message_at
  * @property Carbon|null $closed_at
- * @property-read Order $order
+ * @property-read Order|null $order
  * @property-read Branch|null $branch
+ * @property-read User|null $driver
  * @property-read Collection<int, ConversationParticipant> $participants
  */
 class Conversation extends Model implements ScoutSearchable
@@ -37,8 +41,10 @@ class Conversation extends Model implements ScoutSearchable
      * @var list<string>
      */
     protected $fillable = [
+        'type',
         'order_id',
         'branch_id',
+        'driver_id',
         'status',
         'last_message_preview',
         'last_message_sender_id',
@@ -54,13 +60,21 @@ class Conversation extends Model implements ScoutSearchable
      */
     public function toSearchableArray(): array
     {
-        $this->loadMissing(['order:id,order_number', 'participants.user:id,name']);
+        $this->loadMissing([
+            'order:id,order_number',
+            'driver:id,name',
+            'branch:id,name',
+            'participants.user:id,name',
+        ]);
 
         return [
             'id' => (int) $this->id,
+            'type' => $this->type->value,
             'branch_id' => (int) $this->branch_id,
             'status' => $this->status->value,
-            'order_number' => $this->order->order_number,
+            'order_number' => $this->order?->order_number,
+            'driver_name' => $this->driver?->name,
+            'branch_name' => $this->branch?->name,
             'participant_names' => $this->participants
                 ->map(fn (ConversationParticipant $participant): string => $participant->user->name)
                 ->values()
@@ -68,6 +82,11 @@ class Conversation extends Model implements ScoutSearchable
             'last_message_preview' => $this->last_message_preview,
             'last_message_at' => SearchableTimestamp::from($this->last_message_at),
         ];
+    }
+
+    public function isDriverOps(): bool
+    {
+        return $this->type === ConversationType::DriverOps;
     }
 
     /**
@@ -84,6 +103,14 @@ class Conversation extends Model implements ScoutSearchable
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function driver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'driver_id');
     }
 
     /**
@@ -123,6 +150,7 @@ class Conversation extends Model implements ScoutSearchable
     protected function casts(): array
     {
         return [
+            'type' => ConversationType::class,
             'status' => ConversationStatus::class,
             'last_message_at' => 'datetime',
             'closed_at' => 'datetime',

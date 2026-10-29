@@ -2,23 +2,21 @@
 
 namespace App\Policies;
 
+use App\Enums\ConversationType;
 use App\Enums\PermissionEnum;
 use App\Models\Conversation;
 use App\Models\User;
 
 /**
- * Operator access to order conversations.
- *
- * Platform staff see every branch; branch staff are locked to their own branch.
- * Customers and drivers reach a thread only as participants — their portals are
- * not built yet, but the rules are enforced now so those screens inherit them.
+ * Access to order conversations and branch↔driver ops chats.
  */
 class ConversationPolicy
 {
     public function viewAny(User $user): bool
     {
         if ($user->isPlatform() || $user->isBranch()) {
-            return $this->hasOperatorPermission($user);
+            return $this->hasOperatorPermission($user)
+                || $this->hasDriverOpsPermission($user);
         }
 
         return $user->isCustomer() || $user->isDriver();
@@ -26,15 +24,19 @@ class ConversationPolicy
 
     public function view(User $user, Conversation $conversation): bool
     {
+        if ($conversation->isDriverOps()) {
+            return $this->canAccessDriverOps($user, $conversation);
+        }
+
         if ($user->isPlatform() || $user->isBranch()) {
-            return $this->isOperatorFor($user, $conversation);
+            return $this->isOrderOperatorFor($user, $conversation);
         }
 
         return $this->isParticipant($user, $conversation);
     }
 
     /**
-     * Only operators open a thread for an order; customers and drivers join one.
+     * Opening order threads is operators-only; driver ops open is handled in-controller.
      */
     public function create(User $user): bool
     {
@@ -42,34 +44,57 @@ class ConversationPolicy
             && $this->hasOperatorPermission($user);
     }
 
-    /**
-     * A closed thread is read-only for everyone.
-     */
+    public function createDriverOps(User $user): bool
+    {
+        if ($user->isDriver()) {
+            return true;
+        }
+
+        return $user->isBranch() && $this->hasDriverOpsPermission($user);
+    }
+
     public function send(User $user, Conversation $conversation): bool
     {
         return $conversation->isOpen() && $this->view($user, $conversation);
     }
 
-    /**
-     * Closing is idempotent: operators may POST close against a thread that
-     * is already closed, and the service no-ops instead of 403ing.
-     */
     public function close(User $user, Conversation $conversation): bool
     {
-        return $this->isOperatorFor($user, $conversation);
+        if ($conversation->isDriverOps()) {
+            return $user->isBranch()
+                && $user->branch_id === $conversation->branch_id
+                && $this->hasDriverOpsPermission($user);
+        }
+
+        return $this->isOrderOperatorFor($user, $conversation);
     }
 
     public function addParticipant(User $user, Conversation $conversation): bool
     {
-        return $conversation->isOpen() && $this->isOperatorFor($user, $conversation);
+        return $conversation->isOpen() && $this->view($user, $conversation)
+            && ($user->isPlatform() || $user->isBranch());
     }
 
-    /**
-     * Operators manage a thread when they hold the portal permission and, for
-     * branch staff, the thread belongs to their own branch.
-     */
-    private function isOperatorFor(User $user, Conversation $conversation): bool
+    private function canAccessDriverOps(User $user, Conversation $conversation): bool
     {
+        if ($user->isDriver()) {
+            return $conversation->driver_id === $user->id;
+        }
+
+        if ($user->isBranch()) {
+            return $user->branch_id === $conversation->branch_id
+                && $this->hasDriverOpsPermission($user);
+        }
+
+        return false;
+    }
+
+    private function isOrderOperatorFor(User $user, Conversation $conversation): bool
+    {
+        if ($conversation->type !== ConversationType::Order) {
+            return false;
+        }
+
         if ($user->isPlatform()) {
             return $user->can(PermissionEnum::MANAGE_CONVERSATIONS->value);
         }
@@ -87,6 +112,12 @@ class ConversationPolicy
         return $user->isPlatform()
             ? $user->can(PermissionEnum::MANAGE_CONVERSATIONS->value)
             : $user->can(PermissionEnum::MANAGE_BRANCH_CONVERSATIONS->value);
+    }
+
+    private function hasDriverOpsPermission(User $user): bool
+    {
+        return $user->isBranch()
+            && $user->can(PermissionEnum::MANAGE_BRANCH_DRIVER_CHAT->value);
     }
 
     private function isParticipant(User $user, Conversation $conversation): bool

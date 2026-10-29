@@ -34,6 +34,7 @@ function branchNavDestinations(): array
         ['suffix' => '/stock-transfers', 'permissions' => ['manage-branch-orders']],
         ['suffix' => '/areas', 'permissions' => ['manage-branch-settings']],
         ['suffix' => '/conversations', 'permissions' => ['manage-branch-conversations']],
+        ['suffix' => '/driver-chats', 'permissions' => ['manage-branch-driver-chat']],
         ['suffix' => '/reports/order-reports', 'permissions' => ['manage-branch-orders']],
         ['suffix' => '/reports/order-assign-history', 'permissions' => ['manage-branch-orders']],
         ['suffix' => '/reports/stock-transactions', 'permissions' => ['manage-branch-products']],
