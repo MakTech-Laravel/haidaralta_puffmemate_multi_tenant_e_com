@@ -6,6 +6,7 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\OrderReturnType;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
+use App\Events\ConversationReceiptsUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Order;
@@ -16,9 +17,11 @@ use App\Services\Order\FulfillmentStatusService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
+use App\Support\ConversationUnreadCounts;
 use App\Support\MediaUrl;
 use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -42,15 +45,20 @@ class OrderController extends Controller
      */
     public function index(Request $request): Response
     {
+        $customer = $request->user();
+        $unread = ConversationUnreadCounts::forUser($customer);
+
         $orders = Order::query()
-            ->where('customer_id', $request->user()->id)
+            ->where('customer_id', $customer->id)
             ->with(['items', 'fulfillment', 'conversation'])
             ->orderByDesc('created_at')
             ->paginate(12)
             ->withQueryString();
 
         return Inertia::render('customer/orders/index', [
-            'orders' => $orders->getCollection()->map(fn (Order $order): array => $this->summarize($order))->all(),
+            'orders' => $orders->getCollection()
+                ->map(fn (Order $order): array => $this->summarize($order, $unread))
+                ->all(),
             'meta' => [
                 'currentPage' => $orders->currentPage(),
                 'lastPage' => $orders->lastPage(),
@@ -71,7 +79,7 @@ class OrderController extends Controller
         ]);
 
         return Inertia::render('customer/orders/show', [
-            'order' => $this->detail($order),
+            'order' => $this->detail($order, $request->user()),
         ]);
     }
 
@@ -125,6 +133,10 @@ class OrderController extends Controller
         $conversation = $this->chatConversation($request, $order);
         $customer = $request->user();
 
+        $viewerLastReadMessageId = (int) $conversation->participants()
+            ->where('user_id', $customer->id)
+            ->value('last_read_message_id');
+
         $this->conversations->markRead($conversation, $customer);
 
         return Inertia::render('customer/orders/chat', [
@@ -140,6 +152,10 @@ class OrderController extends Controller
             'viewerId' => (int) $customer->id,
             'canSend' => $this->canSendChat($customer, $order, $conversation),
             'channel' => $conversation->channelName(),
+            'receipts' => ConversationReceiptsUpdated::receiptsFor($conversation),
+            'viewerLastReadMessageId' => $viewerLastReadMessageId,
+            'deliveredUrl' => route('customer.orders.chat.delivered', $order),
+            'readUrl' => route('customer.orders.chat.read', $order),
         ]);
     }
 
@@ -155,6 +171,32 @@ class OrderController extends Controller
         $this->conversations->sendMessage($conversation, $request->user(), $validated['body']);
 
         return back();
+    }
+
+    public function delivered(Request $request, Order $order): JsonResponse
+    {
+        $conversation = $this->chatConversation($request, $order);
+
+        $this->conversations->markDelivered(
+            $conversation,
+            $request->user(),
+            $request->integer('message_id') ?: null,
+        );
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function read(Request $request, Order $order): JsonResponse
+    {
+        $conversation = $this->chatConversation($request, $order);
+
+        $this->conversations->markRead(
+            $conversation,
+            $request->user(),
+            $request->integer('message_id') ?: null,
+        );
+
+        return response()->json(['status' => 'ok']);
     }
 
     /**
@@ -189,10 +231,13 @@ class OrderController extends Controller
     }
 
     /**
-     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, statusLabel: string, isActive: bool, canChat: bool, paymentStatus: string, source: string, sourceLabel: string, date: string}
+     * @param  array<int, int>  $unreadByConversation
+     * @return array{orderNumber: string, products: list<string>, priceLabel: string, status: string, statusLabel: string, isActive: bool, canChat: bool, chatUnreadCount: int, paymentStatus: string, source: string, sourceLabel: string, date: string}
      */
-    private function summarize(Order $order): array
+    private function summarize(Order $order, array $unreadByConversation = []): array
     {
+        $conversationId = $order->conversation?->id;
+
         return [
             'orderNumber' => $order->order_number,
             'products' => $order->items->map(fn ($item): string => $item->product_name_snapshot.' (x'.$item->quantity.')')->all(),
@@ -201,6 +246,9 @@ class OrderController extends Controller
             'statusLabel' => $order->status->customerLabel(),
             'isActive' => ! $order->status->isTerminal(),
             'canChat' => $this->canChat($order),
+            'chatUnreadCount' => $conversationId === null
+                ? 0
+                : ($unreadByConversation[$conversationId] ?? 0),
             'paymentStatus' => $order->payment_status->value,
             'source' => $order->source->value,
             'sourceLabel' => $order->source->label(),
@@ -225,8 +273,10 @@ class OrderController extends Controller
     /**
      * @return array<string, mixed>
      */
-    private function detail(Order $order): array
+    private function detail(Order $order, User $viewer): array
     {
+        $order->loadMissing('conversation');
+
         return [
             'orderNumber' => $order->order_number,
             'status' => $order->status->value,
@@ -242,6 +292,9 @@ class OrderController extends Controller
             'canResendCode' => $order->status->allowsPlacementCode(),
             'canCancel' => $order->status->allowsCustomerCancel(),
             'canChat' => $this->canChat($order),
+            'chatUnreadCount' => $order->conversation === null
+                ? 0
+                : $this->conversations->unreadCountFor($order->conversation, $viewer),
             'canRequestReturn' => in_array($order->status, [OrderStatus::Arrived, OrderStatus::Delivered], true)
                 && $order->returns()->where('status', 'requested')->doesntExist(),
             'returnRequest' => $this->returns->payload($order),

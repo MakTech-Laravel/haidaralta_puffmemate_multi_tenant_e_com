@@ -65,7 +65,7 @@ export const driverNavItems: DriverNavItem[] = [
         label: 'Chats',
         icon: MessageCircle,
         href: chatsIndex.url(),
-        tab: false,
+        tab: true,
         match: (url) => matchesPath(url, chatsIndex.url(), true),
     },
     {

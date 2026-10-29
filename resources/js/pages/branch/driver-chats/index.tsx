@@ -53,6 +53,7 @@ export default function BranchDriverChats({
                     kind="driver_ops"
                     title="Driver chat"
                     showSenderRole
+                    canClose={false}
                     optionField="driver_id"
                     orderOptionsUrl={DriverChatController.driverOptions.url(
                         branch.slug,

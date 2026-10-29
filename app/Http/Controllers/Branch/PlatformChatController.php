@@ -27,9 +27,20 @@ class PlatformChatController extends Controller
 
     public function __construct(private ConversationService $conversations) {}
 
-    public function index(Request $request, Branch $branch): Response
+    public function index(Request $request, Branch $branch): Response|RedirectResponse
     {
         $this->branch = $branch;
+
+        $existing = Conversation::query()
+            ->where('type', ConversationType::PlatformBranch)
+            ->where('branch_id', $branch->id)
+            ->orderByDesc('last_message_at')
+            ->orderByDesc('id')
+            ->first();
+
+        if ($existing !== null) {
+            return redirect()->route('branch.platform-chats.show', [$branch, $existing]);
+        }
 
         return Inertia::render(
             $this->conversationPageComponent(),
@@ -71,11 +82,12 @@ class PlatformChatController extends Controller
         $viewer = $this->viewer($request);
         $this->authorizeConversation($conversation, $viewer);
         $this->conversations->joinOperator($conversation, $viewer);
+        $lastRead = $this->viewerLastReadMessageId($conversation, $viewer);
         $this->conversations->markRead($conversation, $viewer);
 
         return Inertia::render(
             $this->conversationPageComponent(),
-            $this->workspacePayload($request, $viewer, $conversation),
+            $this->workspacePayload($request, $viewer, $conversation, $lastRead),
         );
     }
 

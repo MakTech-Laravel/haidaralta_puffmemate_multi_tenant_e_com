@@ -79,6 +79,7 @@ trait InteractsWithConversations
         Request $request,
         User $viewer,
         ?Conversation $conversation = null,
+        ?int $viewerLastReadMessageId = null,
     ): array {
         $inbox = null;
 
@@ -96,12 +97,23 @@ trait InteractsWithConversations
             'inboxMeta' => fn (): array => Arr::except($resolve(), 'items'),
             'thread' => $conversation === null
                 ? null
-                : $this->threadPayload($conversation, $viewer),
+                : $this->threadPayload($conversation, $viewer, $viewerLastReadMessageId),
             'viewerId' => $viewer->id,
             'viewerName' => $viewer->name,
             'indexUrl' => $this->conversationIndexUrl(),
             'inboxChannel' => ConversationInboxUpdated::channelFor($viewer->id),
         ];
+    }
+
+    /**
+     * Capture the viewer's read cursor before markRead advances it (for the
+     * in-thread "Unread messages" divider).
+     */
+    protected function viewerLastReadMessageId(Conversation $conversation, User $viewer): int
+    {
+        return (int) $conversation->participants()
+            ->where('user_id', $viewer->id)
+            ->value('last_read_message_id');
     }
 
     /**
@@ -118,10 +130,14 @@ trait InteractsWithConversations
     }
 
     /**
+     * @param  int|null  $viewerLastReadMessageId  Captured before markRead; null means unknown (no divider).
      * @return array<string, mixed>
      */
-    protected function threadPayload(Conversation $conversation, User $viewer): array
-    {
+    protected function threadPayload(
+        Conversation $conversation,
+        User $viewer,
+        ?int $viewerLastReadMessageId = null,
+    ): array {
         $conversation->load([
             'order:id,order_number,status',
             'branch:id,name,slug',
@@ -148,6 +164,7 @@ trait InteractsWithConversations
             'canSend' => Gate::forUser($viewer)->allows('send', $conversation),
             'canClose' => Gate::forUser($viewer)->allows('close', $conversation),
             'endpoints' => $this->conversationEndpoints($conversation),
+            'viewerLastReadMessageId' => $viewerLastReadMessageId,
         ];
     }
 

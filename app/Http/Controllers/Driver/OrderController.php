@@ -8,6 +8,7 @@ use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderReturnType;
 use App\Enums\OrderSource;
+use App\Events\ConversationReceiptsUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Order;
@@ -22,6 +23,7 @@ use App\Support\Toast;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -174,6 +176,17 @@ class OrderController extends Controller
         abort_unless($fulfillment->status->allowsOrderChat(), 404);
 
         $conversation = $order->conversation;
+        $viewer = $request->user();
+        $viewerLastReadMessageId = 0;
+        $receipts = [];
+
+        if ($conversation !== null) {
+            $viewerLastReadMessageId = (int) $conversation->participants()
+                ->where('user_id', $viewer->id)
+                ->value('last_read_message_id');
+            $this->conversations->markRead($conversation, $viewer);
+            $receipts = ConversationReceiptsUpdated::receiptsFor($conversation);
+        }
 
         return Inertia::render('driver/orders/chat', [
             'order' => $this->detail($fulfillment),
@@ -182,11 +195,19 @@ class OrderController extends Controller
                 : ConversationPayload::messages(
                     $conversation->messages()->with(['sender:id,name', 'sender.media', 'attachments'])->orderBy('id')->get(),
                 ),
-            'viewerId' => (int) $request->user()->id,
+            'viewerId' => (int) $viewer->id,
             'canSend' => $conversation !== null
                 && ! $conversation->isClosed()
                 && ! $fulfillment->status->isTerminal(),
             'channel' => $conversation?->channelName(),
+            'receipts' => $receipts,
+            'viewerLastReadMessageId' => $viewerLastReadMessageId,
+            'deliveredUrl' => $conversation === null
+                ? null
+                : route('driver.orders.chat.delivered', $order),
+            'readUrl' => $conversation === null
+                ? null
+                : route('driver.orders.chat.read', $order),
         ]);
     }
 
@@ -203,6 +224,34 @@ class OrderController extends Controller
         Toast::success('Message sent.');
 
         return back();
+    }
+
+    public function delivered(Request $request, Order $order): JsonResponse
+    {
+        $this->owned($request, $order);
+        $conversation = $this->thread($order);
+
+        $this->conversations->markDelivered(
+            $conversation,
+            $request->user(),
+            $request->integer('message_id') ?: null,
+        );
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function read(Request $request, Order $order): JsonResponse
+    {
+        $this->owned($request, $order);
+        $conversation = $this->thread($order);
+
+        $this->conversations->markRead(
+            $conversation,
+            $request->user(),
+            $request->integer('message_id') ?: null,
+        );
+
+        return response()->json(['status' => 'ok']);
     }
 
     public function removeLateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
