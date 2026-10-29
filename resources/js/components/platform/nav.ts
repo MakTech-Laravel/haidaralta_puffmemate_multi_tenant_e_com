@@ -317,13 +317,23 @@ export function buildPlatformNav(
                 title: 'Conversations',
                 href: '/platform/conversations',
                 icon: MessagesSquare,
-                permissions: ['manage-conversations', 'manage-drivers'],
+                permissions: [
+                    'manage-conversations',
+                    'manage-platform-branch-chat',
+                    'manage-drivers',
+                ],
                 items: [
                     navLink({
                         title: 'Order chats',
                         href: '/platform/conversations',
                         icon: Inbox,
                         permissions: ['manage-conversations'],
+                    }),
+                    navLink({
+                        title: 'Branch chat',
+                        href: '/platform/branch-chats',
+                        icon: MessageCircle,
+                        permissions: ['manage-platform-branch-chat'],
                     }),
                     navSoon({
                         title: 'Driver chat',

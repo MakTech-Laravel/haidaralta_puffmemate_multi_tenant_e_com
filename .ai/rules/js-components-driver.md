@@ -5,5 +5,8 @@ paths:
 
 # Js Components Driver
 
-## Driver chat is nested under an order
-Driver conversations are order-scoped. Use GET driver/orders/{order}/chat (OrderController::chat, Inertia driver/orders/chat). Put Chat as a sibling Link on the order card and order show — never nest it inside the show Link, and never restore /driver/chats or a Chats nav tab.
+## Order chat stays nested under an order
+Customer-facing order conversations stay order-scoped: GET driver/orders/{order}/chat (OrderController::chat, Inertia driver/orders/chat). Put Chat as a sibling Link on the order card and order show — never nest it inside the show Link.
+
+## Branch ops chat is a separate inbox
+Branch↔driver internal chat (no order/customer) lives at /driver/chats (DriverChatController). It may appear in the desktop sidebar; keep the five field tabs focused on dashboard/orders/route/earnings/place-order.

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Driver\ActivityLogController as DriverActivityLogController;
 use App\Http\Controllers\Driver\DashboardController as DriverDashboardController;
+use App\Http\Controllers\Driver\DriverChatController;
 use App\Http\Controllers\Driver\EarningsController as DriverEarningsController;
 use App\Http\Controllers\Driver\NotificationController as DriverNotificationController;
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
@@ -15,6 +16,26 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::get('dashboard', [DriverDashboardController::class, 'index'])->name('driver.dashboard');
     Route::get('route', [DriverRouteController::class, 'index'])->name('driver.route.index');
     Route::get('orders', [DriverOrderController::class, 'index'])->name('driver.orders.index');
+    Route::get('chats', [DriverChatController::class, 'index'])->name('driver.chats.index');
+    Route::get('chats/branch-options', [DriverChatController::class, 'branchOptions'])
+        ->name('driver.chats.branch-options');
+    Route::post('chats', [DriverChatController::class, 'store'])->name('driver.chats.store');
+    Route::get('chats/{conversation}', [DriverChatController::class, 'show'])
+        ->whereNumber('conversation')
+        ->name('driver.chats.show');
+    Route::get('chats/{conversation}/messages', [DriverChatController::class, 'messages'])
+        ->whereNumber('conversation')
+        ->name('driver.chats.messages');
+    Route::post('chats/{conversation}/messages', [DriverChatController::class, 'storeMessage'])
+        ->whereNumber('conversation')
+        ->middleware('throttle:conversation-messages')
+        ->name('driver.chats.messages.store');
+    Route::post('chats/{conversation}/delivered', [DriverChatController::class, 'delivered'])
+        ->whereNumber('conversation')
+        ->name('driver.chats.delivered');
+    Route::post('chats/{conversation}/read', [DriverChatController::class, 'read'])
+        ->whereNumber('conversation')
+        ->name('driver.chats.read');
     Route::get('history', [DriverOrderController::class, 'history'])->name('driver.history.index');
     Route::get('earnings', [DriverEarningsController::class, 'index'])->name('driver.earnings.index');
     Route::get('place-order', [DriverPlaceOrderController::class, 'index'])->name('driver.place-order.index');

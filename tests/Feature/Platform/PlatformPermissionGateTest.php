@@ -240,6 +240,10 @@ dataset('platformPermissionCanonicalRoutes', function () {
             PermissionEnum::MANAGE_CONVERSATIONS,
             fn (): string => route('platform.conversations.index'),
         ],
+        'manage-platform-branch-chat' => [
+            PermissionEnum::MANAGE_PLATFORM_BRANCH_CHAT,
+            fn (): string => route('platform.branch-chats.index'),
+        ],
     ];
 });
 
@@ -285,6 +289,7 @@ test('every platform permission is covered by the gate matrix', function () {
         PermissionEnum::MANAGE_SHIFTS,
         PermissionEnum::VIEW_TRANSFERS,
         PermissionEnum::MANAGE_CONVERSATIONS,
+        PermissionEnum::MANAGE_PLATFORM_BRANCH_CHAT,
     ])->map(fn (PermissionEnum $permission) => $permission->value)->sort()->values();
 
     $all = collect(PermissionEnum::forGuard('platform'))

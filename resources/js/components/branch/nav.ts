@@ -240,7 +240,8 @@ export function buildBranchNav(
                 icon: MessagesSquare,
                 permissions: [
                     'manage-branch-conversations',
-                    'manage-branch-drivers',
+                    'manage-branch-driver-chat',
+                    'manage-branch-platform-chat',
                 ],
                 items: [
                     navLink({
@@ -249,10 +250,17 @@ export function buildBranchNav(
                         icon: Inbox,
                         permissions: ['manage-branch-conversations'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Driver chat',
+                        href: `/branch/${slug}/driver-chats`,
                         icon: MessageCircle,
-                        permissions: ['manage-branch-drivers'],
+                        permissions: ['manage-branch-driver-chat'],
+                    }),
+                    navLink({
+                        title: 'Platform chat',
+                        href: `/branch/${slug}/platform-chats`,
+                        icon: MessageCircle,
+                        permissions: ['manage-branch-platform-chat'],
                     }),
                 ],
             }),
