@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node init && vp build",
-    "build:ssr": "node init && vp build && vp build --ssr",
+    "build:ssr": "vp build && vp build --ssr",
     "dev": "node init && vp dev",
     "check": "vp check",
     "check:fix": "vp check --fix",
