@@ -26,4 +26,4 @@ yarn-error.log
 /.idea
 /.nova
 /.zed
-
+.env
