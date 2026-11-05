@@ -13,6 +13,7 @@
 /resources/js/routes
 /resources/js/wayfinder
 /vendor
+temp_auto_push.bat
 .DS_Store
 .env
 .env.backup
@@ -29,3 +30,5 @@ yarn-error.log
 /.nova
 /.zed
 
+.gitignore
+branch_structure.json
