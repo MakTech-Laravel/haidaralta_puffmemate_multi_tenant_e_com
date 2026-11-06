@@ -21,6 +21,9 @@ Route::middleware(['ensure.guard:driver', 'ensure.driver.location'])->prefix('dr
         ->name('driver.location.required');
     Route::get('dashboard', [DriverDashboardController::class, 'index'])->name('driver.dashboard');
     Route::get('route', [DriverRouteController::class, 'index'])->name('driver.route.index');
+    Route::get('route/{order:order_number}/directions', [DriverRouteController::class, 'directions'])
+        ->middleware('throttle:12,1')
+        ->name('driver.route.directions');
     Route::get('orders', [DriverOrderController::class, 'index'])->name('driver.orders.index');
     Route::get('chats', [DriverChatController::class, 'index'])->name('driver.chats.index');
     Route::get('chats/branch-options', [DriverChatController::class, 'branchOptions'])

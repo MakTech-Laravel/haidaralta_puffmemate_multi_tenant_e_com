@@ -10,6 +10,7 @@ import type {
     DriverTrackingConfig,
     LocationReading,
 } from '@/lib/driver-location';
+import { publishDriverPosition } from '@/lib/driver-position-store';
 
 export type DriverLocationStatus =
     'idle' | 'sharing' | 'denied' | 'unavailable' | 'unsupported';
@@ -104,6 +105,12 @@ export function useDriverLocation(
             }
 
             const reading = toReading(position);
+
+            publishDriverPosition({
+                lat: reading.latitude,
+                lng: reading.longitude,
+                ts: position.timestamp,
+            });
             const elapsed = (Date.now() - lastSentAt) / 1000;
             const moved =
                 lastSent === null ||
