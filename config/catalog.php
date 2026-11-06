@@ -120,6 +120,18 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Product packages (quantity tiers)
+    |--------------------------------------------------------------------------
+    |
+    | When false, package UI and package mutations abort 404. Tables and
+    | routes stay in the codebase. Flip to true to restore packages.
+    |
+    */
+
+    'show_product_packages' => env('SHOW_PRODUCT_PACKAGES', true),
+
+    /*
+    |--------------------------------------------------------------------------
     | Bulk stock import (web)
     |--------------------------------------------------------------------------
     |

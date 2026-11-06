@@ -19,6 +19,7 @@ use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
 use App\Support\ConversationUnreadCounts;
 use App\Support\MediaUrl;
+use App\Support\OrderItemPackageDisplay;
 use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
 use Illuminate\Http\JsonResponse;
@@ -302,10 +303,12 @@ class OrderController extends Controller
             'products' => $order->items->map(function ($item): array {
                 $snapshot = is_array($item->product_snapshot) ? $item->product_snapshot : [];
                 $removed = $item->removed_at !== null;
+                $packageSubtitle = OrderItemPackageDisplay::subtitle($item);
 
                 return [
                     'name' => $item->product_name_snapshot,
                     'image' => MediaUrl::resolve($snapshot['image'] ?? null),
+                    'packageLabel' => $packageSubtitle,
                     'quantityLabel' => 'Quantity x '.$item->quantity,
                     'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
                     'isLateDelivery' => (bool) $item->is_late_delivery,

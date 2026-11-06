@@ -19,6 +19,7 @@ use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
+use App\Support\OrderItemPackageDisplay;
 use App\Support\Toast;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -493,6 +494,7 @@ class OrderController extends Controller
                 return [
                     'id' => $item->id,
                     'name' => $item->product_name_snapshot,
+                    'packageLabel' => OrderItemPackageDisplay::subtitle($item),
                     'quantityLabel' => (string) $item->quantity,
                     'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
                     'isLateDelivery' => (bool) $item->is_late_delivery,

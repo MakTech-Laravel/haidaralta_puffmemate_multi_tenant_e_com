@@ -10,10 +10,12 @@ import { packsSaves } from '@/routes';
 import type {
     StorefrontFeaturedPack,
     StorefrontPack,
+    StorefrontPackagedProduct,
 } from '@/types/storefront';
 
 type PacksSavesPageProps = {
     packs: StorefrontPack[];
+    products: StorefrontPackagedProduct[];
     featuredPack: StorefrontFeaturedPack | null;
     filters: {
         search: string;
@@ -28,6 +30,7 @@ type VisitOptions = {
 
 export default function StorefrontPacksSaves({
     packs,
+    products,
     featuredPack,
     filters,
 }: PacksSavesPageProps) {
@@ -63,7 +66,7 @@ export default function StorefrontPacksSaves({
                 replace: true,
                 async: true,
                 showProgress: false,
-                only: ['packs', 'filters'],
+                only: ['packs', 'products', 'filters'],
                 onFinish: () => {
                     if (visitId.current === id) {
                         setUpdating(false);
@@ -106,7 +109,11 @@ export default function StorefrontPacksSaves({
                     }}
                 />
 
-                <PacksGrid packs={packs} updating={updating} />
+                <PacksGrid
+                    packs={packs}
+                    products={products}
+                    updating={updating}
+                />
             </div>
 
             <FeaturesBar features={storefrontFeatures} />

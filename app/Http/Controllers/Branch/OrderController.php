@@ -25,6 +25,7 @@ use App\Services\Order\OrderReturnService;
 use App\Services\Order\PaymentMarkingService;
 use App\Support\MediaUrl;
 use App\Support\Order\DeliveryAttemptPayload;
+use App\Support\OrderItemPackageDisplay;
 use App\Support\OrderStatusTimeline;
 use App\Support\Toast;
 use Illuminate\Http\RedirectResponse;
@@ -370,6 +371,7 @@ class OrderController extends Controller
                     'id' => $item->id,
                     'name' => $item->product_name_snapshot,
                     'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
+                    'packageLabel' => OrderItemPackageDisplay::subtitle($item),
                     'quantity' => $item->quantity,
                     'unitPriceLabel' => '$'.number_format((float) $item->unit_price, 2),
                     'subtotalLabel' => '$'.number_format((float) $item->subtotal, 2),

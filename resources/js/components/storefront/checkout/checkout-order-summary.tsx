@@ -18,10 +18,14 @@ type AppliedCoupon = {
 export type CheckoutShortfallLine = {
     productId: number;
     variantId: number | null;
+    productPackageId?: number | null;
     productName: string;
+    packageLabel?: string | null;
     quantity: number;
+    inventoryQuantity?: number;
     localQuantity: number;
     shortfall: number;
+    shortfallUnits?: number;
 };
 
 type CheckoutOrderSummaryProps = {
@@ -116,6 +120,14 @@ export function CheckoutOrderSummary({
                             <p className="text-foreground truncate text-sm font-semibold">
                                 {item.name}
                             </p>
+                            {item.packageLabel ? (
+                                <p className="text-muted-foreground text-xs">
+                                    {item.packageLabel}
+                                    {item.packageQuantity
+                                        ? ` · ${item.packageQuantity} ${item.packageQuantity === 1 ? 'item' : 'items'}`
+                                        : ''}
+                                </p>
+                            ) : null}
                             <p className="text-muted-foreground text-xs">
                                 Quantity x {item.quantity}
                             </p>
@@ -262,14 +274,30 @@ export function CheckoutOrderSummary({
                         collected.
                     </p>
                     <ul className="text-muted-foreground space-y-1 text-xs">
-                        {shortfallLines.map((line) => (
-                            <li key={`${line.productId}:${line.variantId ?? 0}`}>
-                                {line.productName}
-                                {line.shortfall < line.quantity
-                                    ? ` (${line.shortfall} of ${line.quantity} later)`
-                                    : ` (×${line.shortfall})`}
-                            </li>
-                        ))}
+                        {shortfallLines.map((line) => {
+                            const label = line.packageLabel
+                                ? `${line.productName} · ${line.packageLabel}`
+                                : line.productName;
+                            const countNoun = line.packageLabel
+                                ? 'packs'
+                                : 'items';
+                            const unitHint =
+                                line.shortfallUnits !== undefined &&
+                                line.packageLabel
+                                    ? ` · ${line.shortfallUnits} units`
+                                    : '';
+
+                            return (
+                                <li
+                                    key={`${line.productId}:${line.variantId ?? 0}:${line.productPackageId ?? 0}`}
+                                >
+                                    {label}
+                                    {line.shortfall < line.quantity
+                                        ? ` (${line.shortfall} of ${line.quantity} ${countNoun} later${unitHint})`
+                                        : ` (×${line.shortfall} ${countNoun}${unitHint})`}
+                                </li>
+                            );
+                        })}
                     </ul>
                     <a
                         href={cartUrl}

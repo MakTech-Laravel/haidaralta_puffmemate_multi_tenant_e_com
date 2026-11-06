@@ -38,6 +38,7 @@ use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPa
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeController;
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
+use App\Http\Controllers\Platform\ProductPackageController as PlatformProductPackageController;
 use App\Http\Controllers\Platform\ProductReviewController as PlatformProductReviewController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
@@ -493,6 +494,15 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.products.variants.update');
         Route::delete('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'destroy'])
             ->name('platform.products.variants.destroy');
+
+        Route::post('products/{product}/packages', [PlatformProductPackageController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.products.packages.store');
+        Route::put('products/{product}/packages/{package}', [PlatformProductPackageController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.products.packages.update');
+        Route::delete('products/{product}/packages/{package}', [PlatformProductPackageController::class, 'destroy'])
+            ->name('platform.products.packages.destroy');
     });
 
     Route::middleware(['permission:manage-orders'])->group(function () {

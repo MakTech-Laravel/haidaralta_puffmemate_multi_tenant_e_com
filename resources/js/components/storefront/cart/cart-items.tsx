@@ -59,7 +59,14 @@ export function CartItems({ items, className }: CartItemsProps) {
                                 >
                                     {item.name}
                                 </Link>
-                                {item.description ? (
+                                {item.packageLabel ? (
+                                    <p className="text-muted-foreground mt-0.5 text-xs font-normal break-words sm:text-sm">
+                                        {item.packageLabel}
+                                        {item.packageQuantity
+                                            ? ` · ${item.packageQuantity} ${item.packageQuantity === 1 ? 'item' : 'items'}`
+                                            : ''}
+                                    </p>
+                                ) : item.description ? (
                                     <p className="text-muted-foreground mt-0.5 text-xs font-normal break-words sm:text-sm">
                                         {item.description}
                                     </p>

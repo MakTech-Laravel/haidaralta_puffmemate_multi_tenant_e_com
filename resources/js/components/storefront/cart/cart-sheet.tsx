@@ -106,7 +106,14 @@ export function CartSheet({
                                     <p className="text-foreground text-sm font-bold break-words">
                                         {item.name}
                                     </p>
-                                    {item.description ? (
+                                    {item.packageLabel ? (
+                                        <p className="text-muted-foreground mt-0.5 text-xs">
+                                            {item.packageLabel}
+                                            {item.packageQuantity
+                                                ? ` · ${item.packageQuantity} ${item.packageQuantity === 1 ? 'item' : 'items'}`
+                                                : ''}
+                                        </p>
+                                    ) : item.description ? (
                                         <p className="text-muted-foreground mt-0.5 text-xs">
                                             {item.description}
                                         </p>

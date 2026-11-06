@@ -11,6 +11,7 @@ use Illuminate\Support\Carbon;
  * @property int $cart_id
  * @property int $product_id
  * @property int|null $variant_id
+ * @property int|null $product_package_id
  * @property int $quantity
  * @property string $price_snapshot
  * @property Carbon|null $created_at
@@ -25,6 +26,7 @@ class CartItem extends Model
         'cart_id',
         'product_id',
         'variant_id',
+        'product_package_id',
         'quantity',
         'price_snapshot',
     ];
@@ -62,5 +64,24 @@ class CartItem extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'variant_id');
+    }
+
+    /**
+     * @return BelongsTo<ProductPackage, $this>
+     */
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(ProductPackage::class, 'product_package_id');
+    }
+
+    public function inventoryUnits(): int
+    {
+        $packageQty = $this->package?->quantity;
+
+        if ($packageQty === null || $packageQty < 1) {
+            return $this->quantity;
+        }
+
+        return $this->quantity * $packageQty;
     }
 }

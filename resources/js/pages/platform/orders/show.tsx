@@ -74,6 +74,7 @@ type FulfillmentSummary = {
         id: number;
         name: string;
         image: string;
+        packageLabel?: string | null;
         quantity: number;
         subtotalLabel: string;
         isLateDelivery?: boolean;
@@ -387,11 +388,16 @@ function FulfillmentCard({
                                         {item.name}
                                     </p>
                                     <p className="text-muted-foreground mt-0.5 text-xs">
-                                        Qty {item.quantity}
-                                        {item.isLateDelivery
-                                            ? ' · Late delivery'
-                                            : ''}
-                                        {item.isRemoved ? ' · Removed' : ''}
+                                        {[
+                                            item.packageLabel,
+                                            `Qty ${item.quantity}`,
+                                            item.isLateDelivery
+                                                ? 'Late delivery'
+                                                : null,
+                                            item.isRemoved ? 'Removed' : null,
+                                        ]
+                                            .filter(Boolean)
+                                            .join(' · ')}
                                     </p>
                                 </div>
                                 <p
