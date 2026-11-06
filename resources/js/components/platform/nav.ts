@@ -492,6 +492,12 @@ export function buildPlatformNav(
                         permissions: ['manage-application-settings'],
                     }),
                     navLink({
+                        title: 'Map provider',
+                        href: '/platform/settings/map-provider',
+                        icon: MapPin,
+                        permissions: ['manage-application-settings'],
+                    }),
+                    navLink({
                         title: 'Backups',
                         href: '/platform/database-backups',
                         icon: Database,

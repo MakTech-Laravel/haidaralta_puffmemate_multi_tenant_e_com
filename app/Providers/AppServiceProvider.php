@@ -9,6 +9,11 @@ use App\Listeners\AuthActivitySubscriber;
 use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\SmtpSettingsService;
+use App\Services\Maps\MapManager;
+use App\Services\Maps\MapProviderCatalog;
+use App\Services\Maps\MapProviderResolver;
+use App\Services\Maps\MapSettingsService;
+use App\Services\Maps\MapUsageRecorder;
 use App\Services\Order\HaversineDistanceCalculator;
 use App\Services\Sms\FakeSmsSender;
 use App\Services\Sms\LogSmsSender;
@@ -42,6 +47,12 @@ class AppServiceProvider extends ServiceProvider
         // implementation later without touching OrderAllocationEngine or
         // ShippingCalculator.
         $this->app->bind(DistanceCalculator::class, HaversineDistanceCalculator::class);
+
+        $this->app->singleton(MapSettingsService::class);
+        $this->app->singleton(MapUsageRecorder::class);
+        $this->app->singleton(MapProviderCatalog::class);
+        $this->app->singleton(MapProviderResolver::class);
+        $this->app->singleton(MapManager::class);
 
         $this->app->singleton(SendsSms::class, function (): SendsSms {
             if ($this->app->environment('testing')) {

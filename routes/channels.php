@@ -2,6 +2,7 @@
 
 use App\Enums\PermissionEnum;
 use App\Events\DatabaseBackupHistoryUpdated;
+use App\Events\DriverLocationUpdated;
 use App\Models\Conversation;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
@@ -29,6 +30,41 @@ Broadcast::channel(
 
         // Super-admin is granted via Gate::before; others need the Spatie permission.
         return $user->can(PermissionEnum::MANAGE_DATABASE_BACKUPS->value);
+    },
+    ['guards' => [...PortalAuth::PORTAL_GUARDS, 'web']],
+);
+
+/**
+ * Live driver positions for the platform map (all branches).
+ */
+Broadcast::channel(
+    DriverLocationUpdated::PLATFORM_CHANNEL,
+    function (User $user): bool {
+        if (! $user->isPlatform()) {
+            return false;
+        }
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+
+        return $user->can(PermissionEnum::MANAGE_DRIVERS->value);
+    },
+    ['guards' => [...PortalAuth::PORTAL_GUARDS, 'web']],
+);
+
+/**
+ * Live driver positions for one branch's map: only staff of that branch.
+ */
+Broadcast::channel(
+    'branch.{branchId}.drivers',
+    function (User $user, int $branchId): bool {
+        if (! $user->isBranch() || (int) $user->branch_id !== $branchId) {
+            return false;
+        }
+
+        app(PermissionRegistrar::class)->setPermissionsTeamId($branchId);
+        $user->unsetRelation('roles')->unsetRelation('permissions');
+
+        return $user->can(PermissionEnum::MANAGE_BRANCH_DRIVERS->value);
     },
     ['guards' => [...PortalAuth::PORTAL_GUARDS, 'web']],
 );
