@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\ContactSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Driver\DriverTrackingGate;
 use App\Services\Notifications\InboxService;
 use App\Services\Storefront\CartService;
 use App\Support\PortalAuth;
@@ -97,6 +98,9 @@ class HandleInertiaRequests extends Middleware
             'customerNotifications' => $portal === 'customer' ? $preview : [],
             'driverSupport' => $portal === 'driver'
                 ? DemoCatalog::driverSupportContacts()
+                : null,
+            'driverTracking' => $portal === 'driver' && $authUser instanceof User
+                ? app(DriverTrackingGate::class)->payload($authUser)
                 : null,
         ];
     }

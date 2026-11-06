@@ -13,10 +13,12 @@ use App\Http\Controllers\Driver\RouteController as DriverRouteController;
 use App\Http\Controllers\Driver\SecurityController as DriverSecurityController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () {
+Route::middleware(['ensure.guard:driver', 'ensure.driver.location'])->prefix('driver')->group(function () {
     Route::post('location', [DriverLocationController::class, 'store'])
         ->middleware('throttle:30,1')
         ->name('driver.location.store');
+    Route::get('location-required', [DriverLocationController::class, 'required'])
+        ->name('driver.location.required');
     Route::get('dashboard', [DriverDashboardController::class, 'index'])->name('driver.dashboard');
     Route::get('route', [DriverRouteController::class, 'index'])->name('driver.route.index');
     Route::get('orders', [DriverOrderController::class, 'index'])->name('driver.orders.index');

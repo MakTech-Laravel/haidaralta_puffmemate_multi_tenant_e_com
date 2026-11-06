@@ -1,25 +1,25 @@
-import { Head, router, useForm } from "@inertiajs/react";
-import MapProviderSettingsController from "@/actions/App/Http/Controllers/Platform/MapProviderSettingsController";
-import Heading from "@/components/heading";
-import InputError from "@/components/input-error";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Head, router, useForm } from '@inertiajs/react';
+import MapProviderSettingsController from '@/actions/App/Http/Controllers/Platform/MapProviderSettingsController';
+import Heading from '@/components/heading';
+import InputError from '@/components/input-error';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
     SelectItem,
     SelectTrigger,
     SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
+import { cn } from '@/lib/utils';
 
 const settingsCardClass = cn(
-    "border-border/80 bg-card rounded-2xl border p-5 shadow-sm",
-    "sm:p-6",
+    'border-border/80 bg-card rounded-2xl border p-5 shadow-sm',
+    'sm:p-6',
 );
 
 type Selection = {
@@ -36,10 +36,10 @@ type CapabilityRow = {
     providers: { key: string; label: string; available: boolean }[];
 };
 
-type KeySource = "dashboard" | "environment" | "none";
+type KeySource = 'dashboard' | 'environment' | 'none';
 
 type ProviderField = {
-    name: "public_key" | "server_key";
+    name: 'public_key' | 'server_key';
     label: string;
     help: string;
     source: KeySource;
@@ -72,15 +72,15 @@ type Props = {
 };
 
 const sourceLabel: Record<KeySource, string> = {
-    dashboard: "Saved in dashboard",
-    environment: "Using deployment environment value",
-    none: "Not set",
+    dashboard: 'Saved in dashboard',
+    environment: 'Using deployment environment value',
+    none: 'Not set',
 };
 
 function SelectionCard({
     selection,
     capabilities,
-}: Pick<Props, "selection" | "capabilities">) {
+}: Pick<Props, 'selection' | 'capabilities'>) {
     const form = useForm<Selection>({ ...selection });
 
     return (
@@ -130,8 +130,8 @@ function SelectionCard({
                                         >
                                             {provider.label}
                                             {provider.available
-                                                ? ""
-                                                : " (no key saved)"}
+                                                ? ''
+                                                : ' (no key saved)'}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -147,7 +147,7 @@ function SelectionCard({
                         <Select
                             value={form.data.fallback_provider}
                             onValueChange={(value) =>
-                                form.setData("fallback_provider", value)
+                                form.setData('fallback_provider', value)
                             }
                         >
                             <SelectTrigger className="w-full">
@@ -181,15 +181,15 @@ function SelectionCard({
 function ProviderCard({ provider }: { provider: Provider }) {
     const form = useForm({
         is_enabled: provider.is_enabled,
-        public_key: "",
-        server_key: "",
+        public_key: '',
+        server_key: '',
         clear_public_key: false,
         clear_server_key: false,
         options: Object.fromEntries(
             provider.options.map((option) => [option.name, option.value]),
         ) as Record<string, string>,
-        daily_limit: provider.daily_limit?.toString() ?? "",
-        monthly_limit: provider.monthly_limit?.toString() ?? "",
+        daily_limit: provider.daily_limit?.toString() ?? '',
+        monthly_limit: provider.monthly_limit?.toString() ?? '',
     });
 
     const errors = form.errors as Record<string, string | undefined>;
@@ -207,8 +207,8 @@ function ProviderCard({ provider }: { provider: Provider }) {
                         onSuccess: () =>
                             form.setData((data) => ({
                                 ...data,
-                                public_key: "",
-                                server_key: "",
+                                public_key: '',
+                                server_key: '',
                                 clear_public_key: false,
                                 clear_server_key: false,
                             })),
@@ -245,7 +245,7 @@ function ProviderCard({ provider }: { provider: Provider }) {
                             id={`${provider.key}_enabled`}
                             checked={form.data.is_enabled}
                             onCheckedChange={(checked) =>
-                                form.setData("is_enabled", checked)
+                                form.setData('is_enabled', checked)
                             }
                         />
                     </div>
@@ -254,9 +254,9 @@ function ProviderCard({ provider }: { provider: Provider }) {
                 <div className="grid gap-5 sm:grid-cols-2">
                     {provider.fields.map((field) => {
                         const clearName =
-                            field.name === "public_key"
-                                ? "clear_public_key"
-                                : "clear_server_key";
+                            field.name === 'public_key'
+                                ? 'clear_public_key'
+                                : 'clear_server_key';
 
                         return (
                             <div
@@ -273,9 +273,9 @@ function ProviderCard({ provider }: { provider: Provider }) {
                                     type="password"
                                     autoComplete="off"
                                     placeholder={
-                                        field.source === "none"
-                                            ? ""
-                                            : "Leave blank to keep the current key"
+                                        field.source === 'none'
+                                            ? ''
+                                            : 'Leave blank to keep the current key'
                                     }
                                     value={form.data[field.name]}
                                     onChange={(event) =>
@@ -288,7 +288,7 @@ function ProviderCard({ provider }: { provider: Provider }) {
                                 <p className="text-muted-foreground text-xs">
                                     {sourceLabel[field.source]}. {field.help}
                                 </p>
-                                {field.source === "dashboard" && (
+                                {field.source === 'dashboard' && (
                                     <div className="flex items-center gap-2">
                                         <Checkbox
                                             id={`${provider.key}_${clearName}`}
@@ -324,9 +324,9 @@ function ProviderCard({ provider }: { provider: Provider }) {
                             <Input
                                 id={`${provider.key}_${option.name}`}
                                 placeholder={option.default}
-                                value={form.data.options[option.name] ?? ""}
+                                value={form.data.options[option.name] ?? ''}
                                 onChange={(event) =>
-                                    form.setData("options", {
+                                    form.setData('options', {
                                         ...form.data.options,
                                         [option.name]: event.target.value,
                                     })
@@ -349,7 +349,7 @@ function ProviderCard({ provider }: { provider: Provider }) {
                             placeholder="No limit"
                             value={form.data.daily_limit}
                             onChange={(event) =>
-                                form.setData("daily_limit", event.target.value)
+                                form.setData('daily_limit', event.target.value)
                             }
                         />
                         <p className="text-muted-foreground text-xs">
@@ -369,7 +369,7 @@ function ProviderCard({ provider }: { provider: Provider }) {
                             value={form.data.monthly_limit}
                             onChange={(event) =>
                                 form.setData(
-                                    "monthly_limit",
+                                    'monthly_limit',
                                     event.target.value,
                                 )
                             }
@@ -443,8 +443,8 @@ export default function PlatformMapProviderSettings({
 PlatformMapProviderSettings.layout = {
     breadcrumbs: [
         {
-            title: "Map provider",
-            href: "/platform/settings/map-provider",
+            title: 'Map provider',
+            href: '/platform/settings/map-provider',
         },
     ],
 };

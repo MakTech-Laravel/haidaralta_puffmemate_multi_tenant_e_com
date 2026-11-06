@@ -29,6 +29,16 @@ return [
     */
 
     'tracking' => [
+        // When true, a driver who should be sharing location but has no fresh position is
+        // blocked from the portal until they allow location. Readings are collected either way.
+        'gate_enabled' => (bool) env('DRIVER_TRACKING_GATE', true),
+        // Browser tracker pacing (seconds / metres). Sent to the app through shared props.
+        'client' => [
+            'heartbeat_seconds' => 45,
+            'min_send_interval_seconds' => 10,
+            'min_distance_meters' => 15,
+            'recheck_seconds' => 120,
+        ],
         // A position older than this counts as lost signal (seconds).
         'stale_after_seconds' => (int) env('DRIVER_TRACKING_STALE_AFTER', 120),
         // How long the last known position is kept in the cache (seconds).
