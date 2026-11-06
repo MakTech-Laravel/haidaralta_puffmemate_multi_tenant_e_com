@@ -121,6 +121,7 @@ class OpenStreetMapProvider extends AbstractMapProvider implements Geocodes, Rou
                 'state' => $address['state'] ?? null,
                 'postcode' => $address['postcode'] ?? null,
                 'country' => $address['country'] ?? null,
+                'country_code' => isset($address['country_code']) ? strtolower((string) $address['country_code']) : null,
             ],
         );
     }

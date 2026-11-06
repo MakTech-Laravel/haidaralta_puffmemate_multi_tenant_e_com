@@ -110,6 +110,8 @@ class AppServiceProvider extends ServiceProvider
                 : Limit::perMinute(30)->by((string) $user->getAuthIdentifier());
         });
 
+        RateLimiter::for('maps', fn (Request $request): Limit => Limit::perMinute(60)->by($request->ip()));
+
         RateLimiter::for('announcement-mail', function (): Limit {
             if ($this->app->environment('testing')) {
                 return Limit::none();

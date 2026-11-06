@@ -36,6 +36,26 @@ class MapManager
     }
 
     /**
+     * Tile settings for tools built on Leaflet only (the area polygon editor). Google tiles
+     * cannot be used in Leaflet, so a Google display provider falls back to the next
+     * Leaflet-capable provider in the chain (the fallback selection, then OpenStreetMap).
+     *
+     * @return array<string, mixed>
+     */
+    public function leafletDisplayConfig(): array
+    {
+        foreach ($this->resolver->chain(MapCapability::Display) as $provider) {
+            $config = $provider->frontendConfig();
+
+            if (($config['type'] ?? null) === 'leaflet') {
+                return ['key' => $provider->key(), 'label' => $provider->label()] + $config;
+            }
+        }
+
+        throw MapProviderUnavailableException::forCapability(MapCapability::Display);
+    }
+
+    /**
      * @param  array{country?: string|null, limit?: int}  $options
      * @return list<GeocodeResult>
      */

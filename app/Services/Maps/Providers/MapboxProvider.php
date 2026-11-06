@@ -136,6 +136,7 @@ class MapboxProvider extends AbstractMapProvider implements Geocodes, Routes
                 'state' => $context['region']['name'] ?? null,
                 'postcode' => $context['postcode']['name'] ?? null,
                 'country' => $context['country']['name'] ?? null,
+                'country_code' => isset($context['country']['country_code']) ? strtolower((string) $context['country']['country_code']) : null,
             ],
         );
     }

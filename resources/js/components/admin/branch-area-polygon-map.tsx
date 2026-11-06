@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { fetchLeafletTiles } from '@/lib/maps/config';
 import { cn } from '@/lib/utils';
 
 export type PolygonPoint = {
@@ -54,11 +55,7 @@ function uniqueVertices(ring: PolygonPoint[]): PolygonPoint[] {
     const first = ring[0];
     const last = ring[ring.length - 1];
 
-    if (
-        ring.length > 1 &&
-        first.lat === last.lat &&
-        first.lng === last.lng
-    ) {
+    if (ring.length > 1 && first.lat === last.lat && first.lng === last.lng) {
         return ring.slice(0, -1);
     }
 
@@ -157,11 +154,24 @@ export function BranchAreaPolygonMap({
                 13,
             ) as unknown as LeafletMap;
 
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution:
-                    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-                maxZoom: 19,
-            }).addTo(map as never);
+            // Leaflet cannot draw Google tiles, so this editor uses the Leaflet-capable
+            // provider chosen in the dashboard (OpenStreetMap when none is configured).
+            const tiles = await fetchLeafletTiles();
+
+            if (cancelled) {
+                map.remove();
+
+                return;
+            }
+
+            L.tileLayer(
+                tiles.tile_url ??
+                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                {
+                    attribution: tiles.attribution ?? '',
+                    maxZoom: tiles.max_zoom ?? 19,
+                },
+            ).addTo(map as never);
 
             const featureGroup = new L.FeatureGroup();
             featureGroup.addTo(map as never);
@@ -287,7 +297,12 @@ export function BranchAreaPolygonMap({
         const featureGroup = featureGroupRef.current;
         const leaflet = leafletRef.current;
 
-        if (!mapReady || map === null || featureGroup === null || leaflet === null) {
+        if (
+            !mapReady ||
+            map === null ||
+            featureGroup === null ||
+            leaflet === null
+        ) {
             return;
         }
 
@@ -331,7 +346,12 @@ export function BranchAreaPolygonMap({
     const vertexCount = uniqueVertices(value).length;
 
     return (
-        <div className={cn('branch-area-polygon-map flex flex-col gap-3', className)}>
+        <div
+            className={cn(
+                'branch-area-polygon-map flex flex-col gap-3',
+                className,
+            )}
+        >
             <div
                 ref={mapElement}
                 className="border-border h-64 w-full overflow-hidden rounded-xl border md:h-80"

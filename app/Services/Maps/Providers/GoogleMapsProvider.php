@@ -148,6 +148,7 @@ class GoogleMapsProvider extends AbstractMapProvider implements Geocodes, Routes
                 'state' => $part('administrative_area_level_1'),
                 'postcode' => $part('postal_code'),
                 'country' => $part('country'),
+                'country_code' => ($code = $part('country', 'short_name')) !== null ? strtolower($code) : null,
             ],
         );
     }
