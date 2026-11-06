@@ -179,8 +179,9 @@ export function buildBranchNav(
                         icon: PackagePlus,
                         permissions: ['manage-branch-drivers'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Live tracking',
+                        href: `/branch/${slug}/driver-map`,
                         icon: MapPinned,
                         permissions: ['manage-branch-drivers'],
                     }),

@@ -25,6 +25,8 @@ class DriverLocationService
 {
     public const CACHE_PREFIX = 'driver.location.';
 
+    public function __construct(private readonly DriverMapWatchers $watchers) {}
+
     /**
      * @param  array{latitude: float, longitude: float, accuracy?: float|null, speed?: float|null, heading?: int|null, recorded_at: CarbonInterface}  $reading
      */
@@ -82,6 +84,12 @@ class DriverLocationService
         if ($shouldBroadcast || $shouldCrumb) {
             $entry['fulfillment_id'] = $this->activeFulfillmentId($driver);
             $entry['branch_ids'] = $this->activeBranchIds($driver);
+        }
+
+        if ($shouldBroadcast && config('drivers.tracking.broadcast_only_when_watched') && ! $this->watchers->isWatched($entry['branch_ids'])) {
+            // Nobody has a live map open, so skip the Reverb push. The cached position still serves
+            // any map that opens later, and the unmoved broadcast mark makes the next reading send.
+            $shouldBroadcast = false;
         }
 
         if ($shouldCrumb) {

@@ -26,6 +26,7 @@ use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBa
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\DriverProductAssignController as PlatformDriverProductAssignController;
+use App\Http\Controllers\Platform\DriverTrackingController as PlatformDriverTrackingController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
 use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
@@ -185,6 +186,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:manage-drivers'])->group(function () {
+        Route::get('driver-map', [PlatformDriverTrackingController::class, 'index'])
+            ->name('platform.drivers.live');
+        Route::post('driver-map/watch', [PlatformDriverTrackingController::class, 'watch'])
+            ->middleware('throttle:6,1')
+            ->name('platform.drivers.live.watch');
+
         Route::resource('drivers', PlatformDriverController::class)
             ->parameters(['drivers' => 'user'])
             ->names('platform.drivers')

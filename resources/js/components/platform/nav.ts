@@ -161,8 +161,9 @@ export function buildPlatformNav(
                         icon: PackagePlus,
                         permissions: ['manage-drivers'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Live tracking',
+                        href: '/platform/driver-map',
                         icon: MapPinned,
                         permissions: ['manage-drivers'],
                     }),

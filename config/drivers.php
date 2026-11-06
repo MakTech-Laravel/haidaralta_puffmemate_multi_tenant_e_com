@@ -32,6 +32,8 @@ return [
         // When true, a driver who should be sharing location but has no fresh position is
         // blocked from the portal until they allow location. Readings are collected either way.
         'gate_enabled' => (bool) env('DRIVER_TRACKING_GATE', true),
+        // Push positions over Reverb only while a live map is open (saves Reverb traffic).
+        'broadcast_only_when_watched' => (bool) env('DRIVER_TRACKING_WATCH_ONLY', true),
         // Browser tracker pacing (seconds / metres). Sent to the app through shared props.
         'client' => [
             'heartbeat_seconds' => 45,
