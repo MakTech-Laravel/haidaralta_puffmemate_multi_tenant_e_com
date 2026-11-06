@@ -21,6 +21,7 @@ class AddCartItemRequest extends FormRequest
             'product' => ['required', 'string', 'exists:products,slug'],
             'quantity' => ['nullable', 'integer', 'min:1', 'max:'.CartService::MAX_LINE_QUANTITY],
             'variant_id' => ['nullable', 'integer', 'exists:product_variants,id'],
+            'product_package_id' => ['nullable', 'integer', 'exists:product_packages,id'],
             'count_view' => ['nullable', 'boolean'],
         ];
     }

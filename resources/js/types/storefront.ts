@@ -28,6 +28,11 @@ export type StorefrontProduct = {
     views: string;
 };
 
+export type StorefrontPackagedProduct = StorefrontProduct & {
+    packageCount: number;
+    fromLabel: string;
+};
+
 export type StorefrontPack = {
     id: string;
     slug: string;
@@ -79,6 +84,9 @@ export type StorefrontCartItem = {
     maxQuantity: number;
     lineTotal: number;
     formattedLineTotal: string;
+    productPackageId?: number | null;
+    packageLabel?: string | null;
+    packageQuantity?: number | null;
 };
 
 export type StorefrontCart = {

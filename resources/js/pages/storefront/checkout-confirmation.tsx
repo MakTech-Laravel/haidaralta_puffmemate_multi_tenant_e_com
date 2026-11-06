@@ -7,6 +7,7 @@ import { shop } from '@/routes';
 type ConfirmationItem = {
     name: string;
     image: string;
+    packageLabel?: string | null;
     quantity: number;
     formattedLineTotal: string;
     isLateDelivery?: boolean;
@@ -186,10 +187,15 @@ export default function StorefrontCheckoutConfirmation({
                                                 {item.name}
                                             </p>
                                             <p className="text-muted-foreground text-xs">
-                                                Quantity x {item.quantity}
-                                                {item.isLateDelivery
-                                                    ? ' · May arrive later'
-                                                    : ''}
+                                                {[
+                                                    item.packageLabel,
+                                                    `Quantity x ${item.quantity}`,
+                                                    item.isLateDelivery
+                                                        ? 'May arrive later'
+                                                        : null,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(' · ')}
                                             </p>
                                         </div>
                                         <p className="text-foreground shrink-0 text-sm font-bold">

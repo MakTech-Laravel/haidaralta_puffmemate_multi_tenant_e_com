@@ -38,6 +38,7 @@ class CartController extends Controller
                 $product,
                 (int) ($request->validated('quantity') ?? 1),
                 $request->validated('variant_id'),
+                $request->validated('product_package_id'),
             );
         } catch (InvalidArgumentException $exception) {
             return back()->withErrors(['product' => $exception->getMessage()]);

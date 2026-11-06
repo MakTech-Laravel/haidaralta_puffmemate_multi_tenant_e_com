@@ -93,6 +93,7 @@ export type DriverOrderDetail = DriverAssignedOrder & {
     products: Array<{
         id: number;
         name: string;
+        packageLabel?: string | null;
         quantityLabel: string;
         priceLabel: string;
         isLateDelivery?: boolean;

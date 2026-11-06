@@ -290,10 +290,12 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                                 </span>
                                                 {product.name}
                                             </p>
-                                            {product.isLateDelivery ||
+                                            {product.packageLabel ||
+                                            product.isLateDelivery ||
                                             product.isRemoved ? (
                                                 <p className="text-muted-foreground mt-0.5 text-xs">
                                                     {[
+                                                        product.packageLabel,
                                                         product.isLateDelivery
                                                             ? 'Late delivery'
                                                             : null,

@@ -60,6 +60,7 @@ declare module '@inertiajs/core' {
                 branch_can_view_categories: boolean;
                 show_parent_category: boolean;
                 show_product_variants: boolean;
+                show_product_packages: boolean;
                 show_bulk_import: boolean;
                 show_branch_pricing: boolean;
                 branch_can_manage_catalog_pricing: boolean;

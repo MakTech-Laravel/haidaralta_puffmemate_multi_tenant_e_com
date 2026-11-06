@@ -70,6 +70,7 @@ class HandleInertiaRequests extends Middleware
                 'branch_can_view_categories' => (bool) config('catalog.branch_can_view_categories'),
                 'show_parent_category' => (bool) config('catalog.show_parent_category'),
                 'show_product_variants' => (bool) config('catalog.show_product_variants'),
+                'show_product_packages' => (bool) config('catalog.show_product_packages'),
                 'show_bulk_import' => (bool) config('catalog.show_bulk_import'),
                 'show_branch_pricing' => (bool) config('catalog.show_branch_pricing'),
                 'branch_can_manage_catalog_pricing' => (bool) config('catalog.branch_can_manage_catalog_pricing'),
