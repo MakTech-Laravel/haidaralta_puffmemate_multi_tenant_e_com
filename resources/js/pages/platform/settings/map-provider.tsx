@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Progress } from '@/components/ui/progress';
 import {
     Select,
     SelectContent,
@@ -62,7 +63,12 @@ type Provider = {
     options: ProviderOption[];
     daily_limit: number | null;
     monthly_limit: number | null;
-    usage: { today: number; month: number };
+    usage: {
+        today: number;
+        month: number;
+        today_percent: number | null;
+        month_percent: number | null;
+    };
 };
 
 type Props = {
@@ -76,6 +82,37 @@ const sourceLabel: Record<KeySource, string> = {
     environment: 'Using deployment environment value',
     none: 'Not set',
 };
+
+function UsageMeter({
+    label,
+    count,
+    percent,
+}: {
+    label: string;
+    count: number;
+    percent: number | null;
+}) {
+    return (
+        <div className="space-y-1.5">
+            <p className="text-muted-foreground text-xs">
+                {label}: {count}
+                {percent !== null ? ` (${percent}% of limit)` : ''}
+            </p>
+            {percent !== null ? (
+                <Progress
+                    value={percent}
+                    className={cn(
+                        'h-1.5',
+                        percent >= 100 && '[&>div]:bg-destructive',
+                        percent >= 80 &&
+                            percent < 100 &&
+                            '[&>div]:bg-amber-500',
+                    )}
+                />
+            ) : null}
+        </div>
+    );
+}
 
 function SelectionCard({
     selection,
@@ -352,9 +389,11 @@ function ProviderCard({ provider }: { provider: Provider }) {
                                 form.setData('daily_limit', event.target.value)
                             }
                         />
-                        <p className="text-muted-foreground text-xs">
-                            Used today: {provider.usage.today}
-                        </p>
+                        <UsageMeter
+                            label="Used today"
+                            count={provider.usage.today}
+                            percent={provider.usage.today_percent}
+                        />
                         <InputError message={form.errors.daily_limit} />
                     </div>
                     <div className="flex flex-col gap-2">
@@ -374,9 +413,11 @@ function ProviderCard({ provider }: { provider: Provider }) {
                                 )
                             }
                         />
-                        <p className="text-muted-foreground text-xs">
-                            Used this month: {provider.usage.month}
-                        </p>
+                        <UsageMeter
+                            label="Used this month"
+                            count={provider.usage.month}
+                            percent={provider.usage.month_percent}
+                        />
                         <InputError message={form.errors.monthly_limit} />
                     </div>
                 </div>

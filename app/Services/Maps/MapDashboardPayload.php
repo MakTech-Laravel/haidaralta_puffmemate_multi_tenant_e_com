@@ -83,8 +83,10 @@ class MapDashboardPayload
             'daily_limit' => $row?->daily_limit,
             'monthly_limit' => $row?->monthly_limit,
             'usage' => [
-                'today' => $this->usage->dailyTotal($key),
-                'month' => $this->usage->monthlyTotal($key),
+                'today' => $today = $this->usage->dailyTotal($key),
+                'month' => $month = $this->usage->monthlyTotal($key),
+                'today_percent' => $row?->daily_limit ? min(100, (int) floor($today / $row->daily_limit * 100)) : null,
+                'month_percent' => $row?->monthly_limit ? min(100, (int) floor($month / $row->monthly_limit * 100)) : null,
             ],
         ];
     }
