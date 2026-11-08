@@ -28,6 +28,8 @@ class ProductSeeder extends Seeder
         $heated = Category::query()->where('slug', 'tobacco')->firstOrFail();
         $pouches = Category::query()->where('slug', 'nicotine-pouches')->firstOrFail();
         $accessories = Category::query()->where('slug', 'accessories')->firstOrFail();
+        $disposables = Category::query()->where('slug', 'disposables')->firstOrFail();
+        $podSystems = Category::query()->where('slug', 'pod-systems')->firstOrFail();
 
         // ExtendedCategorySeeder owns these root categories and refreshes them via updateOrCreate;
         // create them here when it has not run yet so no cigarette brand is left uncategorised.
@@ -56,7 +58,7 @@ class ProductSeeder extends Seeder
                 ['label' => 'Age Requirement', 'value' => '18+'],
             ],
             'description' => 'Premium Virginia blend cigarettes in a soft pack of 20. Smooth gold profile popular with everyday adult smokers. Age-restricted product — 18+ only.',
-            'image' => 'images/storefront/product-marlboro-gold.jpg',
+            'image' => 'images/catalog/products/marlboro-gold.webp',
             'color_code' => ['mode' => 'solid', 'color' => '#F8E7C1'],
             'variants' => [
                 ['name' => 'Single pack', 'sku' => 'CIG-MB-GOLD-20-PK', 'attributes' => ['pack_size' => '20', 'format' => 'Soft pack']],
@@ -180,7 +182,13 @@ class ProductSeeder extends Seeder
         ]);
 
         // ——— Vapes & disposables ———
-        $this->product([$vapes], $creator, [
+        // The Vapes & Disposables root holds only the owner-approved range (listedVapes); every other
+        // vape lives in its own root category (Disposables / Pod Systems / Pods & Coils / E-Liquids).
+        foreach ($this->listedVapes() as $listed) {
+            $this->product([$vapes], $creator, $listed);
+        }
+
+        $this->product([$disposables], $creator, [
             'name' => 'Vuse Go 5000 Disposable',
             'slug' => 'vuse-go-5000-disposable',
             'sku' => 'VAPE-VUSE-GO-5000',
@@ -203,7 +211,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$disposables], $creator, [
             'name' => 'PuffMeMate Pulse 5000',
             'slug' => 'puffmemate-pulse-5000',
             'sku' => 'POM-PULSE-5000',
@@ -225,7 +233,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$disposables], $creator, [
             'name' => 'PuffMeMate Mini Bar 1200',
             'slug' => 'puffmemate-mini-bar-1200',
             'sku' => 'POM-MINI-1200',
@@ -238,7 +246,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$podSystems], $creator, [
             'name' => 'PuffMeMate Core Kit',
             'slug' => 'puffmemate-core-kit',
             'sku' => 'POM-CORE-KIT',
@@ -251,7 +259,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$podSystems], $creator, [
             'name' => 'PuffMeMate Air Pro',
             'slug' => 'puffmemate-air-pro',
             'sku' => 'POM-AIR-PRO',
@@ -410,7 +418,7 @@ class ProductSeeder extends Seeder
         ]);
 
         // ——— Extra vapes & disposables ———
-        $this->product([$vapes], $creator, [
+        $this->product([$disposables], $creator, [
             'name' => 'IGET Bar Plus Disposable',
             'slug' => 'iget-bar-plus-disposable',
             'sku' => 'VAPE-IGET-BAR-PLUS',
@@ -432,7 +440,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$disposables], $creator, [
             'name' => 'PuffMeMate Cloud Bar 6000',
             'slug' => 'puffmemate-cloud-bar-6000',
             'sku' => 'POM-CLOUD-6000',
@@ -454,7 +462,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$disposables], $creator, [
             'name' => 'PuffMeMate Soft Touch 3500',
             'slug' => 'puffmemate-soft-touch-3500',
             'sku' => 'POM-SOFT-3500',
@@ -475,7 +483,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$podSystems], $creator, [
             'name' => 'Vuse ePod 2 Device Kit',
             'slug' => 'vuse-epod-2-device-kit',
             'sku' => 'VAPE-VUSE-EPOD2',
@@ -495,7 +503,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$disposables], $creator, [
             'name' => 'PuffMeMate Max Mesh 8000',
             'slug' => 'puffmemate-max-mesh-8000',
             'sku' => 'POM-MAX-8000',
@@ -517,7 +525,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$vapes], $creator, [
+        $this->product([$podSystems], $creator, [
             'name' => 'PuffMeMate Nano Pod Kit',
             'slug' => 'puffmemate-nano-pod-kit',
             'sku' => 'POM-NANO-KIT',
@@ -771,6 +779,44 @@ class ProductSeeder extends Seeder
     }
 
     /**
+     * Owner-approved Vapes & Disposables range. Selling prices are the owner's AUD amounts (plain
+     * numbers; the storefront formats them as A$); compare-at is derived (+15%). Stock is added later.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function listedVapes(): array
+    {
+        $range = [
+            ['ALIBARBAR INGOT 9000 PUFFS', 'alibarbar-ingot-9000-puffs', 'ALIBARBAR-INGOT-9000', 'Alibarbar', '9000 puffs', '60.00', 'alibarbar-ingot-9000-puffs'],
+            ['KUZ NOVA 16000: ULTIMATE HIGH-CAPACITY DISPOSABLE VAPE.', 'kuz-nova-16000', 'KUZ-NOVA-16000', 'KUZ', '16000 puffs', '65.00', 'kuz-nova-16000'],
+            ['KUZ PEARL 30000 PUFFS', 'kuz-pearl-30000-puffs', 'KUZ-PEARL-30000', 'KUZ', '30000 puffs', '75.00', 'kuz-pearl-30000-puffs'],
+            ['IGET ONE 12000', 'iget-one-12000', 'IGET-ONE-12000', 'IGET', '12000 puffs', '75.00', 'iget-one-12000'],
+            ['IGET BAR PRO 10K', 'iget-bar-pro-10k', 'IGET-BAR-PRO-10K', 'IGET', '10000 puffs', '60.00', 'iget-bar-pro-10k'],
+            ['ZYN NIC CHEWABLE FLAVORED PRACTICAL AND SMOKE-FREE', 'zyn-nic-chewable-flavored', 'ZYN-NIC-CHEWABLE', 'ZYN', 'Smoke-free', '25.00', 'zyn-nic-chewable'],
+        ];
+
+        return array_map(fn (array $row): array => [
+            'name' => $row[0],
+            'slug' => $row[1],
+            'sku' => 'VAPE-'.$row[2],
+            'brand' => $row[3],
+            'pack_label' => $row[4],
+            'tags' => [],
+            'specifications' => [
+                ['label' => 'Variant', 'value' => $row[4]],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => "{$row[0]} Age-restricted product — 18+ only.",
+            'image' => "images/catalog/products/{$row[6]}.webp",
+            'color_code' => ['mode' => 'solid', 'color' => '#E8F0FE'],
+            'selling_price' => $row[5],
+            'variants' => [
+                ['name' => 'Single unit', 'sku' => 'VAPE-'.$row[2].'-1', 'attributes' => ['format' => $row[4]]],
+            ],
+        ], $range);
+    }
+
+    /**
      * Owner-approved Cigarettes range (besides Marlboro Gold Soft Pack 20s above). Selling prices are the
      * owner's AUD amounts (stored as plain numbers; the storefront formats them as A$); compare-at is
      * derived (+15%). Stock is added later per branch.
@@ -780,20 +826,20 @@ class ProductSeeder extends Seeder
     private function listedCigarettes(): array
     {
         $range = [
-            ['Double Happiness (Soft Pack)', 'double-happiness-soft-pack', 'DH-SP', 'Double Happiness', 'Soft Pack', 'Soft Pack', '140.00'],
-            ['Manchester Special Edition', 'manchester-special-edition', 'MC-SE', 'Manchester', 'Special Edition', 'Standard', '150.00'],
-            ['Manchester Light', 'manchester-light', 'MC-LT', 'Manchester', 'Light', 'Standard', '150.00'],
-            ['Manchester Royal Red', 'manchester-royal-red', 'MC-RR', 'Manchester', 'Royal Red', 'Standard', '140.00'],
-            ['Manchester Double Drive', 'manchester-double-drive', 'MC-DD', 'Manchester', 'Double Drive', 'Standard', '170.00'],
-            ['Manchester Sapphire Blue', 'manchester-sapphire-blue', 'MC-SB', 'Manchester', 'Sapphire Blue', 'Standard', '160.00'],
-            ['Manchester Red', 'manchester-red', 'MC-RD', 'Manchester', 'Red', 'Standard', '140.00'],
-            ['Marlboro Red', 'marlboro-red', 'MB-RED', 'Marlboro', 'Red', 'Standard', '140.00'],
-            ['Marlboro Ice Blast', 'marlboro-ice-blast', 'MB-ICE', 'Marlboro', 'Ice Blast', 'Standard', '160.00'],
-            ['Benson & Hedges Special Filter', 'benson-hedges-special-filter', 'BH-SF', 'Benson & Hedges', 'Special Filter', 'Standard', '150.00'],
-            ['Dunhill Blue', 'dunhill-blue', 'DH-BLUE', 'Dunhill', 'Blue', 'Standard', '150.00'],
-            ['MAC', 'mac', 'MAC', 'MAC', 'Original', 'Standard', '140.00'],
-            ['Kent Switch', 'kent-switch', 'KT-SW', 'Kent', 'Switch', 'Standard', '150.00'],
-            ['Eights (8mg)', 'eights-8mg', 'EI-8MG', 'Eights', '8mg', 'Standard', '155.00'],
+            ['Double Happiness (Soft Pack)', 'double-happiness-soft-pack', 'DH-SP', 'Double Happiness', 'Soft Pack', 'Soft Pack', '140.00', 'double-happiness'],
+            ['Manchester Special Edition', 'manchester-special-edition', 'MC-SE', 'Manchester', 'Special Edition', 'Standard', '150.00', 'manchester-special-edition'],
+            ['Manchester Light', 'manchester-light', 'MC-LT', 'Manchester', 'Light', 'Standard', '150.00', 'manchester-light'],
+            ['Manchester Royal Red', 'manchester-royal-red', 'MC-RR', 'Manchester', 'Royal Red', 'Standard', '140.00', 'manchester-royal-red'],
+            ['Manchester Double Drive', 'manchester-double-drive', 'MC-DD', 'Manchester', 'Double Drive', 'Standard', '170.00', 'manchester-double-drive'],
+            ['Manchester Sapphire Blue', 'manchester-sapphire-blue', 'MC-SB', 'Manchester', 'Sapphire Blue', 'Standard', '160.00', 'manchester-sapphire-blue'],
+            ['Manchester Red', 'manchester-red', 'MC-RD', 'Manchester', 'Red', 'Standard', '140.00', 'manchester-red'],
+            ['Marlboro Red', 'marlboro-red', 'MB-RED', 'Marlboro', 'Red', 'Standard', '140.00', 'marlboro-red'],
+            ['Marlboro Ice Blast', 'marlboro-ice-blast', 'MB-ICE', 'Marlboro', 'Ice Blast', 'Standard', '160.00', 'marlboro-ice-blast'],
+            ['Benson & Hedges Special Filter', 'benson-hedges-special-filter', 'BH-SF', 'Benson & Hedges', 'Special Filter', 'Standard', '150.00', 'benson-hedges-special-filter'],
+            ['Dunhill Blue', 'dunhill-blue', 'DH-BLUE', 'Dunhill', 'Blue', 'Standard', '150.00', 'dunhill-blue'],
+            ['MAC', 'mac', 'MAC', 'MAC', 'Original', 'Standard', '140.00', 'mac'],
+            ['Kent Switch', 'kent-switch', 'KT-SW', 'Kent', 'Switch', 'Standard', '150.00', 'kent-switch'],
+            ['Eights (8mg)', 'eights-8mg', 'EI-8MG', 'Eights', '8mg', 'Standard', '155.00', 'eights-8mg'],
         ];
 
         return array_map(fn (array $row): array => [
@@ -812,9 +858,7 @@ class ProductSeeder extends Seeder
                 ['label' => 'Age Requirement', 'value' => '18+'],
             ],
             'description' => "{$row[0]} cigarettes. Age-restricted product — 18+ only.",
-            'image' => $row[3] === 'Marlboro'
-                ? 'images/storefront/product-marlboro-gold.jpg'
-                : 'images/storefront/product-winfield-blue.jpg',
+            'image' => "images/catalog/products/{$row[7]}.webp",
             'color_code' => ['mode' => 'solid', 'color' => '#F1F5F9'],
             'selling_price' => $row[6],
             'variants' => [

@@ -23,13 +23,14 @@ class ExtendedCategorySeeder extends Seeder
     {
         $children = $this->children();
         $roots = Category::query()->whereIn('slug', array_keys($children))->pluck('id', 'slug');
-        $cigaretteRanges = $this->cigaretteRanges();
+        $rootRanges = $this->rootRanges();
 
-        $this->startSeedProgress('Categories', array_sum(array_map('count', $children)) + count($cigaretteRanges));
+        $this->startSeedProgress('Categories', array_sum(array_map('count', $children)) + count($rootRanges));
 
-        // Cigarette brand ranges are root categories (not children of Cigarettes) so that the Cigarettes
-        // page, which includes child categories, lists only the owner-approved range attached to it.
-        foreach ($cigaretteRanges as $row) {
+        // Cigarette brand ranges and vape sub-ranges are root categories (not children of Cigarettes /
+        // Vapes) so that those pages, which include child categories, list only the owner-approved
+        // range attached to the root itself.
+        foreach ($rootRanges as $row) {
             $this->childCategory(null, $row);
             $this->advanceSeedProgress();
         }
@@ -63,10 +64,6 @@ class ExtendedCategorySeeder extends Seeder
                 ['name' => 'Cigars & Cigarillos', 'slug' => 'cigars-cigarillos', 'image' => 'images/storefront/category-tobacco.png'],
                 ['name' => 'Pipe Tobacco', 'slug' => 'pipe-tobacco', 'image' => 'images/storefront/category-tobacco.png'],
             ],
-            'vapes' => [
-                ['name' => 'Pods & Coils', 'slug' => 'pods-coils', 'image' => 'images/catalog/products/core-closed-pods-2-pack.jpg'],
-                ['name' => 'E-Liquids', 'slug' => 'e-liquids', 'image' => 'images/catalog/products/harbor-fruit-blend-60ml.jpg'],
-            ],
             'nicotine-pouches' => [
                 ['name' => 'Mint Pouches', 'slug' => 'mint-pouches', 'image' => 'images/storefront/category-pouches.png'],
                 ['name' => 'Flavoured Pouches', 'slug' => 'flavoured-pouches', 'image' => 'images/storefront/category-pouches.png'],
@@ -85,12 +82,14 @@ class ExtendedCategorySeeder extends Seeder
     /**
      * @return list<array{name: string, slug: string, image: string}>
      */
-    private function cigaretteRanges(): array
+    private function rootRanges(): array
     {
         return [
             ['name' => 'Premium Cigarettes', 'slug' => 'premium-cigarettes', 'image' => 'images/storefront/category-cigarettes.png'],
             ['name' => 'Everyday & Value Cigarettes', 'slug' => 'value-cigarettes', 'image' => 'images/storefront/category-cigarettes.png'],
             ['name' => 'Large Packs (30s–50s)', 'slug' => 'large-packs', 'image' => 'images/storefront/category-cigarettes.png'],
+            ['name' => 'Pods & Coils', 'slug' => 'pods-coils', 'image' => 'images/catalog/products/core-closed-pods-2-pack.jpg'],
+            ['name' => 'E-Liquids', 'slug' => 'e-liquids', 'image' => 'images/catalog/products/harbor-fruit-blend-60ml.jpg'],
         ];
     }
 

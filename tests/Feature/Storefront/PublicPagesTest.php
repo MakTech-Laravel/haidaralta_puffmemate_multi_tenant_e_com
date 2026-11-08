@@ -359,7 +359,13 @@ test('storefront category search does not leak products from other categories', 
 });
 
 test('storefront category page includes products from child categories', function () {
-    $child = Category::query()->where('slug', 'disposables')->firstOrFail();
+    $parent = Category::query()->where('slug', 'tobacco')->firstOrFail();
+    $child = Category::query()->create([
+        'name' => 'Test Child Category',
+        'slug' => 'test-child-category',
+        'parent_id' => $parent->id,
+        'status' => true,
+    ]);
 
     $childOnly = Product::factory()->create([
         'name' => 'Child Only Disposable',
@@ -370,7 +376,7 @@ test('storefront category page includes products from child categories', functio
     ]);
     $childOnly->categories()->sync([$child->id]);
 
-    $this->get(route('shop.category', ['category' => 'vapes']))
+    $this->get(route('shop.category', ['category' => 'tobacco']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/category')
