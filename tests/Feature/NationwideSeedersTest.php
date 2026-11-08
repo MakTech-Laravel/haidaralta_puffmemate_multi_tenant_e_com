@@ -99,6 +99,27 @@ test('cigarettes storefront page lists only the owner-approved range, not child 
             ->has('products', 15));
 });
 
+test('vapes category holds only the owner-approved range and shows nothing from other vape categories', function () {
+    $vapes = Category::query()->where('slug', 'vapes')->firstOrFail();
+
+    expect(Category::query()->where('parent_id', $vapes->id)->exists())->toBeFalse()
+        ->and($vapes->products()->pluck('slug')->sort()->values()->all())->toBe(collect([
+            'alibarbar-ingot-9000-puffs',
+            'kuz-nova-16000',
+            'kuz-pearl-30000-puffs',
+            'iget-one-12000',
+            'iget-bar-pro-10k',
+            'zyn-nic-chewable-flavored',
+        ])->sort()->values()->all())
+        ->and(Product::query()->doesntHave('categories')->exists())->toBeFalse();
+
+    $this->get(route('shop.category', ['category' => 'vapes']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/category')
+            ->has('products', 6));
+});
+
 test('nationwide inventory stocks every branch with a stock-in ledger and keeps hand-tuned stock', function () {
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
     $marlboro = Product::query()->where('slug', 'marlboro-gold-soft-pack-20s')->firstOrFail();
