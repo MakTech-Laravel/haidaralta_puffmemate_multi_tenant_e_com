@@ -16,6 +16,7 @@ use Database\Seeders\NationwideInventorySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Support\Facades\Http;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     Http::fake([
@@ -62,6 +63,40 @@ test('extended catalog seeds 500+ priced products under hidden sub-categories', 
         ->and($rollingTobacco->featured)->toBeFalse()
         ->and($rollingTobacco->show_in_nav)->toBeFalse()
         ->and($rollingTobacco->products()->count())->toBeGreaterThan(0);
+});
+
+test('cigarettes category holds only the owner-approved range', function () {
+    $cigarettes = Category::query()->where('slug', 'cigarettes')->firstOrFail();
+
+    expect($cigarettes->products()->pluck('slug')->sort()->values()->all())->toBe(collect([
+        'double-happiness-soft-pack',
+        'manchester-special-edition',
+        'manchester-light',
+        'manchester-royal-red',
+        'manchester-double-drive',
+        'manchester-sapphire-blue',
+        'manchester-red',
+        'marlboro-gold-soft-pack-20s',
+        'marlboro-red',
+        'marlboro-ice-blast',
+        'benson-hedges-special-filter',
+        'dunhill-blue',
+        'mac',
+        'kent-switch',
+        'eights-8mg',
+    ])->sort()->values()->all());
+});
+
+test('cigarettes storefront page lists only the owner-approved range, not child category products', function () {
+    $cigarettes = Category::query()->where('slug', 'cigarettes')->firstOrFail();
+
+    expect(Category::query()->where('parent_id', $cigarettes->id)->exists())->toBeFalse();
+
+    $this->get(route('shop.category', ['category' => 'cigarettes']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/category')
+            ->has('products', 15));
 });
 
 test('nationwide inventory stocks every branch with a stock-in ledger and keeps hand-tuned stock', function () {

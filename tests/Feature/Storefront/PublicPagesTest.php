@@ -280,9 +280,11 @@ test('storefront shop page filters products by search', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/shop')
             ->where('filters.search', 'Marlboro')
-            ->where('products.0.id', 'marlboro-gold-soft-pack-20s')
-            ->where('products.0.name', 'Marlboro Gold Soft Pack 20s')
-            ->has('products', 1));
+            ->where('products', fn ($products): bool => collect($products)->pluck('id')->sort()->values()->all() === [
+                'marlboro-gold-soft-pack-20s',
+                'marlboro-ice-blast',
+                'marlboro-red',
+            ]));
 });
 
 test('storefront category page renders products for a valid slug', function () {
@@ -312,7 +314,9 @@ test('storefront category page searches within the category via scout', function
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/category')
             ->where('filters.search', 'Marlboro')
-            ->where('products.0.id', 'marlboro-gold-soft-pack-20s')
+            ->where('products', fn ($products): bool => collect($products)->contains(
+                fn ($product): bool => $product['id'] === 'marlboro-gold-soft-pack-20s',
+            ))
             ->where('products', fn ($products): bool => collect($products)->every(
                 fn ($product): bool => str_contains(strtolower((string) $product['name']), 'marlboro')
                     || str_contains(strtolower((string) $product['id']), 'marlboro'),

@@ -50,8 +50,11 @@ test('storefront shop filters products by search', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/shop')
             ->where('filters.search', 'Marlboro')
-            ->where('products.0.id', 'marlboro-gold-soft-pack-20s')
-            ->has('products', 1));
+            ->where('products', fn ($products): bool => collect($products)->pluck('id')->sort()->values()->all() === [
+                'marlboro-gold-soft-pack-20s',
+                'marlboro-ice-blast',
+                'marlboro-red',
+            ]));
 });
 
 test('storefront shop filters by category slug tag and price', function () {

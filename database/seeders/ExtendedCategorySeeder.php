@@ -23,8 +23,16 @@ class ExtendedCategorySeeder extends Seeder
     {
         $children = $this->children();
         $roots = Category::query()->whereIn('slug', array_keys($children))->pluck('id', 'slug');
+        $cigaretteRanges = $this->cigaretteRanges();
 
-        $this->startSeedProgress('Categories', array_sum(array_map('count', $children)));
+        $this->startSeedProgress('Categories', array_sum(array_map('count', $children)) + count($cigaretteRanges));
+
+        // Cigarette brand ranges are root categories (not children of Cigarettes) so that the Cigarettes
+        // page, which includes child categories, lists only the owner-approved range attached to it.
+        foreach ($cigaretteRanges as $row) {
+            $this->childCategory(null, $row);
+            $this->advanceSeedProgress();
+        }
 
         foreach ($children as $rootSlug => $rows) {
             $parentId = $roots[$rootSlug] ?? null;
@@ -49,11 +57,6 @@ class ExtendedCategorySeeder extends Seeder
     private function children(): array
     {
         return [
-            'cigarettes' => [
-                ['name' => 'Premium Cigarettes', 'slug' => 'premium-cigarettes', 'image' => 'images/storefront/category-cigarettes.png'],
-                ['name' => 'Everyday & Value Cigarettes', 'slug' => 'value-cigarettes', 'image' => 'images/storefront/category-cigarettes.png'],
-                ['name' => 'Large Packs (30s–50s)', 'slug' => 'large-packs', 'image' => 'images/storefront/category-cigarettes.png'],
-            ],
             'tobacco' => [
                 ['name' => 'Rolling Tobacco', 'slug' => 'rolling-tobacco', 'image' => 'images/storefront/category-tobacco.png'],
                 ['name' => 'Heated Tobacco', 'slug' => 'heated-tobacco', 'image' => 'images/storefront/product-iqos.png'],
@@ -80,9 +83,21 @@ class ExtendedCategorySeeder extends Seeder
     }
 
     /**
+     * @return list<array{name: string, slug: string, image: string}>
+     */
+    private function cigaretteRanges(): array
+    {
+        return [
+            ['name' => 'Premium Cigarettes', 'slug' => 'premium-cigarettes', 'image' => 'images/storefront/category-cigarettes.png'],
+            ['name' => 'Everyday & Value Cigarettes', 'slug' => 'value-cigarettes', 'image' => 'images/storefront/category-cigarettes.png'],
+            ['name' => 'Large Packs (30s–50s)', 'slug' => 'large-packs', 'image' => 'images/storefront/category-cigarettes.png'],
+        ];
+    }
+
+    /**
      * @param  array{name: string, slug: string, image: string}  $row
      */
-    private function childCategory(int $parentId, array $row): Category
+    private function childCategory(?int $parentId, array $row): Category
     {
         $attributes = [
             'name' => $row['name'],
