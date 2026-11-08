@@ -205,7 +205,8 @@ class ExtendedProductSeeder extends Seeder
         foreach ($brands as $brand) {
             foreach ($brand['shades'] as $shadeIndex => $shade) {
                 foreach ($brand['sizes'] as $size) {
-                    $categories = ['cigarettes', $brand['tier'] === 'premium' ? 'premium-cigarettes' : 'value-cigarettes'];
+                    // Never attach the root `cigarettes` category: it holds only the owner-approved range (ProductSeeder).
+                    $categories = [$brand['tier'] === 'premium' ? 'premium-cigarettes' : 'value-cigarettes'];
 
                     if ($size >= 30) {
                         $categories[] = 'large-packs';

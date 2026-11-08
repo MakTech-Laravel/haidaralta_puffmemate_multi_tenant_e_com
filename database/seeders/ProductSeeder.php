@@ -29,7 +29,14 @@ class ProductSeeder extends Seeder
         $pouches = Category::query()->where('slug', 'nicotine-pouches')->firstOrFail();
         $accessories = Category::query()->where('slug', 'accessories')->firstOrFail();
 
+        // ExtendedCategorySeeder owns these root categories and refreshes them via updateOrCreate;
+        // create them here when it has not run yet so no cigarette brand is left uncategorised.
+        $premiumCigarettes = [$this->cigaretteRangeCategory('Premium Cigarettes', 'premium-cigarettes')];
+        $valueCigarettes = [$this->cigaretteRangeCategory('Everyday & Value Cigarettes', 'value-cigarettes')];
+
         // ——— Cigarettes ———
+        // The Cigarettes category holds only the owner-approved range below. Other cigarette
+        // brands sit in the premium / value child categories and must never be attached to it.
         $this->product([$cigarettes], $creator, [
             'name' => 'Marlboro Gold Soft Pack 20s',
             'slug' => 'marlboro-gold-soft-pack-20s',
@@ -57,7 +64,11 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$cigarettes], $creator, [
+        foreach ($this->listedCigarettes() as $listed) {
+            $this->product([$cigarettes], $creator, $listed);
+        }
+
+        $this->product($valueCigarettes, $creator, [
             'name' => 'Winfield Blue Soft Pack 20s',
             'slug' => 'winfield-blue-soft-pack-20s',
             'sku' => 'CIG-WF-BLUE-20',
@@ -82,7 +93,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$cigarettes], $creator, [
+        $this->product($valueCigarettes, $creator, [
             'name' => 'Horizon Red Soft Pack 25s',
             'slug' => 'horizon-red-soft-pack-25s',
             'sku' => 'CIG-HZ-RED-25',
@@ -102,7 +113,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$cigarettes], $creator, [
+        $this->product($valueCigarettes, $creator, [
             'name' => 'Peter Jackson Menthol 20s',
             'slug' => 'peter-jackson-menthol-20s',
             'sku' => 'CIG-PJ-MENTH-20',
@@ -253,7 +264,7 @@ class ProductSeeder extends Seeder
         ]);
 
         // ——— Extra cigarettes (AU retail staples) ———
-        $this->product([$cigarettes], $creator, [
+        $this->product($premiumCigarettes, $creator, [
             'name' => 'Benson & Hedges Smooth Soft Pack 20s',
             'slug' => 'benson-hedges-smooth-soft-pack-20s',
             'sku' => 'CIG-BH-SMOOTH-20',
@@ -275,7 +286,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$cigarettes], $creator, [
+        $this->product($premiumCigarettes, $creator, [
             'name' => 'Dunhill Fine Cut Soft Pack 20s',
             'slug' => 'dunhill-fine-cut-soft-pack-20s',
             'sku' => 'CIG-DH-FINE-20',
@@ -296,7 +307,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$cigarettes], $creator, [
+        $this->product($valueCigarettes, $creator, [
             'name' => 'Rothmans Blue Soft Pack 20s',
             'slug' => 'rothmans-blue-soft-pack-20s',
             'sku' => 'CIG-RM-BLUE-20',
@@ -317,7 +328,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$cigarettes], $creator, [
+        $this->product($valueCigarettes, $creator, [
             'name' => 'Winfield Red Soft Pack 20s',
             'slug' => 'winfield-red-soft-pack-20s',
             'sku' => 'CIG-WF-RED-20',
@@ -339,7 +350,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$cigarettes], $creator, [
+        $this->product($valueCigarettes, $creator, [
             'name' => 'Escort Red Soft Pack 25s',
             'slug' => 'escort-red-soft-pack-25s',
             'sku' => 'CIG-ES-RED-25',
@@ -630,7 +641,7 @@ class ProductSeeder extends Seeder
         ]);
 
         // ——— Accessories ———
-        $this->product([$accessories, $cigarettes], $creator, [
+        $this->product([$accessories], $creator, [
             'name' => 'Clipper Classic Lighter',
             'slug' => 'clipper-classic-lighter',
             'sku' => 'ACC-CLIPPER',
@@ -646,7 +657,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$accessories, $cigarettes], $creator, [
+        $this->product([$accessories], $creator, [
             'name' => 'RAW Classic Rolling Papers King Size',
             'slug' => 'raw-classic-rolling-papers-ks',
             'sku' => 'ACC-RAW-KS',
@@ -704,7 +715,7 @@ class ProductSeeder extends Seeder
             'variants' => [],
         ]);
 
-        $this->product([$accessories, $cigarettes], $creator, [
+        $this->product([$accessories], $creator, [
             'name' => 'Bic Maxi Lighter',
             'slug' => 'bic-maxi-lighter',
             'sku' => 'ACC-BIC-MAXI',
@@ -742,6 +753,74 @@ class ProductSeeder extends Seeder
             'Products',
             fn (int $total): string => sprintf('%d core products ready.', $total),
         );
+    }
+
+    /**
+     * Root category (never a child of Cigarettes, whose page lists child-category products too).
+     */
+    private function cigaretteRangeCategory(string $name, string $slug): Category
+    {
+        return Category::query()->firstOrCreate(['slug' => $slug], [
+            'name' => $name,
+            'parent_id' => null,
+            'status' => true,
+            'featured' => false,
+            'show_in_nav' => false,
+            'nav_sort' => null,
+        ]);
+    }
+
+    /**
+     * Owner-approved Cigarettes range (besides Marlboro Gold Soft Pack 20s above). Selling prices are the
+     * owner's AUD amounts (stored as plain numbers; the storefront formats them as A$); compare-at is
+     * derived (+15%). Stock is added later per branch.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function listedCigarettes(): array
+    {
+        $range = [
+            ['Double Happiness (Soft Pack)', 'double-happiness-soft-pack', 'DH-SP', 'Double Happiness', 'Soft Pack', 'Soft Pack', '140.00'],
+            ['Manchester Special Edition', 'manchester-special-edition', 'MC-SE', 'Manchester', 'Special Edition', 'Standard', '150.00'],
+            ['Manchester Light', 'manchester-light', 'MC-LT', 'Manchester', 'Light', 'Standard', '150.00'],
+            ['Manchester Royal Red', 'manchester-royal-red', 'MC-RR', 'Manchester', 'Royal Red', 'Standard', '140.00'],
+            ['Manchester Double Drive', 'manchester-double-drive', 'MC-DD', 'Manchester', 'Double Drive', 'Standard', '170.00'],
+            ['Manchester Sapphire Blue', 'manchester-sapphire-blue', 'MC-SB', 'Manchester', 'Sapphire Blue', 'Standard', '160.00'],
+            ['Manchester Red', 'manchester-red', 'MC-RD', 'Manchester', 'Red', 'Standard', '140.00'],
+            ['Marlboro Red', 'marlboro-red', 'MB-RED', 'Marlboro', 'Red', 'Standard', '140.00'],
+            ['Marlboro Ice Blast', 'marlboro-ice-blast', 'MB-ICE', 'Marlboro', 'Ice Blast', 'Standard', '160.00'],
+            ['Benson & Hedges Special Filter', 'benson-hedges-special-filter', 'BH-SF', 'Benson & Hedges', 'Special Filter', 'Standard', '150.00'],
+            ['Dunhill Blue', 'dunhill-blue', 'DH-BLUE', 'Dunhill', 'Blue', 'Standard', '150.00'],
+            ['MAC', 'mac', 'MAC', 'MAC', 'Original', 'Standard', '140.00'],
+            ['Kent Switch', 'kent-switch', 'KT-SW', 'Kent', 'Switch', 'Standard', '150.00'],
+            ['Eights (8mg)', 'eights-8mg', 'EI-8MG', 'Eights', '8mg', 'Standard', '155.00'],
+        ];
+
+        return array_map(fn (array $row): array => [
+            'name' => $row[0],
+            'slug' => $row[1],
+            'sku' => 'CIG-'.$row[2],
+            'brand' => $row[3],
+            'pack_label' => $row[4],
+            'pieces_per_pack' => 20,
+            'pack_unit' => 'Cigarettes',
+            'tags' => [],
+            'specifications' => [
+                ['label' => 'Variant', 'value' => $row[4]],
+                ['label' => 'Pack Format', 'value' => $row[5]],
+                ['label' => 'Quantity', 'value' => '20 cigarettes'],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => "{$row[0]} cigarettes. Age-restricted product — 18+ only.",
+            'image' => $row[3] === 'Marlboro'
+                ? 'images/storefront/product-marlboro-gold.jpg'
+                : 'images/storefront/product-winfield-blue.jpg',
+            'color_code' => ['mode' => 'solid', 'color' => '#F1F5F9'],
+            'selling_price' => $row[6],
+            'variants' => [
+                ['name' => 'Single pack', 'sku' => 'CIG-'.$row[2].'-PK', 'attributes' => ['pack_size' => '20', 'format' => $row[5]]],
+            ],
+        ], $range);
     }
 
     /**
@@ -872,7 +951,7 @@ class ProductSeeder extends Seeder
         }
 
         $selling = match ($slug) {
-            'marlboro-gold-soft-pack-20s' => '48.95',
+            'marlboro-gold-soft-pack-20s' => '140.00',
             'winfield-blue-soft-pack-20s' => '46.50',
             'horizon-red-soft-pack-25s' => '52.90',
             'peter-jackson-menthol-20s' => '47.20',
