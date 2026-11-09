@@ -77,6 +77,15 @@ declare module '@inertiajs/core' {
                 supportPhone: string;
                 branchPhone: string;
             } | null;
+            driverTracking: {
+                should_share: boolean;
+                location_url: string;
+                gate_url: string;
+                heartbeat_seconds: number;
+                min_send_interval_seconds: number;
+                min_distance_meters: number;
+                recheck_seconds: number;
+            } | null;
             notifications: SharedNotifications;
             [key: string]: unknown;
         };

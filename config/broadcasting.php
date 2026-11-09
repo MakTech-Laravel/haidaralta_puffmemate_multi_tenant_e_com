@@ -43,6 +43,10 @@ return [
             ],
             'client_options' => [
                 // Guzzle client options: https://docs.guzzlephp.org/en/stable/request-options.html
+                // Short timeouts: live driver positions are broadcast synchronously, and a slow
+                // Reverb server must not hold the driver's request open.
+                'timeout' => 3,
+                'connect_timeout' => 2,
             ],
         ],
 

@@ -28,6 +28,7 @@ class DatabaseSeeder extends Seeder
             BranchAreaSeeder::class,
             UserSeeder::class,
             ApplicationSettingsSeeder::class,
+            MapProviderSeeder::class,
             CmsPageSeeder::class,
             HomeBannerSeeder::class,
             CategorySeeder::class,
