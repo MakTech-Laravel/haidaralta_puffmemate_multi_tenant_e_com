@@ -46,6 +46,7 @@ use Spatie\MediaLibrary\HasMedia;
  * @property Carbon|null $discount_start_date
  * @property Carbon|null $discount_end_date
  * @property bool $status
+ * @property bool $packages_enabled
  * @property int $views
  * @property int|null $created_by
  * @property-read Collection<int, Category> $categories
@@ -106,6 +107,7 @@ class Product extends Model implements DataTableConfigurable, HasMedia, ScoutSea
         'discount_start_date',
         'discount_end_date',
         'status',
+        'packages_enabled',
         'created_by',
     ];
 
@@ -263,6 +265,7 @@ class Product extends Model implements DataTableConfigurable, HasMedia, ScoutSea
     {
         return [
             'status' => 'boolean',
+            'packages_enabled' => 'boolean',
             'views' => 'integer',
             'tags' => 'array',
             'specifications' => 'array',

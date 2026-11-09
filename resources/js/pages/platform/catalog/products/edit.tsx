@@ -47,6 +47,7 @@ type Product = {
     wholesale_price?: string | null;
     min_wholesale_qty?: number | null;
     status: boolean;
+    packages_enabled?: boolean;
     packages?: CatalogProductPackage[];
 };
 
@@ -112,6 +113,7 @@ export default function PlatformProductsEdit({
                 <ProductPackagesCard
                     productSlug={product.slug}
                     productName={product.name}
+                    packagesEnabled={product.packages_enabled ?? true}
                     packages={product.packages ?? []}
                 />
             </div>

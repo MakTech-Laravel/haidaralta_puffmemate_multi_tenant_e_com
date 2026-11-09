@@ -13,7 +13,10 @@ use Illuminate\Support\Facades\DB;
 
 class ProductService
 {
-    public function __construct(private MediaUploadService $media) {}
+    public function __construct(
+        private MediaUploadService $media,
+        private ProductPackageService $packages,
+    ) {}
 
     /**
      * @param  array{
@@ -23,6 +26,14 @@ class ProductService
      *     sku?: string|null,
      *     description?: string|null,
      *     status?: bool,
+     *     packages_enabled?: bool,
+     *     packages?: list<array{
+     *         label: string,
+     *         quantity: int|string,
+     *         price: float|string,
+     *         status?: bool,
+     *         sort_order?: int|string
+     *     }>,
      *     color_code?: array<string, mixed>|null
      * }  $data
      * @param  list<UploadedFile>  $galleryImages
@@ -34,7 +45,32 @@ class ProductService
         ?User $actor = null,
     ): Product {
         return DB::transaction(function () use ($data, $primaryImage, $galleryImages, $actor): Product {
-            return $this->createProduct($data, $primaryImage, $galleryImages, $actor);
+            /** @var list<array{label: string, quantity: int|string, price: float|string, status?: bool, sort_order?: int|string}> $packages */
+            $packages = [];
+
+            if (array_key_exists('packages', $data) && is_array($data['packages'])) {
+                $packages = array_values($data['packages']);
+            }
+
+            unset($data['packages']);
+
+            $product = $this->createProduct($data, $primaryImage, $galleryImages, $actor);
+
+            if ((bool) config('catalog.show_product_packages')) {
+                foreach ($packages as $package) {
+                    $this->packages->create($product, [
+                        'label' => $package['label'],
+                        'quantity' => (int) $package['quantity'],
+                        'price' => $package['price'],
+                        'status' => array_key_exists('status', $package)
+                            ? (bool) $package['status']
+                            : true,
+                        'sort_order' => (int) ($package['sort_order'] ?? 0),
+                    ]);
+                }
+            }
+
+            return $product->refresh()->load(['media', 'categories:id,name,slug', 'packages']);
         });
     }
 
@@ -208,6 +244,9 @@ class ProductService
             'wholesale_price' => $this->nullableMoney($data['wholesale_price'] ?? null),
             'min_wholesale_qty' => $this->nullablePositiveInt($data['min_wholesale_qty'] ?? null),
             'status' => $data['status'] ?? true,
+            'packages_enabled' => array_key_exists('packages_enabled', $data)
+                ? (bool) $data['packages_enabled']
+                : true,
             'created_by' => $actor?->id,
         ]);
 

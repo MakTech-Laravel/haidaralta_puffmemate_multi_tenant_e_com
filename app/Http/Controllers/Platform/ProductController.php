@@ -63,6 +63,13 @@ class ProductController extends Controller
         $data = $request->safe()->except(['image', 'gallery']);
         $data['status'] = $request->boolean('status', true);
 
+        if ((bool) config('catalog.show_product_packages')) {
+            $data['packages_enabled'] = $request->boolean('packages_enabled', true);
+            $data['packages'] = $request->input('packages', []);
+        } else {
+            unset($data['packages'], $data['packages_enabled']);
+        }
+
         $product = $this->products->createFromPlatform(
             $data,
             $request->file('image'),
@@ -220,6 +227,7 @@ class ProductController extends Controller
             'wholesale_price' => $product->wholesale_price,
             'min_wholesale_qty' => $product->min_wholesale_qty,
             'status' => (bool) $product->status,
+            'packages_enabled' => (bool) $product->packages_enabled,
             'created_at' => $product->created_at?->toIso8601String(),
             'updated_at' => $product->updated_at?->toIso8601String(),
             'gallery' => CatalogMediaPayload::gallery($product),

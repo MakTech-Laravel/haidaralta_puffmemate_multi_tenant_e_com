@@ -109,7 +109,6 @@ export default function StorefrontProduct({
                         badges={product.badges}
                         price={product.price}
                         compareAtPrice={product.compareAtPrice}
-                        stock={product.stock}
                         rating={product.rating}
                         reviewCount={product.reviewCount}
                         about={product.about}

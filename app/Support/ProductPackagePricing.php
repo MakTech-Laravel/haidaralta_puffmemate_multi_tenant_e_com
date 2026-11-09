@@ -14,9 +14,14 @@ class ProductPackagePricing
         return (bool) config('catalog.show_product_packages');
     }
 
+    public static function productPackagesEnabled(Product $product): bool
+    {
+        return self::packagesEnabled() && (bool) $product->packages_enabled;
+    }
+
     public static function hasEnabledPackages(Product $product): bool
     {
-        if (! self::packagesEnabled()) {
+        if (! self::productPackagesEnabled($product)) {
             return false;
         }
 
@@ -35,7 +40,7 @@ class ProductPackagePricing
             return null;
         }
 
-        if (! self::packagesEnabled()) {
+        if (! self::productPackagesEnabled($product)) {
             throw new InvalidArgumentException('That package is not available for this product.');
         }
 
@@ -54,7 +59,7 @@ class ProductPackagePricing
 
     public static function requirePackageSelection(Product $product, ?int $packageId): ?ProductPackage
     {
-        if (! self::packagesEnabled()) {
+        if (! self::productPackagesEnabled($product)) {
             if ($packageId !== null) {
                 throw new InvalidArgumentException('That package is not available for this product.');
             }
@@ -111,7 +116,12 @@ class ProductPackagePricing
         $package = $item->package;
 
         if ($item->product_package_id !== null) {
-            if ($package === null || ! $package->status || $package->product_id !== $product->id) {
+            if (
+                ! self::productPackagesEnabled($product)
+                || $package === null
+                || ! $package->status
+                || $package->product_id !== $product->id
+            ) {
                 return 0.0;
             }
 
