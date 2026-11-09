@@ -1,7 +1,9 @@
 import { usePage } from '@inertiajs/react';
+import { useMemo } from 'react';
 import AlertError from '@/components/alert-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -13,14 +15,15 @@ import {
 } from '@/components/ui/select';
 import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
 import { AddressSuggestInput } from '@/components/storefront/wholesale/address-suggest-input';
+import { filterUpcomingDeliverySlots } from '@/lib/delivery-shift-availability';
 import { cn } from '@/lib/utils';
-
-const AU_COUNTRY = 'au';
 import type {
     StorefrontDeliveryMethod,
     StorefrontPaymentMethod,
     StorefrontTimeSlot,
 } from '@/types/storefront';
+
+const AU_COUNTRY = 'au';
 
 export type CheckoutDetails = {
     name: string;
@@ -32,6 +35,7 @@ export type CheckoutDetails = {
     longitude: string;
     saveAsDefault: boolean;
     deliveryMethodId: string;
+    deliveryDate: string;
     timeSlotId: string;
     paymentMethodId: string;
 };
@@ -122,8 +126,17 @@ export function CheckoutForm({
     const selectedMethod = deliveryMethods.find(
         (method) => method.id === details.deliveryMethodId,
     );
-    const timeSlots = selectedMethod?.timeSlots ?? [];
     const showTimeSlots = selectedMethod?.requiresSlot ?? false;
+    const showDeliveryDate = selectedMethod?.requiresDate ?? false;
+    const timeSlots = useMemo(() => {
+        const slots = selectedMethod?.timeSlots ?? [];
+
+        if (showDeliveryDate) {
+            return slots;
+        }
+
+        return filterUpcomingDeliverySlots(slots);
+    }, [selectedMethod?.timeSlots, showDeliveryDate]);
     const paymentHint = paymentMethods.some(
         (method) => method.id === 'payment_link',
     )
@@ -420,48 +433,100 @@ export function CheckoutForm({
                             );
                         })}
                     </div>
-                    {showTimeSlots ? (
+                    {showTimeSlots || showDeliveryDate ? (
                         <div className="space-y-4">
                             <p className="text-muted-foreground text-sm">
-                                Choose a preferred time window for your Late
-                                delivery.
+                                {showDeliveryDate
+                                    ? 'Choose a future delivery date and one shift.'
+                                    : 'Choose one remaining delivery shift for today.'}
                             </p>
-                            <div className="space-y-2">
-                                <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
-                                    Available time slots
-                                </p>
-                                <p className="text-muted-foreground text-sm">
-                                    {deliveryWindowLabel(timeSlots)}
-                                </p>
-                            </div>
-                            <div className="max-w-sm space-y-1.5">
-                                <div className="space-y-1.5">
-                                    <Label>
-                                        Time slot <RequiredMark />
-                                    </Label>
-                                    <Select
-                                        value={details.timeSlotId}
-                                        onValueChange={(value) =>
-                                            onChange('timeSlotId', value)
-                                        }
-                                    >
-                                        <SelectTrigger className={fieldClass}>
-                                            <SelectValue placeholder="Select a time slot" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {timeSlots.map((slot) => (
-                                                <SelectItem
-                                                    key={slot.id}
-                                                    value={slot.id}
-                                                >
-                                                    {slot.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FieldError message={errors.time_slot_id} />
+                            {showDeliveryDate ? (
+                                <div className="border-border/80 bg-background space-y-3 rounded-none border p-4">
+                                    <div className="space-y-1">
+                                        <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+                                            Delivery date
+                                        </p>
+                                        <p className="text-muted-foreground text-sm">
+                                            Pick a day from tomorrow through the
+                                            next two weeks.
+                                        </p>
+                                    </div>
+                                    <div className="max-w-sm space-y-1.5">
+                                        <Label htmlFor="delivery_date">
+                                            Date <RequiredMark />
+                                        </Label>
+                                        <DatePicker
+                                            id="delivery_date"
+                                            value={
+                                                details.deliveryDate || null
+                                            }
+                                            onChange={(value) =>
+                                                onChange(
+                                                    'deliveryDate',
+                                                    value ?? '',
+                                                )
+                                            }
+                                            placeholder="Select delivery date"
+                                            clearable={false}
+                                            className="w-full"
+                                            min={
+                                                selectedMethod?.minDate ??
+                                                undefined
+                                            }
+                                            max={
+                                                selectedMethod?.maxDate ??
+                                                undefined
+                                            }
+                                            aria-invalid={Boolean(
+                                                errors.delivery_date,
+                                            )}
+                                        />
+                                        <FieldError
+                                            message={errors.delivery_date}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                            ) : null}
+                            {showTimeSlots ? (
+                                <div className="space-y-2">
+                                    <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+                                        Available delivery shifts
+                                    </p>
+                                    <p className="text-muted-foreground text-sm">
+                                        {deliveryWindowLabel(timeSlots)}
+                                    </p>
+                                    <div className="max-w-sm space-y-1.5">
+                                        <Label>
+                                            Delivery shift <RequiredMark />
+                                        </Label>
+                                        <Select
+                                            value={details.timeSlotId}
+                                            onValueChange={(value) =>
+                                                onChange('timeSlotId', value)
+                                            }
+                                        >
+                                            <SelectTrigger
+                                                className={fieldClass}
+                                            >
+                                                <SelectValue placeholder="Select a delivery shift" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {timeSlots.map((slot) => (
+                                                    <SelectItem
+                                                        key={slot.id}
+                                                        value={slot.id}
+                                                    >
+                                                        {slot.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FieldError
+                                            message={errors.time_slot_id}
+                                        />
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
                     ) : null}
                 </CardContent>

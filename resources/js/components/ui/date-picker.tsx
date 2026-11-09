@@ -95,7 +95,7 @@ export function DatePicker({
                         aria-invalid={ariaInvalid}
                         aria-expanded={open}
                         className={cn(
-                            'border-input h-9 w-full min-w-0 shrink justify-between gap-2 overflow-hidden bg-transparent px-3 font-normal shadow-xs',
+                            'border-input h-11 w-full min-w-0 shrink justify-between gap-2 overflow-hidden bg-transparent px-3 font-normal shadow-xs',
                             'hover:bg-transparent',
                             showClear && 'pr-16',
                             !selected && 'text-muted-foreground',

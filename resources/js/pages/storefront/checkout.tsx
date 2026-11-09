@@ -11,6 +11,7 @@ import {
     type CheckoutDetails,
 } from '@/components/storefront/checkout/checkout-form';
 import { CheckoutOrderSummary } from '@/components/storefront/checkout/checkout-order-summary';
+import { filterUpcomingDeliverySlots } from '@/lib/delivery-shift-availability';
 import type {
     StorefrontCartItem,
     StorefrontDeliveryMethod,
@@ -101,8 +102,22 @@ function checkoutCanPlaceOrder(
         return false;
     }
 
+    if (method?.requiresDate && !filled(details.deliveryDate)) {
+        return false;
+    }
+
     if (method?.requiresSlot) {
-        return filled(details.timeSlotId);
+        if (!filled(details.timeSlotId)) {
+            return false;
+        }
+
+        if (!method.requiresDate) {
+            const upcoming = filterUpcomingDeliverySlots(method.timeSlots);
+
+            return upcoming.some((slot) => slot.id === details.timeSlotId);
+        }
+
+        return true;
     }
 
     return true;
@@ -121,6 +136,11 @@ export default function StorefrontCheckout({
 }: CheckoutPageProps) {
     const page = usePage<{ errors?: Record<string, string> }>();
     const defaultMethod = deliveryMethods[0];
+    const defaultSlots = defaultMethod
+        ? defaultMethod.requiresDate
+            ? defaultMethod.timeSlots
+            : filterUpcomingDeliverySlots(defaultMethod.timeSlots)
+        : [];
     const form = useForm({
         name: savedAddress?.name ?? '',
         mobile: savedAddress?.mobile ?? '',
@@ -131,8 +151,11 @@ export default function StorefrontCheckout({
         longitude: savedAddress?.longitude ?? '',
         save_as_default: false,
         delivery_method: defaultMethod?.id ?? '',
+        delivery_date: defaultMethod?.requiresDate
+            ? (defaultMethod.minDate ?? '')
+            : '',
         time_slot_id: defaultMethod?.requiresSlot
-            ? (defaultMethod.timeSlots[0]?.id ?? '')
+            ? (defaultSlots[0]?.id ?? '')
             : '',
         payment_method: paymentMethods[0]?.id ?? '',
         coupon: appliedCoupon?.code ?? '',
@@ -185,6 +208,7 @@ export default function StorefrontCheckout({
         longitude: form.data.longitude ?? '',
         saveAsDefault: form.data.save_as_default,
         deliveryMethodId: form.data.delivery_method,
+        deliveryDate: form.data.delivery_date,
         timeSlotId: form.data.time_slot_id,
         paymentMethodId: form.data.payment_method,
     };
@@ -248,6 +272,29 @@ export default function StorefrontCheckout({
         transformQuote,
     ]);
 
+    useEffect(() => {
+        const method = deliveryMethods.find(
+            (row) => row.id === form.data.delivery_method,
+        );
+
+        if (!method?.requiresSlot || method.requiresDate) {
+            return;
+        }
+
+        const upcoming = filterUpcomingDeliverySlots(method.timeSlots);
+
+        if (
+            form.data.time_slot_id !== '' &&
+            !upcoming.some((slot) => slot.id === form.data.time_slot_id)
+        ) {
+            form.setData('time_slot_id', upcoming[0]?.id ?? '');
+        }
+    }, [
+        deliveryMethods,
+        form.data.delivery_method,
+        form.data.time_slot_id,
+    ]);
+
     const onDetailChange = <K extends keyof CheckoutDetails>(
         key: K,
         value: CheckoutDetails[K],
@@ -256,24 +303,33 @@ export default function StorefrontCheckout({
             const method = deliveryMethods.find((row) => row.id === value);
 
             form.setData((current) => {
-                if (!method?.requiresSlot) {
+                if (!method) {
                     return {
                         ...current,
                         delivery_method: String(value),
+                        delivery_date: '',
                         time_slot_id: '',
                     };
                 }
 
-                const slotStillValid = method.timeSlots.some(
+                const slots = method.requiresDate
+                    ? method.timeSlots
+                    : filterUpcomingDeliverySlots(method.timeSlots);
+                const slotStillValid = slots.some(
                     (slot) => slot.id === current.time_slot_id,
                 );
 
                 return {
                     ...current,
                     delivery_method: String(value),
-                    time_slot_id: slotStillValid
-                        ? current.time_slot_id
-                        : (method.timeSlots[0]?.id ?? ''),
+                    delivery_date: method.requiresDate
+                        ? (method.minDate ?? '')
+                        : '',
+                    time_slot_id: method.requiresSlot
+                        ? slotStillValid
+                            ? current.time_slot_id
+                            : (slots[0]?.id ?? '')
+                        : '',
                 };
             });
 
@@ -290,6 +346,7 @@ export default function StorefrontCheckout({
             longitude: 'longitude',
             saveAsDefault: 'save_as_default',
             deliveryMethodId: 'delivery_method',
+            deliveryDate: 'delivery_date',
             timeSlotId: 'time_slot_id',
             paymentMethodId: 'payment_method',
         };

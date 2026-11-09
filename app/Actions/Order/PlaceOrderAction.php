@@ -60,6 +60,7 @@ class PlaceOrderAction
      *     delivery_method: string,
      *     delivery_date?: string|null,
      *     time_slot?: string|null,
+     *     delivery_shift_id?: int|null,
      *     payment_method: string,
      *     coupon?: Coupon|null,
      *     discount?: float,
@@ -164,6 +165,7 @@ class PlaceOrderAction
                 'delivery_method' => $data['delivery_method'],
                 'delivery_date' => $data['delivery_date'] ?? null,
                 'time_slot' => $data['time_slot'] ?? null,
+                'delivery_shift_id' => $data['delivery_shift_id'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'accepts_late_delivery' => $acceptLate && $plan['requires_late_delivery'],
             ]);

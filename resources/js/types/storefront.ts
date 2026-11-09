@@ -109,6 +109,9 @@ export type StorefrontSavedAddress = {
 export type StorefrontTimeSlot = {
     id: string;
     label: string;
+    name?: string;
+    start_time?: string;
+    end_time?: string;
 };
 
 export type StorefrontDeliveryMethod = {
@@ -116,6 +119,9 @@ export type StorefrontDeliveryMethod = {
     label: string;
     description: string;
     requiresSlot: boolean;
+    requiresDate?: boolean;
+    minDate?: string | null;
+    maxDate?: string | null;
     timeSlots: StorefrontTimeSlot[];
 };
 
