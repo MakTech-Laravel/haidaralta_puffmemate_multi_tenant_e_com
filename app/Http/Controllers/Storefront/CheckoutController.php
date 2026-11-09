@@ -132,11 +132,15 @@ class CheckoutController extends Controller
     {
         $user = $request->user('customer');
 
-        if ($user === null || ! $user->isCustomer()) {
+        if ($user !== null && ! $user->isCustomer()) {
             return redirect()->guest(route('login'));
         }
 
         $order = $this->checkout->place($request, $user, $request->validated());
+
+        if ($user === null) {
+            $request->session()->push('storefront.guest_orders', $order->order_number);
+        }
 
         $request->session()->forget('storefront.checkout_coupon');
         $request->session()->forget('storefront.checkout_shipping');
@@ -150,13 +154,14 @@ class CheckoutController extends Controller
     public function confirmation(Order $order): Response
     {
         $user = request()->user('customer');
-        abort_unless(
-            $user !== null && $user->isCustomer() && $order->customer_id === $user->id,
-            404,
-        );
+        $isOwner = $user !== null && $user->isCustomer() && $order->customer_id === $user->id;
+        $isGuestOrder = $user === null
+            && in_array($order->order_number, (array) request()->session()->get('storefront.guest_orders', []), true);
+
+        abort_unless($isOwner || $isGuestOrder, 404);
 
         return Inertia::render('storefront/checkout-confirmation', [
-            'order' => $this->checkout->confirmation($order),
+            'order' => $this->checkout->confirmation($order, $isOwner),
         ]);
     }
 

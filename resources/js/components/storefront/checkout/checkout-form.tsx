@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import AlertError from '@/components/alert-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,6 +113,8 @@ export function CheckoutForm({
     onPinSelect,
     className,
 }: CheckoutFormProps) {
+    const { auth } = usePage<{ auth: { user: unknown | null } }>().props;
+    const isGuest = !auth.user;
     const selectedMethod = deliveryMethods.find(
         (method) => method.id === details.deliveryMethodId,
     );
@@ -318,18 +321,23 @@ export function CheckoutForm({
                             />
                         </div>
                     </div>
-                    <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={details.saveAsDefault}
-                            onChange={(event) =>
-                                onChange('saveAsDefault', event.target.checked)
-                            }
-                        />
-                        {hasSavedAddress
-                            ? 'Update my default address with these details'
-                            : 'Save as default address'}
-                    </label>
+                    {isGuest ? null : (
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={details.saveAsDefault}
+                                onChange={(event) =>
+                                    onChange(
+                                        'saveAsDefault',
+                                        event.target.checked,
+                                    )
+                                }
+                            />
+                            {hasSavedAddress
+                                ? 'Update my default address with these details'
+                                : 'Save as default address'}
+                        </label>
+                    )}
                 </CardContent>
             </Card>
 

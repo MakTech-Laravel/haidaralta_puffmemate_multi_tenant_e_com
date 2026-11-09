@@ -111,14 +111,14 @@ function packCheckoutPayload(array $overrides = []): array
     ], $overrides);
 }
 
-test('guests are redirected to login when buying a pack', function () {
+test('guests can buy a pack and are sent to checkout', function () {
     $offer = packBuyOffer();
 
     $this->post(route('packs-saves.buy', [
         'branch' => $offer['branch']->slug,
         'pack' => $offer['pack']->slug,
     ]), ['quantity' => 1])
-        ->assertRedirect(route('login'));
+        ->assertRedirect(route('checkout'));
 });
 
 test('buy now stores pack checkout session and opens checkout without coupons', function () {

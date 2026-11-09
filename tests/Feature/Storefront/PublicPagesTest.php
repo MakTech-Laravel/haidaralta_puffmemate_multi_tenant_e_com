@@ -502,8 +502,8 @@ test('storefront cart page renders', function () {
             ->missing('branches'));
 });
 
-test('storefront checkout page requires login', function () {
-    $this->get(route('checkout'))->assertRedirect(route('login'));
+test('storefront checkout page does not require login', function () {
+    $this->get(route('checkout'))->assertRedirect(route('cart'));
 });
 
 test('nav categories respect show_in_nav and nav_sort order', function () {

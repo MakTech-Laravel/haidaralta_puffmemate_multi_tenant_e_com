@@ -5,6 +5,7 @@ namespace App\Http\Requests\Storefront;
 use App\Models\DeliveryMethod;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Support\Phone;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -14,6 +15,10 @@ class PlaceOrderRequest extends FormRequest
     public function authorize(): bool
     {
         $user = $this->user('customer');
+
+        if ($user === null) {
+            return true;
+        }
 
         return $user instanceof User && $user->isCustomer() && $user->is_active;
     }
@@ -29,7 +34,12 @@ class PlaceOrderRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'mobile' => ['required', 'string', 'max:32'],
+            'mobile' => [
+                'required',
+                'string',
+                'max:32',
+                ...($this->user('customer') === null ? Phone::validationRule() : []),
+            ],
             'address' => ['required', 'string', 'max:500'],
             'city' => ['nullable', 'string', 'max:80'],
             'postal_code' => ['nullable', 'string', 'max:20'],
