@@ -3,10 +3,13 @@
 namespace App\Support\Storefront;
 
 use App\Enums\DiscountType;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ProductTag;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Inventory;
+use App\Models\OrderItem;
 use App\Models\Pack;
 use App\Models\PackItem;
 use App\Models\Product;
@@ -314,10 +317,49 @@ class StorefrontCatalog
             ->where('status', true)
             ->whereJsonContains('tags', $tag->value)
             ->with(['categories:id,name,slug', 'media'])
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->limit(max(1, $limit));
 
         return $query->get()
+            ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Active products ranked by units actually sold, highest first. Tags and categories play no part.
+     *
+     * A sale counts only for a delivered order whose payment is collected or verified, so pending,
+     * cancelled, failed, unpaid and refunded orders (a refund leaves the order delivered but sets
+     * payment_status to refunded) are excluded, as are items removed from an order.
+     * Ties fall back to the product name, then id. Products with no counted sales never appear.
+     *
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
+     */
+    public static function bestSellingProducts(?Branch $branch = null, ?int $limit = null): array
+    {
+        $limit ??= (int) config('catalog.home_products_max');
+
+        $sales = OrderItem::query()
+            ->selectRaw('order_items.product_id, SUM(order_items.quantity) as total_sold')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', OrderStatus::Delivered->value)
+            ->whereIn('orders.payment_status', [PaymentStatus::Collected->value, PaymentStatus::Verified->value])
+            ->whereNull('order_items.removed_at')
+            ->groupBy('order_items.product_id')
+            ->havingRaw('SUM(order_items.quantity) > 0');
+
+        return Product::query()
+            ->select('products.*')
+            ->joinSub($sales, 'sales', 'sales.product_id', '=', 'products.id')
+            ->where('products.status', true)
+            ->with(['categories:id,name,slug', 'media'])
+            ->orderByDesc('sales.total_sold')
+            ->orderBy('products.name')
+            ->orderBy('products.id')
+            ->limit(max(1, $limit))
+            ->get()
             ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
             ->values()
             ->all();

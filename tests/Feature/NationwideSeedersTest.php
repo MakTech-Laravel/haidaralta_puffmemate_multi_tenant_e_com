@@ -112,6 +112,20 @@ test('tobacco category holds only the owner-approved range', function () {
         ->and((float) Product::query()->where('slug', 'tobacco-100g')->value('selling_price'))->toBe(50.0);
 });
 
+test('nicotine pouches category holds only the owner-approved range', function () {
+    $pouches = Category::query()->where('slug', 'nicotine-pouches')->firstOrFail();
+
+    expect($pouches->products()->pluck('slug')->sort()->values()->all())->toBe([
+        'zyn-nic-chewable-flavored',
+        'zyn-or-velo',
+    ])
+        ->and(Product::query()->doesntHave('categories')->exists())->toBeFalse()
+        ->and(Product::query()->whereIn('slug', ['nordic-mint-pouches', 'citrus-chill-pouches', 'velo-cool-mint-pouches', 'puffmemate-spearmint-pouches', 'nordic-coffee-pouches'])->exists())->toBeFalse()
+        ->and((float) Product::query()->where('slug', 'zyn-or-velo')->value('selling_price'))->toBe(20.0)
+        ->and((float) Product::query()->where('slug', 'zyn-nic-chewable-flavored')->value('selling_price'))->toBe(25.0)
+        ->and(Category::query()->where('slug', 'vapes')->firstOrFail()->products()->where('slug', 'zyn-nic-chewable-flavored')->exists())->toBeTrue();
+});
+
 test('vapes category holds only the owner-approved range and shows nothing from other vape categories', function () {
     $vapes = Category::query()->where('slug', 'vapes')->firstOrFail();
 

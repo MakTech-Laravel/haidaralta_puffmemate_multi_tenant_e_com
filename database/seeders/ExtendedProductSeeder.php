@@ -665,7 +665,7 @@ class ExtendedProductSeeder extends Seeder
                     $items[] = $this->item(
                         name: "{$range['brand']} {$flavour} {$strength} Nicotine Pouches",
                         brand: $range['brand'],
-                        categories: ['nicotine-pouches', $isMint ? 'mint-pouches' : 'flavoured-pouches'],
+                        categories: [$isMint ? 'mint-pouches' : 'flavoured-pouches'],
                         price: $range['price'],
                         image: $this->pick(self::POUCH_IMAGES, $range['brand'].$flavour),
                         description: "{$range['brand']} {$flavour} tobacco-free nicotine pouches, {$strength} per pouch. Discreet, smoke-free and spit-free — 20 pouches per can. Contains nicotine. 18+ only.",
