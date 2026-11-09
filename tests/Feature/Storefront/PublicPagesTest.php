@@ -349,12 +349,12 @@ test('storefront category page sorts by price without a branch select', function
 test('storefront category search does not leak products from other categories', function () {
     $this->get(route('shop.category', [
         'category' => 'cigarettes',
-        'search' => 'IQOS',
+        'search' => 'Vuse',
     ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/category')
-            ->where('filters.search', 'IQOS')
+            ->where('filters.search', 'Vuse')
             ->has('products', 0));
 });
 

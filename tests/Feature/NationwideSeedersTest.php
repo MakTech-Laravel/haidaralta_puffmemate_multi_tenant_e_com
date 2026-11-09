@@ -99,6 +99,19 @@ test('cigarettes storefront page lists only the owner-approved range, not child 
             ->has('products', 15));
 });
 
+test('tobacco category holds only the owner-approved range', function () {
+    $tobacco = Category::query()->where('slug', 'tobacco')->firstOrFail();
+
+    expect($tobacco->products()->pluck('slug')->sort()->values()->all())->toBe([
+        'royal-bourbon-premium-ryo-40g',
+        'tobacco-100g',
+        'violin-premium-ryo-40g',
+    ])
+        ->and(Product::query()->doesntHave('categories')->exists())->toBeFalse()
+        ->and(Product::query()->whereIn('slug', ['iqos-iluma-starter-kit', 'terea-tobacco-sticks-20', 'terea-menthol-sticks-20', 'drum-original-hand-rolling-tobacco-50g'])->exists())->toBeFalse()
+        ->and((float) Product::query()->where('slug', 'tobacco-100g')->value('selling_price'))->toBe(50.0);
+});
+
 test('vapes category holds only the owner-approved range and shows nothing from other vape categories', function () {
     $vapes = Category::query()->where('slug', 'vapes')->firstOrFail();
 

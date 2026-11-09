@@ -39,10 +39,6 @@ class BranchInventorySeeder extends Seeder
             'rothmans-blue-soft-pack-20s' => ['qty' => 70, 'min' => 16, 'price' => '45.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
             'winfield-red-soft-pack-20s' => ['qty' => 90, 'min' => 20, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
             'escort-red-soft-pack-25s' => ['qty' => 45, 'min' => 12, 'price' => '50.90', 'discount_type' => 'none', 'discount' => null],
-            'iqos-iluma-starter-kit' => ['qty' => 18, 'min' => 4, 'price' => '89.00', 'discount_type' => 'percent', 'discount' => '10'],
-            'terea-tobacco-sticks-20' => ['qty' => 90, 'min' => 20, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
-            'terea-menthol-sticks-20' => ['qty' => 50, 'min' => 12, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
-            'drum-original-hand-rolling-tobacco-50g' => ['qty' => 35, 'min' => 8, 'price' => '42.00', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 64, 'min' => 16, 'price' => '39.95', 'discount_type' => 'fixed', 'discount' => '5.00'],
             'puffmemate-pulse-5000' => ['qty' => 48, 'min' => 12, 'price' => '34.99', 'discount_type' => 'fixed', 'discount' => '5.00'],
             'puffmemate-mini-bar-1200' => ['qty' => 72, 'min' => 18, 'price' => '14.99', 'discount_type' => 'none', 'discount' => null],
@@ -70,7 +66,7 @@ class BranchInventorySeeder extends Seeder
             'device-screen-wipe-pack' => ['qty' => 45, 'min' => 10, 'price' => '5.99', 'discount_type' => 'none', 'discount' => null],
         ]);
 
-        // Melbourne Collins: strong cigarette + heated tobacco focus, leaner vape range.
+        // Melbourne Collins: strong cigarette focus, leaner vape range.
         $this->seedBranch($melbourne, $inventory, $pricing, [
             'marlboro-gold-soft-pack-20s' => ['qty' => 95, 'min' => 20, 'price' => '49.50', 'discount_type' => 'none', 'discount' => null],
             'winfield-blue-soft-pack-20s' => ['qty' => 110, 'min' => 25, 'price' => '47.00', 'discount_type' => 'none', 'discount' => null],
@@ -78,10 +74,6 @@ class BranchInventorySeeder extends Seeder
             'benson-hedges-smooth-soft-pack-20s' => ['qty' => 36, 'min' => 10, 'price' => '50.50', 'discount_type' => 'none', 'discount' => null],
             'rothmans-blue-soft-pack-20s' => ['qty' => 42, 'min' => 12, 'price' => '45.90', 'discount_type' => 'none', 'discount' => null],
             'winfield-red-soft-pack-20s' => ['qty' => 60, 'min' => 15, 'price' => '47.20', 'discount_type' => 'none', 'discount' => null],
-            'iqos-iluma-starter-kit' => ['qty' => 12, 'min' => 3, 'price' => '92.00', 'discount_type' => 'none', 'discount' => null],
-            'terea-tobacco-sticks-20' => ['qty' => 70, 'min' => 15, 'price' => '28.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
-            'terea-menthol-sticks-20' => ['qty' => 32, 'min' => 8, 'price' => '28.50', 'discount_type' => 'none', 'discount' => null],
-            'drum-original-hand-rolling-tobacco-50g' => ['qty' => 22, 'min' => 6, 'price' => '42.50', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 30, 'min' => 10, 'price' => '40.95', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-pulse-5000' => ['qty' => 20, 'min' => 10, 'price' => '35.99', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-mini-bar-1200' => ['qty' => 8, 'min' => 12, 'price' => '15.49', 'discount_type' => 'none', 'discount' => null],
@@ -99,7 +91,6 @@ class BranchInventorySeeder extends Seeder
             'winfield-blue-soft-pack-20s' => ['qty' => 48, 'min' => 16, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
             'peter-jackson-menthol-20s' => ['qty' => 22, 'min' => 10, 'price' => '47.50', 'discount_type' => 'none', 'discount' => null],
             'rothmans-blue-soft-pack-20s' => ['qty' => 28, 'min' => 10, 'price' => '45.80', 'discount_type' => 'none', 'discount' => null],
-            'terea-tobacco-sticks-20' => ['qty' => 24, 'min' => 8, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 42, 'min' => 12, 'price' => '39.50', 'discount_type' => 'percent', 'discount' => '8'],
             'puffmemate-pulse-5000' => ['qty' => 36, 'min' => 10, 'price' => '34.50', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-mini-bar-1200' => ['qty' => 50, 'min' => 15, 'price' => '14.50', 'discount_type' => 'none', 'discount' => null],
@@ -138,12 +129,6 @@ class BranchInventorySeeder extends Seeder
             'CIG-MB-GOLD-20-CTN' => '475.00',
         ]);
 
-        $this->seedVariantStock($melbourne, $inventory, 'terea-tobacco-sticks-20', [
-            'HTP-TEREA-AMBER' => 28,
-            'HTP-TEREA-SIENNA' => 24,
-            'HTP-TEREA-TURQ' => 18,
-        ]);
-
         $regionalSlugs = [
             BranchSeeder::PERTH_HAY,
             BranchSeeder::IPSWICH_BRISBANE_ST,
@@ -173,8 +158,6 @@ class BranchInventorySeeder extends Seeder
             'winfield-red-soft-pack-20s' => ['qty' => 40, 'min' => 12, 'price' => '46.80', 'discount_type' => 'none', 'discount' => null],
             'benson-hedges-smooth-soft-pack-20s' => ['qty' => 28, 'min' => 10, 'price' => '49.90', 'discount_type' => 'none', 'discount' => null],
             'rothmans-blue-soft-pack-20s' => ['qty' => 32, 'min' => 10, 'price' => '45.50', 'discount_type' => 'fixed', 'discount' => '2.00'],
-            'terea-tobacco-sticks-20' => ['qty' => 24, 'min' => 8, 'price' => '28.00', 'discount_type' => 'none', 'discount' => null],
-            'drum-original-hand-rolling-tobacco-50g' => ['qty' => 14, 'min' => 4, 'price' => '41.50', 'discount_type' => 'none', 'discount' => null],
             'vuse-go-5000-disposable' => ['qty' => 36, 'min' => 10, 'price' => '39.95', 'discount_type' => 'none', 'discount' => null],
             'iget-bar-plus-disposable' => ['qty' => 30, 'min' => 8, 'price' => '32.95', 'discount_type' => 'none', 'discount' => null],
             'puffmemate-pulse-5000' => ['qty' => 28, 'min' => 8, 'price' => '34.99', 'discount_type' => 'fixed', 'discount' => '3.00'],

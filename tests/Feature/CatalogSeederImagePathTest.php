@@ -38,8 +38,7 @@ test('catalog seeder attaches committed public images as media without moving th
         ->and($category->imageUrl())->toBe($category->getFirstMediaUrl('image'))
         ->and($storefrontProduct->getFirstMedia('image')->file_name)->toBe('marlboro-gold.webp')
         ->and(is_file(public_path('images/catalog/products/marlboro-gold.webp')))->toBeTrue()
-        ->and($remoteProduct->getFirstMedia('image')->file_name)->toStartWith('horizon-red-soft-pack-25s')
-        ->and(Media::query()->where('collection_name', 'gallery')->exists())->toBeTrue();
+        ->and($remoteProduct->getFirstMedia('image')->file_name)->toStartWith('horizon-red-soft-pack-25s');
 });
 
 test('catalog seeder does not duplicate media when re-run', function () {

@@ -25,7 +25,7 @@ class ProductSeeder extends Seeder
 
         $cigarettes = Category::query()->where('slug', 'cigarettes')->firstOrFail();
         $vapes = Category::query()->where('slug', 'vapes')->firstOrFail();
-        $heated = Category::query()->where('slug', 'tobacco')->firstOrFail();
+        $tobacco = Category::query()->where('slug', 'tobacco')->firstOrFail();
         $pouches = Category::query()->where('slug', 'nicotine-pouches')->firstOrFail();
         $accessories = Category::query()->where('slug', 'accessories')->firstOrFail();
         $disposables = Category::query()->where('slug', 'disposables')->firstOrFail();
@@ -135,51 +135,11 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        // ——— Heated tobacco ———
-        $this->product([$heated], $creator, [
-            'name' => 'IQOS ILUMA Starter Kit',
-            'slug' => 'iqos-iluma-starter-kit',
-            'sku' => 'HTP-IQOS-ILUMA-KIT',
-            'brand' => 'IQOS',
-            'pack_label' => 'Device Kit • Heat-not-burn',
-            'tags' => ['best_selling', 'new_arrival'],
-            'specifications' => [
-                ['label' => 'Pack Format', 'value' => 'Device Kit'],
-                ['label' => 'Market', 'value' => 'Australia'],
-                ['label' => 'Age Requirement', 'value' => '18+'],
-            ],
-            'description' => 'Induction heated tobacco starter kit with holder, pocket charger, USB-C cable, and quick-start guide. Compatible with TEREA sticks. Age-restricted — 18+ only.',
-            'image' => 'images/storefront/product-iqos.png',
-            'color_code' => ['mode' => 'solid', 'color' => '#E5E7EB'],
-            'variants' => [
-                ['name' => 'Pebble Grey', 'sku' => 'HTP-IQOS-ILUMA-GREY', 'attributes' => ['color' => 'Pebble Grey']],
-                ['name' => 'Azure Blue', 'sku' => 'HTP-IQOS-ILUMA-BLUE', 'attributes' => ['color' => 'Azure Blue']],
-                ['name' => 'Sunset Red', 'sku' => 'HTP-IQOS-ILUMA-RED', 'attributes' => ['color' => 'Sunset Red']],
-            ],
-            'gallery_urls' => [
-                'https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=800&q=80',
-            ],
-        ]);
-
-        $this->product([$heated], $creator, [
-            'name' => 'TEREA Tobacco Sticks (Pack of 20)',
-            'slug' => 'terea-tobacco-sticks-20',
-            'sku' => 'HTP-TEREA-20',
-            'brand' => 'TEREA',
-            'tags' => ['popular'],
-            'specifications' => [
-                ['label' => 'Quantity', 'value' => '20 sticks'],
-                ['label' => 'Age Requirement', 'value' => '18+'],
-            ],
-            'description' => 'Heat-not-burn tobacco sticks for IQOS ILUMA. Sold as a pack of 20 sticks. Age-restricted — 18+ only.',
-            'image_url' => 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
-            'color_code' => ['mode' => 'solid', 'color' => '#FEF3C7'],
-            'variants' => [
-                ['name' => 'Amber', 'sku' => 'HTP-TEREA-AMBER', 'attributes' => ['flavor' => 'Amber']],
-                ['name' => 'Sienna', 'sku' => 'HTP-TEREA-SIENNA', 'attributes' => ['flavor' => 'Sienna']],
-                ['name' => 'Turquoise Menthol', 'sku' => 'HTP-TEREA-TURQ', 'attributes' => ['flavor' => 'Turquoise Menthol']],
-            ],
-        ]);
+        // ——— Tobacco ———
+        // The Tobacco category holds only the owner-approved range (listedTobacco).
+        foreach ($this->listedTobacco() as $listed) {
+            $this->product([$tobacco], $creator, $listed);
+        }
 
         // ——— Vapes & disposables ———
         // The Vapes & Disposables root holds only the owner-approved range (listedVapes); every other
@@ -375,45 +335,6 @@ class ProductSeeder extends Seeder
             'color_code' => ['mode' => 'solid', 'color' => '#FECACA'],
             'variants' => [
                 ['name' => 'Single pack', 'sku' => 'CIG-ES-RED-25-PK', 'attributes' => ['pack_size' => '25', 'format' => 'Soft pack']],
-            ],
-        ]);
-
-        // ——— Extra heated / specialty tobacco ———
-        $this->product([$heated], $creator, [
-            'name' => 'Drum Original Hand Rolling Tobacco 50g',
-            'slug' => 'drum-original-hand-rolling-tobacco-50g',
-            'sku' => 'HTP-DRUM-50G',
-            'brand' => 'Drum',
-            'tags' => ['popular'],
-            'specifications' => [
-                ['label' => 'Pack Format', 'value' => 'Pouch'],
-                ['label' => 'Quantity', 'value' => '50g'],
-                ['label' => 'Age Requirement', 'value' => '18+'],
-            ],
-            'description' => 'Classic hand-rolling tobacco pouch. Pair with king-size papers for DIY rollies. Age-restricted — 18+ only.',
-            'image' => 'images/storefront/category-tobacco.png',
-            'color_code' => ['mode' => 'solid', 'color' => '#D6D3D1'],
-            'variants' => [
-                ['name' => '50g pouch', 'sku' => 'HTP-DRUM-50G-PK', 'attributes' => ['weight' => '50g', 'format' => 'Pouch']],
-            ],
-        ]);
-
-        $this->product([$heated], $creator, [
-            'name' => 'TEREA Menthol Sticks (Pack of 20)',
-            'slug' => 'terea-menthol-sticks-20',
-            'sku' => 'HTP-TEREA-MENTH-20',
-            'brand' => 'TEREA',
-            'tags' => ['new_arrival'],
-            'specifications' => [
-                ['label' => 'Quantity', 'value' => '20 sticks'],
-                ['label' => 'Age Requirement', 'value' => '18+'],
-            ],
-            'description' => 'Cool menthol heat-not-burn sticks for IQOS ILUMA. Pack of 20. Age-restricted — 18+ only.',
-            'image_url' => 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80',
-            'color_code' => ['mode' => 'solid', 'color' => '#D1FAE5'],
-            'variants' => [
-                ['name' => 'Turquoise Menthol', 'sku' => 'HTP-TEREA-MENTH-TURQ', 'attributes' => ['flavor' => 'Turquoise Menthol']],
-                ['name' => 'Silver Menthol', 'sku' => 'HTP-TEREA-MENTH-SLV', 'attributes' => ['flavor' => 'Silver Menthol']],
             ],
         ]);
 
@@ -736,7 +657,7 @@ class ProductSeeder extends Seeder
             ],
         ]);
 
-        $this->product([$accessories, $heated], $creator, [
+        $this->product([$accessories], $creator, [
             'name' => 'OCB Slim Filter Tips',
             'slug' => 'ocb-slim-filter-tips',
             'sku' => 'ACC-OCB-SLIM',
@@ -776,6 +697,41 @@ class ProductSeeder extends Seeder
             'show_in_nav' => false,
             'nav_sort' => null,
         ]);
+    }
+
+    /**
+     * Owner-approved Tobacco range. Selling prices are the owner's AUD amounts (plain numbers; the
+     * storefront formats them as A$); compare-at is derived (+15%). Stock is added later.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function listedTobacco(): array
+    {
+        $range = [
+            ['Tobacco (100g)', 'tobacco-100g', 'TOBACCO-100G', null, '100g', '50.00'],
+            ['Royal Bourbon Premium RYO(40g)', 'royal-bourbon-premium-ryo-40g', 'ROYAL-BOURBON-RYO-40G', 'Royal Bourbon', '40g', '40.00'],
+            ['Violin Premium RYO (40g)', 'violin-premium-ryo-40g', 'VIOLIN-RYO-40G', 'Violin', '40g', '25.00'],
+        ];
+
+        return array_map(fn (array $row): array => [
+            'name' => $row[0],
+            'slug' => $row[1],
+            'sku' => 'TOB-'.$row[2],
+            'brand' => $row[3],
+            'pack_label' => $row[4],
+            'tags' => [],
+            'specifications' => [
+                ['label' => 'Weight', 'value' => $row[4]],
+                ['label' => 'Age Requirement', 'value' => '18+'],
+            ],
+            'description' => "{$row[0]} Age-restricted product — 18+ only.",
+            'image' => "images/catalog/products/{$row[1]}.webp",
+            'color_code' => ['mode' => 'solid', 'color' => '#D6D3D1'],
+            'selling_price' => $row[5],
+            'variants' => [
+                ['name' => $row[4].' pouch', 'sku' => 'TOB-'.$row[2].'-PK', 'attributes' => ['weight' => $row[4], 'format' => 'Pouch']],
+            ],
+        ], $range);
     }
 
     /**
@@ -999,8 +955,6 @@ class ProductSeeder extends Seeder
             'winfield-blue-soft-pack-20s' => '46.50',
             'horizon-red-soft-pack-25s' => '52.90',
             'peter-jackson-menthol-20s' => '47.20',
-            'iqos-iluma-starter-kit' => '89.00',
-            'terea-tobacco-sticks-20' => '28.00',
             'vuse-go-5000-disposable' => '39.95',
             'puffmemate-pulse-5000' => '34.99',
             'puffmemate-mini-bar-1200' => '14.99',
@@ -1025,8 +979,6 @@ class ProductSeeder extends Seeder
             'rothmans-blue-soft-pack-20s' => '45.80',
             'winfield-red-soft-pack-20s' => '46.50',
             'escort-red-soft-pack-25s' => '49.90',
-            'drum-original-hand-rolling-tobacco-50g' => '62.00',
-            'terea-menthol-sticks-20' => '28.00',
             'iget-bar-plus-disposable' => '36.99',
             'puffmemate-cloud-bar-6000' => '32.99',
             'puffmemate-soft-touch-3500' => '24.99',

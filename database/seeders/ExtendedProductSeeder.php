@@ -265,7 +265,7 @@ class ExtendedProductSeeder extends Seeder
                     $items[] = $this->item(
                         name: "{$brand['brand']} {$blend} Rolling Tobacco {$grams}g",
                         brand: $brand['brand'],
-                        categories: ['tobacco', 'rolling-tobacco'],
+                        categories: ['rolling-tobacco'],
                         price: $this->retailPrice($basePrices[$grams] + ($brand['offset'] * $grams / 25)),
                         image: self::TOBACCO_IMAGE,
                         description: "{$brand['brand']} {$blend} fine-cut rolling tobacco in a {$grams}g resealable pouch. {$brand['note']} Age-restricted product — 18+ only.",
@@ -299,7 +299,7 @@ class ExtendedProductSeeder extends Seeder
                 $items[] = $this->item(
                     name: "TEREA {$shade} {$format['label']}",
                     brand: 'TEREA',
-                    categories: ['tobacco', 'heated-tobacco'],
+                    categories: ['heated-tobacco'],
                     price: $format['price'],
                     image: $this->pick(['images/catalog/products/terea-tobacco-sticks-20.jpg', 'images/catalog/products/terea-menthol-sticks-20.jpg'], $shade),
                     description: "TEREA {$shade} tobacco sticks for IQOS ILUMA devices ({$format['count']} sticks). Heated, not burned — no ash. Age-restricted product — 18+ only.",
@@ -327,7 +327,7 @@ class ExtendedProductSeeder extends Seeder
                 $items[] = $this->item(
                     name: "{$device['model']} Kit {$colour}",
                     brand: $device['brand'],
-                    categories: ['tobacco', 'heated-tobacco'],
+                    categories: ['heated-tobacco'],
                     price: $device['price'],
                     image: $this->pick(['images/storefront/product-iqos.png', 'images/catalog/gallery/iqos-iluma-starter-kit-gallery-1.jpg'], $colour),
                     description: "{$device['model']} in {$colour}. {$device['note']} Includes USB-C cable. Age-restricted product — 18+ only.",
@@ -387,7 +387,7 @@ class ExtendedProductSeeder extends Seeder
         return array_map(fn (array $cigar): array => $this->item(
             name: $cigar[0],
             brand: $cigar[1],
-            categories: ['tobacco', 'cigars-cigarillos'],
+            categories: ['cigars-cigarillos'],
             price: $cigar[2],
             image: self::TOBACCO_IMAGE,
             description: "{$cigar[0]} from {$cigar[1]}. Hand-selected for a consistent draw and even burn — store in a humidor or cool dry place. Age-restricted product — 18+ only.",
@@ -427,7 +427,7 @@ class ExtendedProductSeeder extends Seeder
         return array_map(fn (array $blend): array => $this->item(
             name: $blend[0].' Pipe Tobacco',
             brand: $blend[1],
-            categories: ['tobacco', 'pipe-tobacco'],
+            categories: ['pipe-tobacco'],
             price: $blend[2],
             image: self::TOBACCO_IMAGE,
             description: "{$blend[0]} pipe tobacco from {$blend[1]}. Slow-burning blend for a cool, relaxed smoke. Age-restricted product — 18+ only.",

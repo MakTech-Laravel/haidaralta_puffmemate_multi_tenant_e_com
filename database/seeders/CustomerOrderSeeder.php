@@ -60,7 +60,7 @@ class CustomerOrderSeeder extends Seeder
         ['puffmemate-mini-bar-1200' => 2, 'usb-c-charge-cable-1m' => 1],
         ['nordic-mint-pouches' => 1, 'raw-classic-rolling-papers-ks' => 2],
         ['horizon-red-soft-pack-25s' => 1, 'bic-maxi-lighter' => 2],
-        ['terea-tobacco-sticks-20' => 2],
+        ['nordic-coffee-pouches' => 2],
         ['velo-cool-mint-pouches' => 1, 'puffmemate-cloud-bar-6000' => 1],
         ['rothmans-blue-soft-pack-20s' => 1, 'clipper-classic-lighter' => 1],
         ['winfield-red-soft-pack-20s' => 1, 'peter-jackson-menthol-20s' => 1],
