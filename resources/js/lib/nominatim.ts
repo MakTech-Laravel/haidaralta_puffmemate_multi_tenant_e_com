@@ -1,3 +1,8 @@
+import {
+    geocode as geocodeRoute,
+    reverse as reverseRoute,
+} from '@/routes/maps';
+
 export type NominatimAddressParts = {
     city?: string;
     state?: string;
@@ -52,11 +57,6 @@ type NominatimSearchRow = {
     geojson?: NominatimGeoJsonGeometry | null;
 };
 
-type NominatimReverseRow = {
-    display_name?: string;
-    address?: NominatimAddress;
-};
-
 const NOMINATIM_HEADERS = {
     Accept: 'application/json',
 } as const;
@@ -103,11 +103,7 @@ function uniqueVertices(points: LatLngPoint[]): LatLngPoint[] {
     const first = points[0];
     const last = points[points.length - 1];
 
-    if (
-        points.length > 1 &&
-        first.lat === last.lat &&
-        first.lng === last.lng
-    ) {
+    if (points.length > 1 && first.lat === last.lat && first.lng === last.lng) {
         return points.slice(0, -1);
     }
 
@@ -212,40 +208,57 @@ export async function reverseGeocode(
     return result?.address;
 }
 
+type ProxyPlace = {
+    displayName: string;
+    latitude: string;
+    longitude: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    countryCode?: string;
+};
+
+/** A two-letter country filter the map proxy understands (it takes one country only). */
+function countryParam(options?: NominatimSearchOptions): string | undefined {
+    const country = options?.countrycodes?.trim().toLowerCase();
+
+    return country && country.length === 2 ? country : undefined;
+}
+
+/**
+ * Address lookups go through the app's own /maps endpoints, so the active provider (and its
+ * key) is chosen in the platform dashboard and answers are cached on the server.
+ */
 export async function reverseGeocodeDetails(
     lat: number,
     lng: number,
     signal?: AbortSignal,
     options?: NominatimSearchOptions,
 ): Promise<NominatimReverseResult | undefined> {
+    const country = countryParam(options);
     const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`,
-        { headers: NOMINATIM_HEADERS, signal },
+        reverseRoute.url({
+            query: { lat, lng, ...(country ? { country } : {}) },
+        }),
+        { headers: NOMINATIM_HEADERS, credentials: 'same-origin', signal },
     );
 
     if (!response.ok) {
         return undefined;
     }
 
-    const payload = (await response.json()) as NominatimReverseRow;
+    const { result } = (await response.json()) as { result: ProxyPlace | null };
 
-    if (!payload.display_name) {
-        return undefined;
-    }
-
-    const countryCode = payload.address?.country_code?.toLowerCase();
-
-    if (
-        options?.countrycodes &&
-        countryCode !== options.countrycodes.toLowerCase()
-    ) {
+    if (!result) {
         return undefined;
     }
 
     return {
-        address: payload.display_name,
-        ...(countryCode ? { countryCode } : {}),
-        ...addressParts(payload.address),
+        address: result.displayName,
+        ...(result.countryCode ? { countryCode: result.countryCode } : {}),
+        ...(result.city ? { city: result.city } : {}),
+        ...(result.state ? { state: result.state } : {}),
+        ...(result.postalCode ? { postalCode: result.postalCode } : {}),
     };
 }
 
@@ -260,46 +273,34 @@ export async function searchPlaces(
         return [];
     }
 
-    const params = new URLSearchParams({
-        q: trimmed,
-        format: 'json',
-        addressdetails: '1',
-        limit: '5',
-    });
-
-    if (options?.countrycodes) {
-        params.set('countrycodes', options.countrycodes);
-    }
-
+    const country = countryParam(options);
     const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?${params.toString()}`,
-        { headers: NOMINATIM_HEADERS, signal },
+        geocodeRoute.url({
+            query: { q: trimmed, ...(country ? { country } : {}) },
+        }),
+        { headers: NOMINATIM_HEADERS, credentials: 'same-origin', signal },
     );
 
     if (!response.ok) {
         throw new Error('Address search failed');
     }
 
-    const payload = (await response.json()) as NominatimSearchRow[];
+    const { results } = (await response.json()) as { results: ProxyPlace[] };
 
-    return payload
-        .filter(
-            (
-                row,
-            ): row is NominatimSearchRow & {
-                display_name: string;
-                lat: string;
-                lon: string;
-            } => Boolean(row.display_name && row.lat && row.lon),
-        )
-        .map((row) => ({
-            displayName: row.display_name,
-            latitude: row.lat,
-            longitude: row.lon,
-            ...addressParts(row.address),
-        }));
+    return results.map((place) => ({
+        displayName: place.displayName,
+        latitude: place.latitude,
+        longitude: place.longitude,
+        ...(place.city ? { city: place.city } : {}),
+        ...(place.state ? { state: place.state } : {}),
+        ...(place.postalCode ? { postalCode: place.postalCode } : {}),
+    }));
 }
 
+/**
+ * Zone outlines (polygon geometry) are only available from Nominatim itself, so the area
+ * editor keeps calling it directly. This is an admin-only, low-volume flow.
+ */
 export async function searchPlacesWithGeometry(
     query: string,
     signal?: AbortSignal,

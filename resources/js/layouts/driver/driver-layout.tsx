@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { DriverHeader } from '@/components/driver/driver-header';
+import { DriverLocationTracker } from '@/components/driver/driver-location-tracker';
 import { DriverMobileNav } from '@/components/driver/driver-mobile-nav';
 import { DriverSidebar } from '@/components/driver/driver-sidebar';
 import { toUrl } from '@/lib/utils';
@@ -24,6 +25,7 @@ export default function DriverLayout({
     return (
         <div className="bg-background text-foreground flex min-h-svh flex-col">
             <DriverHeader />
+            <DriverLocationTracker />
 
             <main className="flex-1 pb-[calc(4.5rem+env(safe-area-inset-bottom))] xl:pb-0">
                 <div className="mx-auto w-full max-w-5xl px-4 py-5 sm:px-6 sm:py-8 xl:max-w-6xl xl:py-10">

@@ -161,8 +161,9 @@ export function buildPlatformNav(
                         icon: PackagePlus,
                         permissions: ['manage-drivers'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Live tracking',
+                        href: '/platform/driver-map',
                         icon: MapPinned,
                         permissions: ['manage-drivers'],
                     }),
@@ -489,6 +490,12 @@ export function buildPlatformNav(
                         title: 'SMTP',
                         href: '/platform/settings/smtp',
                         icon: Mail,
+                        permissions: ['manage-application-settings'],
+                    }),
+                    navLink({
+                        title: 'Map provider',
+                        href: '/platform/settings/map-provider',
+                        icon: MapPin,
                         permissions: ['manage-application-settings'],
                     }),
                     navLink({

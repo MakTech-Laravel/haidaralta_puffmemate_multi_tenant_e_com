@@ -1,5 +1,6 @@
 import { MapPin } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { MapView } from '@/components/map/map-view';
 import { Button } from '@/components/ui/button';
 import {
     Dialog,
@@ -12,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import type { MarkerSpec } from '@/lib/maps/types';
 import { reverseGeocodeDetails } from '@/lib/nominatim';
 
 type Pin = {
@@ -54,16 +56,6 @@ export function CheckoutMapDialog({
     const [state, setState] = useState<string | undefined>();
     const [postalCode, setPostalCode] = useState<string | undefined>();
     const [locationError, setLocationError] = useState<string | null>(null);
-    const mapElement = useRef<HTMLDivElement | null>(null);
-    const mapRef = useRef<{
-        remove: () => void;
-        setView: (center: [number, number], zoom?: number) => void;
-        getZoom: () => number;
-    } | null>(null);
-    const markerRef = useRef<{
-        setLatLng: (latlng: [number, number]) => void;
-    } | null>(null);
-
     // Keep local fields in sync with parent pin (e.g. address suggest) while closed.
     useEffect(() => {
         if (open) {
@@ -79,92 +71,46 @@ export function CheckoutMapDialog({
         setLocationError(null);
     }, [latitude, longitude, open]);
 
-    useEffect(() => {
-        if (!open || mapElement.current === null) {
-            return;
-        }
+    const dropPin = useCallback(
+        (nextLat: number, nextLng: number) => {
+            setLat(String(nextLat));
+            setLng(String(nextLng));
+            setLocationError(null);
 
-        let cancelled = false;
+            void reverseGeocodeDetails(nextLat, nextLng, undefined, {
+                countrycodes,
+            }).then((result) => {
+                if (!result) {
+                    setAddress(undefined);
+                    setCity(undefined);
+                    setState(undefined);
+                    setPostalCode(undefined);
 
-        void (async () => {
-            const leaflet = await import('leaflet');
-
-            if (cancelled || mapElement.current === null) {
-                return;
-            }
-
-            const L = leaflet.default;
-            const startLat = toNumber(lat, DEFAULT_LAT);
-            const startLng = toNumber(lng, DEFAULT_LNG);
-            const map = L.map(mapElement.current).setView(
-                [startLat, startLng],
-                13,
-            );
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors',
-            }).addTo(map);
-
-            const marker = L.circleMarker([startLat, startLng], {
-                radius: 8,
-                color: '#111827',
-                fillColor: '#111827',
-                fillOpacity: 1,
-            }).addTo(map);
-
-            const dropPin = (nextLat: number, nextLng: number) => {
-                setLat(String(nextLat));
-                setLng(String(nextLng));
-                marker.setLatLng([nextLat, nextLng]);
-                map.setView([nextLat, nextLng], map.getZoom());
-                setLocationError(null);
-
-                void reverseGeocodeDetails(nextLat, nextLng, undefined, {
-                    countrycodes,
-                }).then((result) => {
-                    if (!result) {
-                        setAddress(undefined);
-                        setCity(undefined);
-                        setState(undefined);
-                        setPostalCode(undefined);
-
-                        if (countrycodes === 'au') {
-                            setLocationError(
-                                'Only Australian locations can be selected.',
-                            );
-                        }
-
-                        return;
+                    if (countrycodes === 'au') {
+                        setLocationError(
+                            'Only Australian locations can be selected.',
+                        );
                     }
 
-                    setAddress(result.address);
-                    setCity(result.city);
-                    setState(result.state);
-                    setPostalCode(result.postalCode);
-                    setLocationError(null);
-                });
-            };
+                    return;
+                }
 
-            map.on(
-                'click',
-                (event: { latlng: { lat: number; lng: number } }) => {
-                    dropPin(event.latlng.lat, event.latlng.lng);
-                },
-            );
+                setAddress(result.address);
+                setCity(result.city);
+                setState(result.state);
+                setPostalCode(result.postalCode);
+                setLocationError(null);
+            });
+        },
+        [countrycodes],
+    );
 
-            mapRef.current = map;
-            markerRef.current = marker;
-        })();
-
-        return () => {
-            cancelled = true;
-            mapRef.current?.remove();
-            mapRef.current = null;
-            markerRef.current = null;
-        };
-        // Re-init map when dialog opens; lat/lng seeds are read once at open.
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [open, countrycodes]);
+    const pinLat = toNumber(lat, DEFAULT_LAT);
+    const pinLng = toNumber(lng, DEFAULT_LNG);
+    const pinMarkers = useMemo<MarkerSpec[]>(
+        () => [{ id: 'pin', lat: pinLat, lng: pinLng, kind: 'pin' }],
+        [pinLat, pinLng],
+    );
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -183,12 +129,15 @@ export function CheckoutMapDialog({
                     <DialogTitle>Select location</DialogTitle>
                     <DialogDescription>
                         {countrycodes === 'au'
-                            ? 'Drop a pin in Australia. OpenStreetMap is used; no Google key is required.'
-                            : 'Drop a pin on the map. OpenStreetMap is used; no Google key is required.'}
+                            ? 'Drop a pin in Australia.'
+                            : 'Drop a pin on the map.'}
                     </DialogDescription>
                 </DialogHeader>
-                <div
-                    ref={mapElement}
+                <MapView
+                    center={[pinLat, pinLng]}
+                    centerKey={`${pinLat},${pinLng}`}
+                    markers={pinMarkers}
+                    onMapClick={dropPin}
                     className="h-64 w-full overflow-hidden rounded-md"
                 />
                 <div className="grid gap-3 sm:grid-cols-2">

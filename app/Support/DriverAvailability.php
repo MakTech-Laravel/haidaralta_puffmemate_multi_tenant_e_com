@@ -3,7 +3,9 @@
 namespace App\Support;
 
 use App\Enums\DriverAvailabilityStatus;
+use App\Enums\FulfillmentStatus;
 use App\Enums\ShiftAssignmentStatus;
+use App\Models\OrderFulfillment;
 use App\Models\User;
 use App\Models\UserShiftDay;
 use Carbon\CarbonInterface;
@@ -27,6 +29,40 @@ final class DriverAvailability
             return $stored;
         }
 
+        return self::onShift($driver, $at)
+            ? DriverAvailabilityStatus::Available
+            : DriverAvailabilityStatus::Offline;
+    }
+
+    /**
+     * Whether live location should be collected right now: the driver is not on a break and is
+     * either inside a scheduled shift window or still carrying an active delivery. Stored
+     * busy/offline never switch tracking off, because a busy driver is exactly who is on the road.
+     */
+    public static function shouldTrack(User $driver, ?CarbonInterface $at = null): bool
+    {
+        $driver->loadMissing('driverProfile');
+
+        if ($driver->driverProfile?->availability_status === DriverAvailabilityStatus::OnBreak) {
+            return false;
+        }
+
+        return self::onShift($driver, $at) || self::hasActiveDelivery($driver);
+    }
+
+    public static function hasActiveDelivery(User $driver): bool
+    {
+        return OrderFulfillment::query()
+            ->where('driver_id', $driver->id)
+            ->whereIn('status', FulfillmentStatus::driverWorkload())
+            ->exists();
+    }
+
+    /**
+     * Whether a scheduled/override shift day covers the moment, ignoring break/busy overrides.
+     */
+    public static function onShift(User $driver, ?CarbonInterface $at = null): bool
+    {
         $moment = DateTimeFormat::at($at);
 
         if ($driver->relationLoaded('shiftDays')) {
@@ -47,9 +83,7 @@ final class DriverAvailability
                 ->get();
         }
 
-        return self::coversMoment($days, $moment)
-            ? DriverAvailabilityStatus::Available
-            : DriverAvailabilityStatus::Offline;
+        return self::coversMoment($days, $moment);
     }
 
     /**
