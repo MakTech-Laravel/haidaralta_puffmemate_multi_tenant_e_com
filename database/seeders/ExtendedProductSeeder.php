@@ -205,7 +205,8 @@ class ExtendedProductSeeder extends Seeder
         foreach ($brands as $brand) {
             foreach ($brand['shades'] as $shadeIndex => $shade) {
                 foreach ($brand['sizes'] as $size) {
-                    $categories = ['cigarettes', $brand['tier'] === 'premium' ? 'premium-cigarettes' : 'value-cigarettes'];
+                    // Never attach the root `cigarettes` category: it holds only the owner-approved range (ProductSeeder).
+                    $categories = [$brand['tier'] === 'premium' ? 'premium-cigarettes' : 'value-cigarettes'];
 
                     if ($size >= 30) {
                         $categories[] = 'large-packs';
@@ -476,7 +477,7 @@ class ExtendedProductSeeder extends Seeder
                 $items[] = $this->item(
                     name: "{$model['brand']} {$model['model']} {$model['puffs']} {$flavour}",
                     brand: $model['brand'],
-                    categories: ['vapes', 'disposables'],
+                    categories: ['disposables'],
                     price: $model['price'],
                     image: $this->pick(self::DISPOSABLE_IMAGES, $model['brand'].$flavour),
                     description: "{$model['brand']} {$model['model']} disposable in {$flavour}. Up to {$model['puffs']} puffs, pre-filled and pre-charged — no refills or buttons. Contains nicotine. 18+ only.",
@@ -522,7 +523,7 @@ class ExtendedProductSeeder extends Seeder
                 $items[] = $this->item(
                     name: "{$kit['brand']} {$kit['model']} Pod Kit {$colour}",
                     brand: $kit['brand'],
-                    categories: ['vapes', 'pod-systems'],
+                    categories: ['pod-systems'],
                     price: $kit['price'],
                     image: $this->pick(self::POD_KIT_IMAGES, $kit['model'].$colour),
                     description: "{$kit['brand']} {$kit['model']} refillable pod kit in {$colour}. {$kit['battery']}mAh built-in battery with USB-C fast charging and adjustable airflow. Pods sold separately where noted. 18+ only.",
@@ -572,7 +573,7 @@ class ExtendedProductSeeder extends Seeder
         return array_map(fn (array $part): array => $this->item(
             name: $part[0],
             brand: $part[1],
-            categories: ['vapes', 'pods-coils'],
+            categories: ['pods-coils'],
             price: $part[2],
             image: $this->pick(self::POD_IMAGES, $part[0]),
             description: "Genuine {$part[1]} replacement part: {$part[0]}. Replace every 1–2 weeks for the best flavour and consistent vapour. 18+ only.",
@@ -617,7 +618,7 @@ class ExtendedProductSeeder extends Seeder
                     $items[] = $this->item(
                         name: "{$range['brand']} {$flavour} {$format['label']}",
                         brand: $range['brand'],
-                        categories: ['vapes', 'e-liquids'],
+                        categories: ['e-liquids'],
                         price: $this->retailPrice($format['price'] + $range['offset']),
                         image: $this->pick(self::E_LIQUID_IMAGES, $range['brand'].$flavour.$formatKey),
                         description: "{$range['brand']} {$flavour} e-liquid, {$format['label']} at {$format['strength']}. Smooth throat hit and full flavour for refillable devices. Contains nicotine. 18+ only.",

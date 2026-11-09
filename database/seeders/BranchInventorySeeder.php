@@ -30,7 +30,7 @@ class BranchInventorySeeder extends Seeder
 
         // Sydney CBD flagship: full cig / tobacco / vape assortment.
         $this->seedBranch($sydney, $inventory, $pricing, [
-            'marlboro-gold-soft-pack-20s' => ['qty' => 120, 'min' => 24, 'price' => '48.95', 'discount_type' => 'none', 'discount' => null],
+            'marlboro-gold-soft-pack-20s' => ['qty' => 120, 'min' => 24, 'price' => '140.00', 'discount_type' => 'none', 'discount' => null],
             'winfield-blue-soft-pack-20s' => ['qty' => 140, 'min' => 30, 'price' => '46.50', 'discount_type' => 'none', 'discount' => null],
             'horizon-red-soft-pack-25s' => ['qty' => 80, 'min' => 20, 'price' => '52.90', 'discount_type' => 'fixed', 'discount' => '3.00'],
             'peter-jackson-menthol-20s' => ['qty' => 60, 'min' => 15, 'price' => '47.20', 'discount_type' => 'none', 'discount' => null],
@@ -134,7 +134,7 @@ class BranchInventorySeeder extends Seeder
         ]);
 
         $this->seedVariantPrices($sydney, $pricing, 'marlboro-gold-soft-pack-20s', [
-            'CIG-MB-GOLD-20-PK' => '48.95',
+            'CIG-MB-GOLD-20-PK' => '140.00',
             'CIG-MB-GOLD-20-CTN' => '475.00',
         ]);
 
