@@ -39,8 +39,14 @@ class ProductFactory extends Factory
             'discount_start_date' => null,
             'discount_end_date' => null,
             'status' => true,
+            'packages_enabled' => true,
             'created_by' => null,
         ];
+    }
+
+    public function packagesDisabled(): static
+    {
+        return $this->state(fn (): array => ['packages_enabled' => false]);
     }
 
     public function configure(): static

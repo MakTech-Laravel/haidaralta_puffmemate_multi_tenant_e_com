@@ -3,6 +3,7 @@
 use App\Models\Branch;
 use App\Models\BranchArea;
 use App\Models\CartItem;
+use App\Models\Category;
 use App\Models\Inventory;
 use App\Models\OrderItem;
 use App\Models\PaymentGatewaySetting;
@@ -97,6 +98,7 @@ test('platform product edit page includes packages for management', function () 
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('platform/catalog/products/edit')
+            ->where('product.packages_enabled', true)
             ->has('product.packages', 1)
             ->where('product.packages.0.label', 'Edit Page Pack')
             ->etc());
@@ -455,4 +457,194 @@ test('regular purchase still works when all packages are disabled', function () 
         ->and($orderItem->quantity)->toBe(1)
         ->and((float) $orderItem->unit_price)->toBe(55.0)
         ->and($orderItem->local_reserved_quantity)->toBe(1);
+});
+
+test('platform product create can include nested packages', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Create With Packages',
+            'slug' => 'create-with-packages',
+            'sku' => 'SKU-CWP',
+            'status' => true,
+            'packages_enabled' => true,
+            'packages' => [
+                [
+                    'label' => 'Pack of 2',
+                    'quantity' => 2,
+                    'price' => 160,
+                    'status' => true,
+                    'sort_order' => 1,
+                ],
+                [
+                    'label' => 'Pack of 5',
+                    'quantity' => 5,
+                    'price' => 350,
+                    'status' => false,
+                    'sort_order' => 2,
+                ],
+            ],
+        ])
+        ->assertRedirect(route('platform.products.show', 'create-with-packages'));
+
+    $product = Product::query()->where('slug', 'create-with-packages')->firstOrFail();
+
+    expect($product->packages_enabled)->toBeTrue()
+        ->and($product->packages()->count())->toBe(2)
+        ->and($product->packages()->where('label', 'Pack of 2')->where('status', true)->exists())->toBeTrue()
+        ->and($product->packages()->where('label', 'Pack of 5')->where('status', false)->exists())->toBeTrue();
+});
+
+test('platform product create without packages still works', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Create Without Packages',
+            'slug' => 'create-without-packages',
+            'sku' => 'SKU-CWOP',
+            'status' => true,
+        ])
+        ->assertRedirect(route('platform.products.show', 'create-without-packages'));
+
+    $product = Product::query()->where('slug', 'create-without-packages')->firstOrFail();
+
+    expect($product->packages_enabled)->toBeTrue()
+        ->and($product->packages()->count())->toBe(0);
+});
+
+test('platform admin can toggle product packages_enabled without changing package statuses', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create([
+        'slug' => 'pkg-product-toggle',
+        'selling_price' => 100,
+        'status' => true,
+    ]);
+    $enabled = ProductPackage::factory()->create([
+        'product_id' => $product->id,
+        'label' => 'Keep Enabled',
+        'status' => true,
+    ]);
+    $disabled = ProductPackage::factory()->disabled()->create([
+        'product_id' => $product->id,
+        'label' => 'Keep Disabled',
+        'status' => false,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.products.packages-enabled', $product), [
+            'packages_enabled' => false,
+        ])
+        ->assertRedirect();
+
+    expect($product->fresh()->packages_enabled)->toBeFalse()
+        ->and($enabled->fresh()->status)->toBeTrue()
+        ->and($disabled->fresh()->status)->toBeFalse();
+
+    expect(StorefrontCatalog::productDetail($product->fresh())['packages'])->toBe([]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.products.packages-enabled', $product), [
+            'packages_enabled' => true,
+        ])
+        ->assertRedirect();
+
+    expect($product->fresh()->packages_enabled)->toBeTrue()
+        ->and($enabled->fresh()->status)->toBeTrue()
+        ->and($disabled->fresh()->status)->toBeFalse();
+
+    $restored = StorefrontCatalog::productDetail($product->fresh());
+
+    expect($restored['packages'])->toHaveCount(1)
+        ->and($restored['packages'][0]['id'])->toBe($enabled->id);
+});
+
+test('product packages_enabled false hides packages and allows regular cart add', function () {
+    $user = User::factory()->create();
+    $product = Product::factory()->packagesDisabled()->create([
+        'slug' => 'pkg-product-off',
+        'selling_price' => 75,
+        'status' => true,
+    ]);
+    $package = ProductPackage::factory()->create([
+        'product_id' => $product->id,
+        'label' => 'Hidden By Product Flag',
+        'quantity' => 2,
+        'price' => 120,
+        'status' => true,
+    ]);
+
+    productPackageCheckoutBranchWithStock($product, 10);
+
+    expect(StorefrontCatalog::productDetail($product->fresh())['packages'])->toBe([]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+            'product_package_id' => $package->id,
+        ])
+        ->assertSessionHasErrors('product');
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ])
+        ->assertRedirect();
+
+    $item = CartItem::query()->firstOrFail();
+
+    expect($item->product_package_id)->toBeNull()
+        ->and((float) $item->price_snapshot)->toBe(75.0);
+});
+
+test('disabling product packages after cart add blocks checkout', function () {
+    $user = User::factory()->create();
+    $product = Product::factory()->create([
+        'slug' => 'pkg-product-disable-later',
+        'selling_price' => 100,
+        'status' => true,
+    ]);
+    $package = ProductPackage::factory()->create([
+        'product_id' => $product->id,
+        'label' => 'Pack of 2',
+        'quantity' => 2,
+        'price' => 160,
+        'status' => true,
+    ]);
+
+    productPackageCheckoutBranchWithStock($product, 20);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+            'product_package_id' => $package->id,
+        ]);
+
+    $product->forceFill(['packages_enabled' => false])->save();
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), [
+            'name' => 'Ada Lovelace',
+            'mobile' => '0410123456',
+            'address' => '1 Test Street',
+            'city' => 'Sydney',
+            'postal_code' => '2000',
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
+            'delivery_method' => 'regular',
+            'payment_method' => PaymentGatewaySetting::KEY_COD,
+            'terms' => true,
+        ])
+        ->assertSessionHasErrors('cart');
+
+    expect(OrderItem::query()->count())->toBe(0)
+        ->and($package->fresh()->status)->toBeTrue();
 });
