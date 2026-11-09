@@ -6,4 +6,4 @@ paths:
 # Http Controllers Storefront
 
 ## Home product rails capped by tag
-Homepage New Arrivals / Best Selling use StorefrontCatalog::productsWithTag with config('catalog.home_products_max') (default 8). Each rail is active products with that tag only.
+Homepage Best Selling uses StorefrontCatalog::bestSellingProducts (real sales on delivered, collected/verified orders, not tags). New Arrivals uses StorefrontCatalog::productsWithTag(ProductTag::NewArrival), newest first. Each rail is capped independently by config('catalog.home_products_max') (default 8).

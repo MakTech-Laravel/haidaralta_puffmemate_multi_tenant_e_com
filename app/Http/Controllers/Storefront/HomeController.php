@@ -24,11 +24,7 @@ class HomeController extends Controller
         return Inertia::render('storefront/home', [
             'heroSlides' => $this->banners->publishedForStorefront(),
             'featuredCategories' => StorefrontCatalog::featuredCategories(),
-            'bestSellingProducts' => StorefrontCatalog::productsWithTag(
-                ProductTag::BestSelling,
-                $branch,
-                $limit,
-            ),
+            'bestSellingProducts' => StorefrontCatalog::bestSellingProducts($branch, $limit),
             'newArrivalProducts' => StorefrontCatalog::productsWithTag(
                 ProductTag::NewArrival,
                 $branch,
