@@ -2,6 +2,7 @@
 
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
+use App\Enums\CustomerRegistrationStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
@@ -26,6 +27,7 @@ use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
 use App\Support\Geo\Polygon;
+use App\Support\Phone;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -598,9 +600,79 @@ test('an applied coupon can be removed from checkout', function () {
         ->assertSessionMissing('storefront.checkout_coupon');
 });
 
-test('guests cannot remove a checkout coupon', function () {
-    $this->delete(route('checkout.coupon.destroy'))
-        ->assertRedirect(route('login'));
+test('guests can remove a checkout coupon', function () {
+    $this->withSession(['storefront.checkout_coupon' => ['code' => 'X']])
+        ->delete(route('checkout.coupon.destroy'))
+        ->assertRedirect()
+        ->assertSessionMissing('storefront.checkout_coupon');
+});
+
+test('a guest can place an order through a provisional customer', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-order-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $response = $this->post(route('checkout.store'), checkoutPayload([
+        'save_as_default' => true,
+    ]));
+
+    $order = Order::query()->firstOrFail();
+    $customer = User::query()->findOrFail($order->customer_id);
+
+    $response->assertRedirect(route('checkout.confirmation', $order));
+    expect($customer->registration_status)->toBe(CustomerRegistrationStatus::Provisional)
+        ->and($customer->user_type)->toBe(UserType::CUSTOMER)
+        ->and(Address::query()->count())->toBe(0);
+
+    $this->get(route('checkout.confirmation', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout-confirmation')
+            ->where('order.viewOrderUrl', null));
+});
+
+test('a guest repeat order with the same phone reuses the provisional customer', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-repeat-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    foreach (range(1, 2) as $ignored) {
+        $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+        $this->post(route('checkout.store'), checkoutPayload());
+    }
+
+    expect(Order::query()->count())->toBe(2)
+        ->and(Order::query()->distinct()->pluck('customer_id'))->toHaveCount(1);
+});
+
+test('a guest confirmation page is hidden from other sessions', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-private-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload());
+    $order = Order::query()->firstOrFail();
+
+    $this->flushSession();
+
+    $this->get(route('checkout.confirmation', $order))->assertNotFound();
+});
+
+test('a guest cannot order with the phone of a registered account', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-registered-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    User::factory()->create([
+        'phone' => Phone::toE164('0410123456'),
+        'registration_status' => CustomerRegistrationStatus::Registered,
+    ]);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload())
+        ->assertSessionHasErrors('mobile');
+
+    expect(Order::query()->count())->toBe(0);
 });
 
 test('a disabled payment method is rejected', function () {

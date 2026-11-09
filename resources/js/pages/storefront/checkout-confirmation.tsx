@@ -32,7 +32,7 @@ type ConfirmationOrder = {
     discount: string | null;
     deliveryFee: string;
     total: string;
-    viewOrderUrl: string;
+    viewOrderUrl: string | null;
 };
 
 type ConfirmationProps = {
@@ -250,16 +250,18 @@ export default function StorefrontCheckoutConfirmation({
                             >
                                 <Link href={shop.url()}>Continue shopping</Link>
                             </Button>
-                            <Button
-                                asChild
-                                variant="outline"
-                                size="lg"
-                                className="mt-2 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
-                            >
-                                <Link href={order.viewOrderUrl}>
-                                    View order
-                                </Link>
-                            </Button>
+                            {order.viewOrderUrl ? (
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    size="lg"
+                                    className="mt-2 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
+                                >
+                                    <Link href={order.viewOrderUrl}>
+                                        View order
+                                    </Link>
+                                </Button>
+                            ) : null}
                         </aside>
                     </div>
                 </div>

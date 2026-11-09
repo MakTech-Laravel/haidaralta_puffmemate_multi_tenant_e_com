@@ -11,6 +11,10 @@ class BuyPackRequest extends FormRequest
     {
         $user = $this->user('customer');
 
+        if ($user === null) {
+            return true;
+        }
+
         return $user instanceof User && $user->isCustomer() && $user->is_active;
     }
 

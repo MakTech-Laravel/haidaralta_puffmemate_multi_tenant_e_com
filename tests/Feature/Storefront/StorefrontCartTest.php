@@ -121,7 +121,7 @@ test('adding to cart without count_view leaves views unchanged', function () {
     expect($product->fresh()->views)->toBe(0);
 });
 
-test('guest cart survives refresh and a rejected checkout', function () {
+test('guest cart survives refresh and opening checkout', function () {
     $product = storefrontCartProduct(['slug' => 'persist-cart-item']);
 
     $this->post(route('cart.store'), [
@@ -145,7 +145,7 @@ test('guest cart survives refresh and a rejected checkout', function () {
                 ->missing('branchName')
                 ->etc()));
 
-    $this->get(route('checkout'))->assertRedirect(route('login'));
+    $this->get(route('checkout'))->assertOk();
 
     $this->get(route('cart'))
         ->assertOk()
@@ -180,8 +180,8 @@ test('cart line images use the product media or the logo fallback', function () 
             ->where('items.1.image', MediaUrl::DEFAULT_FALLBACK));
 });
 
-test('guest checkout redirects to login', function () {
-    $this->get(route('checkout'))->assertRedirect(route('login'));
+test('guest checkout with an empty cart redirects to the cart', function () {
+    $this->get(route('checkout'))->assertRedirect(route('cart'));
 });
 
 test('login merges guest quantities into the existing user cart', function () {
