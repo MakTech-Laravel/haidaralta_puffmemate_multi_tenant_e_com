@@ -16,12 +16,15 @@ class PacksSavesController extends Controller
         $search = $request->string('search')->trim()->toString();
         $sort = $request->string('sort')->trim()->toString();
 
+        $resolvedSort = $sort === '' ? null : $sort;
+
         return Inertia::render('storefront/packs-saves', [
-            'packs' => StorefrontCatalog::packs($branch, $search, $sort === '' ? null : $sort),
+            'packs' => StorefrontCatalog::packs($branch, $search, $resolvedSort),
+            'products' => StorefrontCatalog::productsWithEnabledPackages($search, $resolvedSort),
             'featuredPack' => StorefrontCatalog::featuredPack($branch),
             'filters' => [
                 'search' => $search,
-                'sort' => $sort === '' ? null : $sort,
+                'sort' => $resolvedSort,
             ],
         ]);
     }

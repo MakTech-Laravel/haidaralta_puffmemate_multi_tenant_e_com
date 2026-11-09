@@ -121,12 +121,20 @@ class CustomerOrderSeeder extends Seeder
     public function run(): void
     {
         $previousBroadcaster = config('broadcasting.default');
-        config(['broadcasting.default' => 'null']);
+        $previousMailer = config('mail.default');
+        config([
+            'broadcasting.default' => 'null',
+            // Placement codes call Mail::send(); Mailtrap Testing 550s burst SMTP.
+            'mail.default' => 'array',
+        ]);
 
         try {
             $this->seedOrders();
         } finally {
-            config(['broadcasting.default' => $previousBroadcaster]);
+            config([
+                'broadcasting.default' => $previousBroadcaster,
+                'mail.default' => $previousMailer,
+            ]);
         }
     }
 

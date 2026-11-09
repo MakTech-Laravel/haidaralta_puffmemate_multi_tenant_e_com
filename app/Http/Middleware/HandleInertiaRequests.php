@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\ContactSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Driver\DriverTrackingGate;
 use App\Services\Notifications\InboxService;
 use App\Services\Storefront\CartService;
 use App\Support\PortalAuth;
@@ -70,6 +71,7 @@ class HandleInertiaRequests extends Middleware
                 'branch_can_view_categories' => (bool) config('catalog.branch_can_view_categories'),
                 'show_parent_category' => (bool) config('catalog.show_parent_category'),
                 'show_product_variants' => (bool) config('catalog.show_product_variants'),
+                'show_product_packages' => (bool) config('catalog.show_product_packages'),
                 'show_bulk_import' => (bool) config('catalog.show_bulk_import'),
                 'show_branch_pricing' => (bool) config('catalog.show_branch_pricing'),
                 'branch_can_manage_catalog_pricing' => (bool) config('catalog.branch_can_manage_catalog_pricing'),
@@ -96,6 +98,9 @@ class HandleInertiaRequests extends Middleware
             'customerNotifications' => $portal === 'customer' ? $preview : [],
             'driverSupport' => $portal === 'driver'
                 ? DemoCatalog::driverSupportContacts()
+                : null,
+            'driverTracking' => $portal === 'driver' && $authUser instanceof User
+                ? app(DriverTrackingGate::class)->payload($authUser)
                 : null,
         ];
     }

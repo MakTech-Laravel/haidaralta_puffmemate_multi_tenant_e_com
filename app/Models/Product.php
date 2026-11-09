@@ -51,6 +51,7 @@ use Spatie\MediaLibrary\HasMedia;
  * @property-read Collection<int, Category> $categories
  * @property-read User|null $creator
  * @property-read Collection<int, ProductVariant> $variants
+ * @property-read Collection<int, ProductPackage> $packages
  * @property-read Collection<int, Inventory> $inventories
  * @property-read Collection<int, BranchProductPrice> $branchPrices
  * @property-read Collection<int, ProductReview> $reviews
@@ -130,6 +131,14 @@ class Product extends Model implements DataTableConfigurable, HasMedia, ScoutSea
     public function variants(): HasMany
     {
         return $this->hasMany(ProductVariant::class);
+    }
+
+    /**
+     * @return HasMany<ProductPackage, $this>
+     */
+    public function packages(): HasMany
+    {
+        return $this->hasMany(ProductPackage::class);
     }
 
     /**

@@ -127,6 +127,7 @@ type AddToCartSuccessPage = {
 
 type AddToCartOptions = {
     countView?: boolean;
+    productPackageId?: number | null;
     onSuccess?: (page: AddToCartSuccessPage) => void;
 };
 
@@ -141,6 +142,9 @@ export function addToCart(
         {
             product: productSlug,
             quantity,
+            ...(options.productPackageId
+                ? { product_package_id: options.productPackageId }
+                : {}),
             ...(options.countView ? { count_view: true } : {}),
         },
         {

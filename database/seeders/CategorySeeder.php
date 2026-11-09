@@ -109,8 +109,10 @@ class CategorySeeder extends Seeder
             $this->advanceSeedProgress();
         }
 
+        // Root categories, not children of Vapes: the Vapes page also lists child-category products and
+        // must show only the owner-approved range attached to it directly.
         foreach ($vapesChildren as $child) {
-            $this->category([...$child, 'parent_id' => $seededRoots['vapes']->id]);
+            $this->category([...$child, 'parent_id' => null]);
             $this->advanceSeedProgress();
         }
 

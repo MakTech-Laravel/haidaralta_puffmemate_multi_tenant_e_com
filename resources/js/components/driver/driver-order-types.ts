@@ -19,11 +19,7 @@ export type DriverOrderListTab = 'active' | 'delivered';
 export type DriverOrderPaymentMethod = 'cod' | 'paid';
 
 export type DriverOrderNextActionKey =
-    | 'pick_up'
-    | 'start'
-    | 'arrive'
-    | 'complete'
-    | 'return';
+    'pick_up' | 'start' | 'arrive' | 'complete' | 'return';
 
 export type DriverOrderNextAction = {
     key: DriverOrderNextActionKey;
@@ -49,6 +45,9 @@ export type DriverAssignedOrder = {
     productCount: number;
     totalLabel: string;
     phone: string;
+    /** Delivery pin, when the order has one. */
+    latitude?: number | null;
+    longitude?: number | null;
     notes: string | null;
     unitLabel: string | null;
     productPreview: string[];
@@ -93,6 +92,7 @@ export type DriverOrderDetail = DriverAssignedOrder & {
     products: Array<{
         id: number;
         name: string;
+        packageLabel?: string | null;
         quantityLabel: string;
         priceLabel: string;
         isLateDelivery?: boolean;

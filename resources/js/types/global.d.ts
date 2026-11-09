@@ -60,6 +60,7 @@ declare module '@inertiajs/core' {
                 branch_can_view_categories: boolean;
                 show_parent_category: boolean;
                 show_product_variants: boolean;
+                show_product_packages: boolean;
                 show_bulk_import: boolean;
                 show_branch_pricing: boolean;
                 branch_can_manage_catalog_pricing: boolean;
@@ -75,6 +76,15 @@ declare module '@inertiajs/core' {
             driverSupport: {
                 supportPhone: string;
                 branchPhone: string;
+            } | null;
+            driverTracking: {
+                should_share: boolean;
+                location_url: string;
+                gate_url: string;
+                heartbeat_seconds: number;
+                min_send_interval_seconds: number;
+                min_distance_meters: number;
+                recheck_seconds: number;
             } | null;
             notifications: SharedNotifications;
             [key: string]: unknown;

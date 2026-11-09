@@ -53,11 +53,16 @@ export function OrderTrackProducts({
                                     {product.name}
                                 </p>
                                 <p className="text-muted-foreground text-xs">
-                                    {product.quantityLabel}
-                                    {product.isLateDelivery
-                                        ? ' · Late delivery'
-                                        : ''}
-                                    {product.isRemoved ? ' · Removed' : ''}
+                                    {[
+                                        product.packageLabel,
+                                        product.quantityLabel,
+                                        product.isLateDelivery
+                                            ? 'Late delivery'
+                                            : null,
+                                        product.isRemoved ? 'Removed' : null,
+                                    ]
+                                        .filter(Boolean)
+                                        .join(' · ')}
                                 </p>
                             </div>
                             <p

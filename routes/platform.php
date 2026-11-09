@@ -26,9 +26,11 @@ use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBa
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\DriverProductAssignController as PlatformDriverProductAssignController;
+use App\Http\Controllers\Platform\DriverTrackingController as PlatformDriverTrackingController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
 use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
+use App\Http\Controllers\Platform\MapProviderSettingsController as PlatformMapProviderSettingsController;
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\OrderAssignController as PlatformOrderAssignController;
@@ -38,6 +40,7 @@ use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPa
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeController;
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
+use App\Http\Controllers\Platform\ProductPackageController as PlatformProductPackageController;
 use App\Http\Controllers\Platform\ProductReviewController as PlatformProductReviewController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
@@ -183,6 +186,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:manage-drivers'])->group(function () {
+        Route::get('driver-map', [PlatformDriverTrackingController::class, 'index'])
+            ->name('platform.drivers.live');
+        Route::post('driver-map/watch', [PlatformDriverTrackingController::class, 'watch'])
+            ->middleware('throttle:6,1')
+            ->name('platform.drivers.live.watch');
+
         Route::resource('drivers', PlatformDriverController::class)
             ->parameters(['drivers' => 'user'])
             ->names('platform.drivers')
@@ -493,6 +502,15 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.products.variants.update');
         Route::delete('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'destroy'])
             ->name('platform.products.variants.destroy');
+
+        Route::post('products/{product}/packages', [PlatformProductPackageController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.products.packages.store');
+        Route::put('products/{product}/packages/{package}', [PlatformProductPackageController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.products.packages.update');
+        Route::delete('products/{product}/packages/{package}', [PlatformProductPackageController::class, 'destroy'])
+            ->name('platform.products.packages.destroy');
     });
 
     Route::middleware(['permission:manage-orders'])->group(function () {
@@ -678,6 +696,16 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('smtp/test', [PlatformSmtpSettingsController::class, 'test'])
             ->middleware('throttle:6,1')
             ->name('platform.settings.smtp.test');
+
+        Route::get('map-provider', [PlatformMapProviderSettingsController::class, 'edit'])
+            ->name('platform.settings.map-provider.edit');
+        Route::put('map-provider/selection', [PlatformMapProviderSettingsController::class, 'updateSelection'])
+            ->name('platform.settings.map-provider.selection');
+        Route::put('map-provider/providers/{provider}', [PlatformMapProviderSettingsController::class, 'updateProvider'])
+            ->name('platform.settings.map-provider.update');
+        Route::post('map-provider/providers/{provider}/test', [PlatformMapProviderSettingsController::class, 'test'])
+            ->middleware('throttle:6,1')
+            ->name('platform.settings.map-provider.test');
 
         Route::get('payment-gateway', [PlatformPaymentGatewaySettingsController::class, 'edit'])
             ->name('platform.settings.payment-gateway.edit');

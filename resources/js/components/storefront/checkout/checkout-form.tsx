@@ -1,3 +1,4 @@
+import { usePage } from '@inertiajs/react';
 import AlertError from '@/components/alert-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -78,6 +79,10 @@ function SectionHint({ children }: { children: string }) {
     );
 }
 
+function FieldHint({ children }: { children: string }) {
+    return <p className="text-muted-foreground text-xs">{children}</p>;
+}
+
 function slotHours(slots: StorefrontTimeSlot[]): string | null {
     if (slots.length === 0) {
         return null;
@@ -112,6 +117,8 @@ export function CheckoutForm({
     onPinSelect,
     className,
 }: CheckoutFormProps) {
+    const { auth } = usePage<{ auth: { user: unknown | null } }>().props;
+    const isGuest = !auth.user;
     const selectedMethod = deliveryMethods.find(
         (method) => method.id === details.deliveryMethodId,
     );
@@ -157,11 +164,16 @@ export function CheckoutForm({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-full-name">
-                                Full name <RequiredMark />
+                                What name should we use for your order?{' '}
+                                <RequiredMark />
                             </Label>
+                            <FieldHint>
+                                You may use any name or alias to maintain your
+                                privacy.
+                            </FieldHint>
                             <Input
                                 id="checkout-full-name"
                                 value={details.name}
@@ -175,7 +187,9 @@ export function CheckoutForm({
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-mobile">
-                                Mobile number <RequiredMark />
+                                Phone Number ( EXPECT CALL FROM PRIVATE
+                                NUMBER!!! must be reachable during delivery
+                                time) <RequiredMark />
                             </Label>
                             <Input
                                 id="checkout-mobile"
@@ -203,8 +217,14 @@ export function CheckoutForm({
                     <div className="flex items-end gap-2">
                         <div className="min-w-0 flex-1 space-y-1.5">
                             <Label htmlFor="checkout-address">
-                                Address <RequiredMark />
+                                Where would you like your order delivered?{' '}
+                                <RequiredMark />
                             </Label>
+                            <FieldHint>
+                                For Privacy you may enter only the street and
+                                suburb , or provide a nearby meeting location
+                                for the driver.
+                            </FieldHint>
                             <AddressSuggestInput
                                 id="checkout-address"
                                 name="address"
@@ -318,18 +338,23 @@ export function CheckoutForm({
                             />
                         </div>
                     </div>
-                    <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={details.saveAsDefault}
-                            onChange={(event) =>
-                                onChange('saveAsDefault', event.target.checked)
-                            }
-                        />
-                        {hasSavedAddress
-                            ? 'Update my default address with these details'
-                            : 'Save as default address'}
-                    </label>
+                    {isGuest ? null : (
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={details.saveAsDefault}
+                                onChange={(event) =>
+                                    onChange(
+                                        'saveAsDefault',
+                                        event.target.checked,
+                                    )
+                                }
+                            />
+                            {hasSavedAddress
+                                ? 'Update my default address with these details'
+                                : 'Save as default address'}
+                        </label>
+                    )}
                 </CardContent>
             </Card>
 
@@ -341,6 +366,13 @@ export function CheckoutForm({
                     <SectionHint>Choose one</SectionHint>
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
+                    <p className="text-muted-foreground text-sm font-semibold">
+                        SAME DAY DELIVERY SERVICE ONLY AVAILABLE WITHIN 15km
+                        RADIUS OF COORPAROO, QLD &amp; WEST IPSWICH, QLD.....
+                        DONT WORRY WE SHIP AUSTRALIA WIDE! FOR ANY ORDERS
+                        OUTSIDE THIS RADIUS, YOU CAN EXPECT YOUR ORDER WITHIN 3
+                        BUSINESS DAYS AFTER FULFILLING PAYMENT LINK.
+                    </p>
                     <div className="grid gap-3 sm:grid-cols-2">
                         {deliveryMethods.map((method) => {
                             const selected =
@@ -391,11 +423,8 @@ export function CheckoutForm({
                     {showTimeSlots ? (
                         <div className="space-y-4">
                             <p className="text-muted-foreground text-sm">
-                                Express is the faster option. Choose a
-                                preferred time window. We only accept Express
-                                when stock, including a short transfer, can be
-                                ready quickly. If that is not possible, choose
-                                Regular delivery.
+                                Choose a preferred time window for your Late
+                                delivery.
                             </p>
                             <div className="space-y-2">
                                 <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">

@@ -62,6 +62,7 @@ function platformNavDestinations(): array
         ['path' => '/platform/settings/payment-gateway', 'permissions' => ['manage-application-settings']],
         ['path' => '/platform/payment-methods', 'permissions' => ['manage-catalog']],
         ['path' => '/platform/settings/smtp', 'permissions' => ['manage-application-settings']],
+        ['path' => '/platform/settings/map-provider', 'permissions' => ['manage-application-settings']],
         ['path' => '/platform/database-backups', 'permissions' => ['manage-database-backups']],
         ['path' => '/platform/activity-logs', 'permissions' => ['view-activity-logs']],
         ['path' => '/platform/observability', 'permissions' => ['view-horizon', 'view-pulse']],

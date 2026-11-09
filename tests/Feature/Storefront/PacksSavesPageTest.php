@@ -4,6 +4,7 @@ use App\Models\Branch;
 use App\Models\Pack;
 use App\Models\PackItem;
 use App\Models\Product;
+use App\Models\ProductPackage;
 use Inertia\Testing\AssertableInertia as Assert;
 
 test('packs and saves page lists only active in-window packs as cards', function () {
@@ -29,7 +30,7 @@ test('packs and saves page lists only active in-window packs as cards', function
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/packs-saves')
-            ->missing('products')
+            ->has('products', 0)
             ->has('packs', 1)
             ->where('packs.0', [
                 'id' => 'sydney:starter-duo',
@@ -128,4 +129,80 @@ test('a selected branch only shows that branch packs', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->has('packs', 1)
             ->where('packs.0.name', 'Sydney Pack'));
+});
+
+test('packs and saves lists enabled products that have an enabled package', function () {
+    $listed = Product::factory()->create(['name' => 'Carton Gold']);
+    ProductPackage::factory()->for($listed)->create([
+        'label' => 'Pack of 10',
+        'price' => '48.00',
+        'sort_order' => 1,
+    ]);
+    ProductPackage::factory()->for($listed)->create([
+        'label' => 'Pack of 5',
+        'price' => '26.00',
+        'sort_order' => 0,
+    ]);
+
+    $mixed = Product::factory()->create(['name' => 'Enabled Tier']);
+    ProductPackage::factory()->for($mixed)->disabled()->create([
+        'label' => 'Off',
+        'price' => '5.00',
+    ]);
+    ProductPackage::factory()->for($mixed)->create([
+        'label' => 'On',
+        'price' => '15.00',
+    ]);
+
+    $hidden = Product::factory()->inactive()->create(['name' => 'Hidden Carton']);
+    ProductPackage::factory()->for($hidden)->create();
+
+    $disabledPackages = Product::factory()->create(['name' => 'Disabled Packages']);
+    ProductPackage::factory()->for($disabledPackages)->disabled()->create();
+
+    Product::factory()->create(['name' => 'No Packages']);
+
+    $removed = Product::factory()->create(['name' => 'Removed Package']);
+    ProductPackage::factory()->for($removed)->create()->delete();
+
+    $this->get(route('packs-saves'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('products', 2)
+            ->where('products.0.name', 'Carton Gold')
+            ->where('products.0.price', 'A$26.00')
+            ->where('products.0.packageCount', 2)
+            ->where('products.0.fromLabel', 'Pack of 5')
+            ->where('products.0.compareAtPrice', '')
+            ->where('products.1.name', 'Enabled Tier')
+            ->where('products.1.price', 'A$15.00')
+            ->where('products.1.packageCount', 1)
+            ->where('products.1.fromLabel', 'On'));
+});
+
+test('packaged products can be searched by name and sorted by package price', function () {
+    $dear = Product::factory()->create(['name' => 'Alpine Carton']);
+    ProductPackage::factory()->for($dear)->create(['price' => '90.00']);
+
+    $cheap = Product::factory()->create(['name' => 'Alpine Duo']);
+    ProductPackage::factory()->for($cheap)->create(['price' => '20.00']);
+
+    $other = Product::factory()->create(['name' => 'Vape Kit']);
+    ProductPackage::factory()->for($other)->create(['price' => '10.00']);
+
+    $this->get(route('packs-saves', ['search' => 'alpine', 'sort' => 'price_asc']))
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('products', 2)
+            ->where('products.0.name', 'Alpine Duo')
+            ->where('products.1.name', 'Alpine Carton'));
+});
+
+test('packaged products are hidden when product packages are turned off', function () {
+    config(['catalog.show_product_packages' => false]);
+
+    $product = Product::factory()->create();
+    ProductPackage::factory()->for($product)->create();
+
+    $this->get(route('packs-saves'))
+        ->assertInertia(fn (Assert $page) => $page->has('products', 0));
 });

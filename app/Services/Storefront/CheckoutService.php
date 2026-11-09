@@ -4,6 +4,7 @@ namespace App\Services\Storefront;
 
 use App\Actions\Order\PlaceOrderAction;
 use App\Actions\Order\PlacePackOrderAction;
+use App\Enums\CustomerRegistrationStatus;
 use App\Models\DeliveryMethod;
 use App\Models\DeliveryTimeSlot;
 use App\Models\Order;
@@ -11,14 +12,17 @@ use App\Models\OrderItem;
 use App\Models\Pack;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Services\Customer\CustomerResolutionService;
 use App\Services\Order\Allocation\AreaCheckoutAllocator;
 use App\Services\Order\BranchDeliveryQuote;
 use App\Services\Order\ShippingCalculator;
-use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
+use App\Support\OrderItemPackageDisplay;
+use App\Support\ProductPackagePricing;
 use App\Support\Storefront\PackCheckoutSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class CheckoutService
@@ -35,6 +39,7 @@ class CheckoutService
         private readonly BranchDeliveryQuote $branchDelivery,
         private readonly PlaceOrderAction $placeOrder,
         private readonly PlacePackOrderAction $placePackOrder,
+        private readonly CustomerResolutionService $customers,
     ) {}
 
     /**
@@ -206,7 +211,10 @@ class CheckoutService
             ];
         }
 
-        $cart = $this->carts->activeCart($request)->load(['items.product.media']);
+        $cart = $this->carts->activeCart($request)->load([
+            'items.product.media',
+            'items.package',
+        ]);
 
         if ($cart->items->isEmpty()) {
             throw ValidationException::withMessages([
@@ -229,14 +237,32 @@ class CheckoutService
             'requiresLateDelivery' => $plan['requires_late_delivery'],
             'shortfallLines' => collect($plan['lines'])
                 ->filter(fn (array $line): bool => $line['shortfall'] > 0)
-                ->map(fn (array $line): array => [
-                    'productId' => $line['product_id'],
-                    'variantId' => $line['variant_id'],
-                    'productName' => $line['product_name'],
-                    'quantity' => $line['quantity'],
-                    'localQuantity' => $line['local_quantity'],
-                    'shortfall' => $line['shortfall'],
-                ])
+                ->map(function (array $line) use ($cart): array {
+                    $cartItem = $cart->items->first(
+                        fn ($item): bool => $item->product_id === $line['product_id']
+                            && $item->variant_id === $line['variant_id']
+                            && $item->product_package_id === ($line['product_package_id'] ?? null),
+                    );
+                    $package = $cartItem?->package;
+                    $orderQuantity = (int) ($line['order_quantity'] ?? $cartItem?->quantity ?? $line['quantity']);
+                    $packageQty = $package?->quantity;
+                    $shortfallPackages = $packageQty !== null && $packageQty > 0
+                        ? (int) ceil($line['shortfall'] / $packageQty)
+                        : $line['shortfall'];
+
+                    return [
+                        'productId' => $line['product_id'],
+                        'variantId' => $line['variant_id'],
+                        'productPackageId' => $line['product_package_id'] ?? null,
+                        'productName' => $line['product_name'],
+                        'packageLabel' => $package?->label,
+                        'quantity' => $orderQuantity,
+                        'inventoryQuantity' => $line['quantity'],
+                        'localQuantity' => $line['local_quantity'],
+                        'shortfall' => $shortfallPackages,
+                        'shortfallUnits' => $line['shortfall'],
+                    ];
+                })
                 ->values()
                 ->all(),
             'distanceKm' => $plan['distance_km'],
@@ -264,10 +290,10 @@ class CheckoutService
      *     discount: string|null,
      *     deliveryFee: string,
      *     total: string,
-     *     viewOrderUrl: string
+     *     viewOrderUrl: string|null
      * }
      */
-    public function confirmation(Order $order): array
+    public function confirmation(Order $order, bool $canViewOrder = true): array
     {
         $order->loadMissing('items');
 
@@ -291,6 +317,7 @@ class CheckoutService
                 ->map(fn (OrderItem $item): array => [
                     'name' => $item->product_name_snapshot,
                     'image' => MediaUrl::resolve($item->product_snapshot['image'] ?? null),
+                    'packageLabel' => OrderItemPackageDisplay::subtitle($item),
                     'quantity' => $item->quantity,
                     'formattedLineTotal' => '$'.number_format((float) $item->subtotal, 2),
                     'isLateDelivery' => (bool) $item->is_late_delivery,
@@ -306,7 +333,7 @@ class CheckoutService
                 : null,
             'deliveryFee' => '$'.number_format((float) $order->delivery_fee, 2),
             'total' => '$'.number_format((float) $order->total_amount, 2),
-            'viewOrderUrl' => route('customer.orders.show', $order),
+            'viewOrderUrl' => $canViewOrder ? route('customer.orders.show', $order) : null,
         ];
     }
 
@@ -329,7 +356,7 @@ class CheckoutService
      *     accept_late_delivery?: bool
      * }  $data
      */
-    public function place(Request $request, User $user, array $data): Order
+    public function place(Request $request, ?User $user, array $data): Order
     {
         [$slotLabel, $deliveryDate] = $this->resolveDeliverySlot($data);
 
@@ -339,6 +366,11 @@ class CheckoutService
             throw ValidationException::withMessages([
                 'payment_method' => 'Choose an available payment method.',
             ]);
+        }
+
+        if ($user === null) {
+            $user = $this->resolveGuestCustomer($data);
+            $data['save_as_default'] = false;
         }
 
         if ($this->isPackCheckout($request)) {
@@ -371,7 +403,11 @@ class CheckoutService
             ]);
         }
 
-        $cart = $this->carts->activeCart($request)->load(['items.product.media']);
+        $cart = $this->carts->activeCart($request)->load([
+            'items.product.media',
+            'items.product.packages',
+            'items.package',
+        ]);
 
         foreach ($cart->items as $item) {
             $product = $item->product;
@@ -382,7 +418,15 @@ class CheckoutService
                 ]);
             }
 
-            if (BranchProductPriceDisplay::catalogEffectiveAmount($product) <= 0) {
+            try {
+                ProductPackagePricing::requirePackageSelection($product, $item->product_package_id);
+            } catch (\InvalidArgumentException $exception) {
+                throw ValidationException::withMessages([
+                    'cart' => $exception->getMessage(),
+                ]);
+            }
+
+            if (ProductPackagePricing::unitAmountForCartItem($item) <= 0) {
                 throw ValidationException::withMessages([
                     'cart' => 'One or more items cannot be purchased at this time.',
                 ]);
@@ -406,6 +450,29 @@ class CheckoutService
             'coupon' => $coupon,
             'discount' => $discount,
         ]);
+    }
+
+    /**
+     * Reuse or create a provisional customer for a guest checkout. A phone that
+     * already belongs to a registered account must log in instead.
+     *
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveGuestCustomer(array $data): User
+    {
+        $existing = $this->customers->findByPhone((string) $data['mobile']);
+
+        if ($existing !== null && $existing->registration_status === CustomerRegistrationStatus::Registered) {
+            throw ValidationException::withMessages([
+                'mobile' => 'This number already has an account. Please log in to place your order.',
+            ]);
+        }
+
+        return DB::transaction(fn (): User => $this->customers->resolve(
+            null,
+            (string) $data['mobile'],
+            (string) $data['name'],
+        ));
     }
 
     /**

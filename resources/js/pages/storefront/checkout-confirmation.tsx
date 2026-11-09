@@ -7,6 +7,7 @@ import { shop } from '@/routes';
 type ConfirmationItem = {
     name: string;
     image: string;
+    packageLabel?: string | null;
     quantity: number;
     formattedLineTotal: string;
     isLateDelivery?: boolean;
@@ -31,7 +32,7 @@ type ConfirmationOrder = {
     discount: string | null;
     deliveryFee: string;
     total: string;
-    viewOrderUrl: string;
+    viewOrderUrl: string | null;
 };
 
 type ConfirmationProps = {
@@ -186,10 +187,15 @@ export default function StorefrontCheckoutConfirmation({
                                                 {item.name}
                                             </p>
                                             <p className="text-muted-foreground text-xs">
-                                                Quantity x {item.quantity}
-                                                {item.isLateDelivery
-                                                    ? ' · May arrive later'
-                                                    : ''}
+                                                {[
+                                                    item.packageLabel,
+                                                    `Quantity x ${item.quantity}`,
+                                                    item.isLateDelivery
+                                                        ? 'May arrive later'
+                                                        : null,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(' · ')}
                                             </p>
                                         </div>
                                         <p className="text-foreground shrink-0 text-sm font-bold">
@@ -244,16 +250,18 @@ export default function StorefrontCheckoutConfirmation({
                             >
                                 <Link href={shop.url()}>Continue shopping</Link>
                             </Button>
-                            <Button
-                                asChild
-                                variant="outline"
-                                size="lg"
-                                className="mt-2 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
-                            >
-                                <Link href={order.viewOrderUrl}>
-                                    View order
-                                </Link>
-                            </Button>
+                            {order.viewOrderUrl ? (
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    size="lg"
+                                    className="mt-2 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
+                                >
+                                    <Link href={order.viewOrderUrl}>
+                                        View order
+                                    </Link>
+                                </Button>
+                            ) : null}
                         </aside>
                     </div>
                 </div>

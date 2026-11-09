@@ -73,7 +73,7 @@ class DeliverySettingsService
         DeliveryMethod::query()->firstOrCreate(
             ['key' => 'regular'],
             [
-                'label' => 'Regular delivery',
+                'label' => 'Same day delivery',
                 'description' => 'Standard delivery for eligible orders.',
                 'fee' => 0,
                 'requires_slot' => false,
@@ -85,7 +85,7 @@ class DeliverySettingsService
         $express = DeliveryMethod::query()->firstOrCreate(
             ['key' => 'express'],
             [
-                'label' => 'Express delivery',
+                'label' => 'Late delivery',
                 'description' => 'Priority delivery in selected areas with a chosen time slot.',
                 'fee' => 0,
                 'requires_slot' => true,

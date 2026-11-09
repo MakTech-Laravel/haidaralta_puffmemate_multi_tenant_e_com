@@ -33,6 +33,8 @@ class AreaCheckoutAllocator
      *     lines: list<array{
      *         product_id: int,
      *         variant_id: int|null,
+     *         product_package_id: int|null,
+     *         order_quantity: int,
      *         quantity: int,
      *         local_quantity: int,
      *         shortfall: int,
@@ -53,13 +55,15 @@ class AreaCheckoutAllocator
         bool $acceptLateDelivery = false,
         bool $enforceLateAcceptance = false,
     ): array {
-        $cartItems->loadMissing('product');
+        $cartItems->loadMissing(['product', 'package']);
 
         $linesInput = $cartItems
             ->map(fn (CartItem $item): array => [
                 'product_id' => $item->product_id,
                 'variant_id' => $item->variant_id,
-                'quantity' => $item->quantity,
+                'product_package_id' => $item->product_package_id,
+                'order_quantity' => $item->quantity,
+                'quantity' => $item->inventoryUnits(),
                 'product_name' => (string) ($item->product?->name ?? 'Item'),
             ])
             ->values()
@@ -108,6 +112,8 @@ class AreaCheckoutAllocator
             $lines[] = [
                 'product_id' => $line['product_id'],
                 'variant_id' => $line['variant_id'],
+                'product_package_id' => $line['product_package_id'] ?? null,
+                'order_quantity' => (int) ($line['order_quantity'] ?? $line['quantity']),
                 'quantity' => $line['quantity'],
                 'local_quantity' => $local,
                 'shortfall' => $shortfall,

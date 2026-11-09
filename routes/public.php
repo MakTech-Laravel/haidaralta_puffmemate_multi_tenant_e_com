@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\FirebaseMessagingServiceWorkerController;
+use App\Http\Controllers\MapProxyController;
 use App\Http\Controllers\Storefront\CartController;
 use App\Http\Controllers\Storefront\CategoryController;
 use App\Http\Controllers\Storefront\CheckoutController;
@@ -22,6 +23,12 @@ Route::get('/manifest.webmanifest', WebAppManifestController::class)
     ->name('pwa.manifest');
 
 Route::get('/', HomeController::class)->name('home');
+
+Route::middleware('throttle:maps')->prefix('maps')->group(function () {
+    Route::get('config', [MapProxyController::class, 'config'])->name('maps.config');
+    Route::get('geocode', [MapProxyController::class, 'geocode'])->name('maps.geocode');
+    Route::get('reverse', [MapProxyController::class, 'reverse'])->name('maps.reverse');
+});
 
 Route::redirect('/driver/login', '/login');
 Route::redirect('/platform/login', '/login');

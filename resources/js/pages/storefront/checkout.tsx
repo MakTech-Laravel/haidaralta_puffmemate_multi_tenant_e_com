@@ -27,10 +27,14 @@ type AppliedCoupon = {
 type ShortfallLine = {
     productId: number;
     variantId: number | null;
+    productPackageId?: number | null;
     productName: string;
+    packageLabel?: string | null;
     quantity: number;
+    inventoryQuantity?: number;
     localQuantity: number;
     shortfall: number;
+    shortfallUnits?: number;
 };
 
 type ShippingQuote = {

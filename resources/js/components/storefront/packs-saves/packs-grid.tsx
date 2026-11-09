@@ -1,18 +1,24 @@
 import { useState } from 'react';
 import { PackCard } from '@/components/storefront/pack-card';
 import { startPackCheckout } from '@/components/storefront/packs-saves/buy-pack';
+import { PackageProductCard } from '@/components/storefront/packs-saves/package-product-card';
 import { show as packShow } from '@/routes/packs-saves';
-import type { StorefrontPack } from '@/types/storefront';
+import type {
+    StorefrontPack,
+    StorefrontPackagedProduct,
+} from '@/types/storefront';
 import { cn } from '@/lib/utils';
 
 type PacksGridProps = {
     packs: StorefrontPack[];
+    products: StorefrontPackagedProduct[];
     updating?: boolean;
     className?: string;
 };
 
 export function PacksGrid({
     packs,
+    products,
     updating = false,
     className,
 }: PacksGridProps) {
@@ -36,13 +42,19 @@ export function PacksGrid({
                     updating && 'pointer-events-none opacity-60',
                 )}
             >
-                {packs.length === 0 ? (
+                {products.length === 0 && packs.length === 0 ? (
                     <p className="text-muted-foreground text-sm">
-                        No packs match right now. Check back soon or browse the
-                        full shop.
+                        No products with packages match right now. Check back
+                        soon or browse the full shop.
                     </p>
                 ) : (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+                        {products.map((product) => (
+                            <PackageProductCard
+                                key={product.id}
+                                product={product}
+                            />
+                        ))}
                         {packs.map((pack) => (
                             <PackCard
                                 key={pack.id}

@@ -1,6 +1,7 @@
 export type OrderTrackProduct = {
     name: string;
     image: string;
+    packageLabel?: string | null;
     quantityLabel: string;
     priceLabel: string;
     isLateDelivery?: boolean;

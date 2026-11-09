@@ -134,6 +134,7 @@ type FulfillmentDetail = {
         id: number;
         name: string;
         image: string;
+        packageLabel?: string | null;
         quantity: number;
         unitPriceLabel: string;
         subtotalLabel: string;
@@ -522,14 +523,19 @@ export default function BranchOrderShow({
                                                         {item.name}
                                                     </p>
                                                     <p className="text-muted-foreground mt-0.5 text-xs">
-                                                        Qty {item.quantity} ·{' '}
-                                                        {item.unitPriceLabel}
-                                                        {item.isLateDelivery
-                                                            ? ' · Late delivery'
-                                                            : ''}
-                                                        {item.isRemoved
-                                                            ? ' · Removed'
-                                                            : ''}
+                                                        {[
+                                                            item.packageLabel,
+                                                            `Qty ${item.quantity}`,
+                                                            item.unitPriceLabel,
+                                                            item.isLateDelivery
+                                                                ? 'Late delivery'
+                                                                : null,
+                                                            item.isRemoved
+                                                                ? 'Removed'
+                                                                : null,
+                                                        ]
+                                                            .filter(Boolean)
+                                                            .join(' · ')}
                                                     </p>
                                                 </div>
                                                 <p

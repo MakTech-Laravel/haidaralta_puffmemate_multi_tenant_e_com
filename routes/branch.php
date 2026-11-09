@@ -10,6 +10,7 @@ use App\Http\Controllers\Branch\DashboardController as BranchDashboardController
 use App\Http\Controllers\Branch\DriverChatController as BranchDriverChatController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
+use App\Http\Controllers\Branch\DriverTrackingController as BranchDriverTrackingController;
 use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\OrderAssignController as BranchOrderAssignController;
@@ -343,6 +344,10 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     Route::middleware(['permission:manage-branch-drivers'])->group(function () {
         Route::get('drivers', [BranchDriverController::class, 'index'])->name('branch.drivers.index');
         Route::get('drivers/create', [BranchDriverController::class, 'create'])->name('branch.drivers.create');
+        Route::get('driver-map', [BranchDriverTrackingController::class, 'index'])->name('branch.drivers.live');
+        Route::post('driver-map/watch', [BranchDriverTrackingController::class, 'watch'])
+            ->middleware('throttle:6,1')
+            ->name('branch.drivers.live.watch');
         Route::post('drivers', [BranchDriverController::class, 'store'])
             ->middleware('precognitive')
             ->name('branch.drivers.store');

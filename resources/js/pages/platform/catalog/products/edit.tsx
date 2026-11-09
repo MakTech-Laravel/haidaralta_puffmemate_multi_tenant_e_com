@@ -6,6 +6,10 @@ import {
     type ProductSpecificationRow,
     type ProductTagValue,
 } from '@/components/platform/product-form';
+import {
+    ProductPackagesCard,
+    type CatalogProductPackage,
+} from '@/components/platform/product-packages-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type CategoryOption = {
@@ -43,6 +47,7 @@ type Product = {
     wholesale_price?: string | null;
     min_wholesale_qty?: number | null;
     status: boolean;
+    packages?: CatalogProductPackage[];
 };
 
 export default function PlatformProductsEdit({
@@ -59,7 +64,7 @@ export default function PlatformProductsEdit({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <Heading
                     title={`Edit ${product.name}`}
-                    description="Update listing photo, image background, and catalog details"
+                    description="Update listing photo, image background, catalog details, and packages"
                 />
 
                 {!product.status ? (
@@ -102,6 +107,12 @@ export default function PlatformProductsEdit({
                         status: product.status,
                     }}
                     cancelHref={ProductController.show.url(product.slug)}
+                />
+
+                <ProductPackagesCard
+                    productSlug={product.slug}
+                    productName={product.name}
+                    packages={product.packages ?? []}
                 />
             </div>
         </>
