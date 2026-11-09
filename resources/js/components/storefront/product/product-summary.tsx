@@ -23,7 +23,6 @@ type ProductSummaryProps = {
     badges: string[];
     price: string;
     compareAtPrice: string;
-    stock: number;
     rating: number;
     reviewCount: number;
     about: string;
@@ -38,7 +37,6 @@ export function ProductSummary({
     badges,
     price,
     compareAtPrice,
-    stock,
     rating,
     reviewCount,
     about,
@@ -63,14 +61,6 @@ export function ProductSummary({
     const displayCompareAt = selectedPackage
         ? (selectedPackage.formattedUnitTotal ?? '')
         : compareAtPrice;
-    const packsAvailable =
-        selectedPackage && selectedPackage.quantity > 0
-            ? Math.floor(stock / selectedPackage.quantity)
-            : null;
-    const stockLabel =
-        packsAvailable !== null
-            ? `${packsAvailable} pack${packsAvailable === 1 ? '' : 's'} available (${stock} units)`
-            : `${stock} available`;
 
     return (
         <div
@@ -130,13 +120,6 @@ export function ProductSummary({
                         {displayCompareAt}
                     </span>
                 ) : null}
-                <span className="text-tertiary font-inter inline-flex items-center gap-1.5 text-sm font-medium">
-                    <span
-                        className="bg-tertiary size-1.5 shrink-0 rounded-full"
-                        aria-hidden
-                    />
-                    {stockLabel}
-                </span>
             </div>
 
             {hasPackages ? (

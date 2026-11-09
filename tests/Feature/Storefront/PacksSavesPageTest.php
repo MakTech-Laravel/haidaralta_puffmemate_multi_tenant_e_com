@@ -160,6 +160,12 @@ test('packs and saves lists enabled products that have an enabled package', func
     $disabledPackages = Product::factory()->create(['name' => 'Disabled Packages']);
     ProductPackage::factory()->for($disabledPackages)->disabled()->create();
 
+    $productPackagesOff = Product::factory()->packagesDisabled()->create(['name' => 'Product Packages Off']);
+    ProductPackage::factory()->for($productPackagesOff)->create([
+        'label' => 'Still Exists',
+        'price' => '12.00',
+    ]);
+
     Product::factory()->create(['name' => 'No Packages']);
 
     $removed = Product::factory()->create(['name' => 'Removed Package']);
