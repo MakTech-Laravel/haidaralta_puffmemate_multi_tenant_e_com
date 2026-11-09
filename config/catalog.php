@@ -236,4 +236,10 @@ return [
 
     'australia_wide_max_transfer_hours' => env('AUSTRALIA_WIDE_MAX_TRANSFER_HOURS', 72),
 
+    /*
+    | Late delivery (express) selectable calendar days starting from tomorrow.
+    | Max date = today + this value (14 days from tomorrow inclusive).
+    */
+    'late_delivery_max_days' => (int) env('LATE_DELIVERY_MAX_DAYS', 14),
+
 ];

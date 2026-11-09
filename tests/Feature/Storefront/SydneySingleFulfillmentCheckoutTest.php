@@ -1,5 +1,6 @@
 <?php
 
+use App\Actions\Order\CollectLateOrderItemAction;
 use App\Enums\DriverAssignmentStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
@@ -30,6 +31,12 @@ beforeEach(function () {
     $this->seed(ApplicationSettingsSeeder::class);
     app(PaymentGatewaySettingsService::class)->ensureDefaults();
     app(DeliverySettingsService::class)->ensureDefaults();
+    seedCheckoutDeliveryShifts();
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 10:00:00', config('app.timezone')));
+});
+
+afterEach(function () {
+    Carbon\Carbon::setTestNow();
 });
 
 test('a sydney customer with a late line gets one area fulfillment without a stock transfer', function () {
@@ -81,6 +88,7 @@ test('a sydney customer with a late line gets one area fulfillment without a sto
             'latitude' => -33.8688,
             'longitude' => 151.2093,
             'delivery_method' => 'regular',
+            'time_slot_id' => checkoutDeliveryShiftId(),
             'payment_method' => PaymentGatewaySetting::KEY_COD,
             'accept_late_delivery' => true,
             'terms' => true,
@@ -134,6 +142,14 @@ test('a sydney customer with a late line gets one area fulfillment without a sto
     $statuses->transition($fulfillment->refresh(), FulfillmentStatus::Processing, $sydneyStaff);
     $statuses->transition($fulfillment->refresh(), FulfillmentStatus::Ready, $sydneyStaff);
     app(DriverAssignmentService::class)->assign($fulfillment->refresh(), $driver, $sydneyStaff);
+
+    Inventory::factory()->create([
+        'branch_id' => $sydney->id,
+        'product_id' => $productD->id,
+        'quantity' => 10,
+        'status' => true,
+    ]);
+    app(CollectLateOrderItemAction::class)->handle($lateItem->fresh(), $driver);
 
     $deliveries = app(DriverDeliveryService::class);
     $deliveries->pickUp($fulfillment->refresh(), $driver);

@@ -54,6 +54,7 @@ class PlacePackOrderAction
      *     delivery_method: string,
      *     delivery_date?: string|null,
      *     time_slot?: string|null,
+     *     delivery_shift_id?: int|null,
      *     payment_method: string,
      *     notes?: string|null
      * }  $data
@@ -156,6 +157,7 @@ class PlacePackOrderAction
                 'delivery_method' => $data['delivery_method'],
                 'delivery_date' => $data['delivery_date'] ?? null,
                 'time_slot' => $data['time_slot'] ?? null,
+                'delivery_shift_id' => $data['delivery_shift_id'] ?? null,
                 'notes' => $data['notes'] ?? null,
                 'pack_id' => $locked->id,
                 'pack_quantity' => $quantity,

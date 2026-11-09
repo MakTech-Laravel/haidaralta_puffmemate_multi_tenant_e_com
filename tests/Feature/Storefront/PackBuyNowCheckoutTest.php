@@ -31,6 +31,12 @@ beforeEach(function () {
     $this->seed(ApplicationSettingsSeeder::class);
     app(PaymentGatewaySettingsService::class)->ensureDefaults();
     app(DeliverySettingsService::class)->ensureDefaults();
+    seedCheckoutDeliveryShifts();
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 10:00:00', config('app.timezone')));
+});
+
+afterEach(function () {
+    Carbon\Carbon::setTestNow();
 });
 
 function packBuyBranch(): Branch
@@ -106,6 +112,7 @@ function packCheckoutPayload(array $overrides = []): array
         'latitude' => -33.8688,
         'longitude' => 151.2093,
         'delivery_method' => 'regular',
+        'time_slot_id' => checkoutDeliveryShiftId(),
         'payment_method' => PaymentGatewaySetting::KEY_COD,
         'terms' => true,
     ], $overrides);
