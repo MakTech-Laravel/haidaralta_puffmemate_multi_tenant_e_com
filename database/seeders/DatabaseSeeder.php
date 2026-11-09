@@ -37,6 +37,7 @@ class DatabaseSeeder extends Seeder
             ExtendedProductSeeder::class,
             PriceRangeSeeder::class,
             CheckoutSettingsSeeder::class,
+            DeliveryShiftSeeder::class,
             BranchInventorySeeder::class,
             DriverStockAssignmentSeeder::class,
             WorkforceShiftSeeder::class,

@@ -24,6 +24,7 @@ use App\Http\Controllers\Platform\CustomerController as PlatformCustomerControll
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
+use App\Http\Controllers\Platform\DeliveryShiftController as PlatformDeliveryShiftController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\DriverProductAssignController as PlatformDriverProductAssignController;
 use App\Http\Controllers\Platform\DriverTrackingController as PlatformDriverTrackingController;
@@ -676,6 +677,25 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.home-banners.move');
         Route::patch('home-banners/{home_banner}/toggle', [PlatformHomeBannerController::class, 'toggle'])
             ->name('platform.home-banners.toggle');
+    });
+
+    Route::middleware(['permission:manage-application-settings'])->group(function () {
+        Route::get('delivery-shifts', [PlatformDeliveryShiftController::class, 'index'])
+            ->name('platform.delivery-shifts.index');
+        Route::get('delivery-shifts/create', [PlatformDeliveryShiftController::class, 'create'])
+            ->name('platform.delivery-shifts.create');
+        Route::post('delivery-shifts', [PlatformDeliveryShiftController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.delivery-shifts.store');
+        Route::get('delivery-shifts/{delivery_shift}', [PlatformDeliveryShiftController::class, 'show'])
+            ->name('platform.delivery-shifts.show');
+        Route::get('delivery-shifts/{delivery_shift}/edit', [PlatformDeliveryShiftController::class, 'edit'])
+            ->name('platform.delivery-shifts.edit');
+        Route::put('delivery-shifts/{delivery_shift}', [PlatformDeliveryShiftController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.delivery-shifts.update');
+        Route::delete('delivery-shifts/{delivery_shift}', [PlatformDeliveryShiftController::class, 'destroy'])
+            ->name('platform.delivery-shifts.destroy');
     });
 
     Route::middleware(['permission:manage-application-settings'])->prefix('settings')->group(function () {

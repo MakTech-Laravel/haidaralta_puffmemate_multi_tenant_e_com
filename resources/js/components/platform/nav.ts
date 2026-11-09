@@ -7,6 +7,7 @@ import {
     Boxes,
     Building2,
     CalendarClock,
+    Clock,
     ChartColumn,
     CreditCard,
     Database,
@@ -496,6 +497,12 @@ export function buildPlatformNav(
                         title: 'Map provider',
                         href: '/platform/settings/map-provider',
                         icon: MapPin,
+                        permissions: ['manage-application-settings'],
+                    }),
+                    navLink({
+                        title: 'Delivery shifts',
+                        href: '/platform/delivery-shifts',
+                        icon: Clock,
                         permissions: ['manage-application-settings'],
                     }),
                     navLink({
