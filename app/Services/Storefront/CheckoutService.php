@@ -6,7 +6,7 @@ use App\Actions\Order\PlaceOrderAction;
 use App\Actions\Order\PlacePackOrderAction;
 use App\Enums\CustomerRegistrationStatus;
 use App\Models\DeliveryMethod;
-use App\Models\DeliveryTimeSlot;
+use App\Models\DeliveryShift;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Pack;
@@ -16,6 +16,7 @@ use App\Services\Customer\CustomerResolutionService;
 use App\Services\Order\Allocation\AreaCheckoutAllocator;
 use App\Services\Order\BranchDeliveryQuote;
 use App\Services\Order\ShippingCalculator;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\MediaUrl;
 use App\Support\OrderItemPackageDisplay;
 use App\Support\ProductPackagePricing;
@@ -40,52 +41,73 @@ class CheckoutService
         private readonly PlaceOrderAction $placeOrder,
         private readonly PlacePackOrderAction $placePackOrder,
         private readonly CustomerResolutionService $customers,
+        private readonly DeliveryShiftAvailability $deliveryShifts,
     ) {}
 
     /**
-     * @return list<array{id: string, label: string, description: string, requiresSlot: bool, timeSlots: list<array{id: string, label: string}>}>
+     * @return list<array{
+     *     id: string,
+     *     label: string,
+     *     description: string,
+     *     requiresSlot: bool,
+     *     requiresDate: bool,
+     *     minDate: string|null,
+     *     maxDate: string|null,
+     *     timeSlots: list<array{id: string, label: string, name: string, start_time: string, end_time: string}>
+     * }>
      */
     public function deliveryMethods(): array
     {
+        $now = $this->deliveryShifts->now();
+        $sameDaySlots = $this->deliveryShifts->eligibleForSameDay($now)
+            ->map(fn (DeliveryShift $shift): array => $this->deliveryShifts->payloadSlot($shift))
+            ->values()
+            ->all();
+        $allSlots = $this->deliveryShifts->activeShifts()
+            ->map(fn (DeliveryShift $shift): array => $this->deliveryShifts->payloadSlot($shift))
+            ->values()
+            ->all();
+        $lateMin = $this->deliveryShifts->lateMinDate($now);
+        $lateMax = $this->deliveryShifts->lateMaxDate($now);
+
         return $this->activeDeliveryMethods()
-            ->map(fn (DeliveryMethod $method): array => [
-                'id' => $method->key,
-                'label' => $method->label,
-                'description' => $method->description ?? '',
-                'requiresSlot' => $method->requires_slot,
-                'timeSlots' => $method->timeSlots
-                    ->map(fn (DeliveryTimeSlot $slot): array => [
-                        'id' => (string) $slot->id,
-                        'label' => $slot->label,
-                    ])
-                    ->values()
-                    ->all(),
-            ])
+            ->filter(function (DeliveryMethod $method) use ($sameDaySlots): bool {
+                if ($method->key === DeliveryShiftAvailability::METHOD_SAME_DAY) {
+                    return $sameDaySlots !== [];
+                }
+
+                return true;
+            })
+            ->map(function (DeliveryMethod $method) use ($sameDaySlots, $allSlots, $lateMin, $lateMax): array {
+                $isLate = $method->key === DeliveryShiftAvailability::METHOD_LATE;
+                $slots = $isLate ? $allSlots : $sameDaySlots;
+
+                return [
+                    'id' => $method->key,
+                    'label' => $method->label,
+                    'description' => $method->description ?? '',
+                    'requiresSlot' => true,
+                    'requiresDate' => $isLate,
+                    'minDate' => $isLate ? $lateMin : null,
+                    'maxDate' => $isLate ? $lateMax : null,
+                    'timeSlots' => $slots,
+                ];
+            })
+            ->values()
             ->all();
     }
 
     /**
-     * @return list<array{id: string, label: string}>
+     * @return list<array{id: string, label: string, name: string, start_time: string, end_time: string}>
      */
     public function timeSlots(?string $methodKey = null): array
     {
-        $methods = $this->activeDeliveryMethods();
+        $shifts = $methodKey === DeliveryShiftAvailability::METHOD_SAME_DAY
+            ? $this->deliveryShifts->eligibleForSameDay()
+            : $this->deliveryShifts->activeShifts();
 
-        if (is_string($methodKey) && $methodKey !== '') {
-            $methods = $methods->where('key', $methodKey);
-        }
-
-        return $methods
-            ->flatMap(fn (DeliveryMethod $method) => $method->timeSlots)
-            ->unique('id')
-            ->sortBy([
-                ['sort', 'asc'],
-                ['id', 'asc'],
-            ])
-            ->map(fn (DeliveryTimeSlot $slot): array => [
-                'id' => (string) $slot->id,
-                'label' => $slot->label,
-            ])
+        return $shifts
+            ->map(fn (DeliveryShift $shift): array => $this->deliveryShifts->payloadSlot($shift))
             ->values()
             ->all();
     }
@@ -99,7 +121,6 @@ class CheckoutService
             ->where('status', true)
             ->orderBy('sort')
             ->orderBy('id')
-            ->with(['timeSlots' => fn ($query) => $query->where('status', true)->orderBy('sort')->orderBy('id')])
             ->get();
     }
 
@@ -358,7 +379,7 @@ class CheckoutService
      */
     public function place(Request $request, ?User $user, array $data): Order
     {
-        [$slotLabel, $deliveryDate] = $this->resolveDeliverySlot($data);
+        [$slotLabel, $deliveryDate, $deliveryShiftId] = $this->resolveDeliverySlot($data);
 
         $enabledKeys = collect($this->payments->enabledMethods())->pluck('id')->all();
 
@@ -390,6 +411,7 @@ class CheckoutService
                     ...$data,
                     'delivery_date' => $deliveryDate,
                     'time_slot' => $slotLabel,
+                    'delivery_shift_id' => $deliveryShiftId,
                 ],
                 $request,
             );
@@ -447,6 +469,7 @@ class CheckoutService
             ...$data,
             'delivery_date' => $deliveryDate,
             'time_slot' => $slotLabel,
+            'delivery_shift_id' => $deliveryShiftId,
             'coupon' => $coupon,
             'discount' => $discount,
         ]);
@@ -477,7 +500,7 @@ class CheckoutService
 
     /**
      * @param  array<string, mixed>  $data
-     * @return array{0: string|null, 1: string|null}
+     * @return array{0: string, 1: string, 2: int}
      */
     private function resolveDeliverySlot(array $data): array
     {
@@ -492,22 +515,19 @@ class CheckoutService
             ]);
         }
 
-        if (! $method->requires_slot) {
-            return [null, null];
-        }
-
-        $slot = DeliveryTimeSlot::query()
-            ->where('id', $data['time_slot_id'] ?? null)
-            ->where('delivery_method_id', $method->id)
-            ->where('status', true)
-            ->first();
-
-        if ($slot === null) {
+        if ($method->key === DeliveryShiftAvailability::METHOD_SAME_DAY
+            && $this->deliveryShifts->eligibleForSameDay()->isEmpty()) {
             throw ValidationException::withMessages([
-                'time_slot_id' => 'Choose a time slot.',
+                'delivery_method' => 'Same-day delivery is not available right now.',
             ]);
         }
 
-        return [$slot->label, now()->toDateString()];
+        [$shift, $label, $deliveryDate] = $this->deliveryShifts->assertSelectable(
+            $method->key,
+            $data['delivery_date'] ?? null,
+            $data['time_slot_id'] ?? null,
+        );
+
+        return [$label, $deliveryDate, $shift->id];
     }
 }

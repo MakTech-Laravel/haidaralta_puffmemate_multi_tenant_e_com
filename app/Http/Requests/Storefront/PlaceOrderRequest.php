@@ -5,10 +5,12 @@ namespace App\Http\Requests\Storefront;
 use App\Models\DeliveryMethod;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\Phone;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class PlaceOrderRequest extends FormRequest
 {
@@ -32,6 +34,9 @@ class PlaceOrderRequest extends FormRequest
             ->pluck('id')
             ->all();
 
+        $methodKey = $this->input('delivery_method');
+        $isLate = $methodKey === DeliveryShiftAvailability::METHOD_LATE;
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'mobile' => [
@@ -47,8 +52,8 @@ class PlaceOrderRequest extends FormRequest
             'longitude' => ['required', 'numeric', 'between:-180,180'],
             'save_as_default' => ['sometimes', 'boolean'],
             'delivery_method' => ['required', 'string'],
-            'delivery_date' => ['nullable', 'date'],
-            'time_slot_id' => ['nullable', 'string'],
+            'delivery_date' => [$isLate ? 'required' : 'nullable', 'date'],
+            'time_slot_id' => ['required', 'integer'],
             'payment_method' => ['required', 'string', Rule::in($enabledPaymentKeys)],
             'coupon' => ['nullable', 'string', 'max:60'],
             'notes' => ['nullable', 'string', 'max:1000'],
@@ -64,12 +69,18 @@ class PlaceOrderRequest extends FormRequest
     {
         return [
             'payment_method.in' => 'Choose an available payment method.',
+            'time_slot_id.required' => 'Choose a delivery shift.',
+            'delivery_date.required' => 'Choose a delivery date.',
         ];
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            if ($validator->errors()->isNotEmpty()) {
+                return;
+            }
+
             $key = $this->input('delivery_method');
 
             if (! is_string($key) || $key === '') {
@@ -81,12 +92,24 @@ class PlaceOrderRequest extends FormRequest
                 ->where('status', true)
                 ->first();
 
-            if ($method === null || ! $method->requires_slot) {
+            if ($method === null) {
+                $validator->errors()->add('delivery_method', 'Choose a delivery method.');
+
                 return;
             }
 
-            if (blank($this->input('time_slot_id'))) {
-                $validator->errors()->add('time_slot_id', 'Choose a time slot.');
+            try {
+                app(DeliveryShiftAvailability::class)->assertSelectable(
+                    $method->key,
+                    $this->input('delivery_date'),
+                    $this->input('time_slot_id'),
+                );
+            } catch (ValidationException $exception) {
+                foreach ($exception->errors() as $field => $messages) {
+                    foreach ($messages as $message) {
+                        $validator->errors()->add($field, $message);
+                    }
+                }
             }
         });
     }

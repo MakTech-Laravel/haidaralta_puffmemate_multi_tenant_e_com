@@ -16,7 +16,7 @@ use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
-use App\Models\DeliveryMethod;
+use App\Models\DeliveryShift;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Payment;
@@ -36,6 +36,12 @@ beforeEach(function () {
     $this->seed(ApplicationSettingsSeeder::class);
     app(PaymentGatewaySettingsService::class)->ensureDefaults();
     app(DeliverySettingsService::class)->ensureDefaults();
+    seedCheckoutDeliveryShifts();
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 10:00:00', config('app.timezone')));
+});
+
+afterEach(function () {
+    Carbon\Carbon::setTestNow();
 });
 
 function storefrontCheckoutProduct(array $overrides = []): Product
@@ -85,6 +91,7 @@ function checkoutPayload(array $overrides = []): array
         'latitude' => -33.8688,
         'longitude' => 151.2093,
         'delivery_method' => 'regular',
+        'time_slot_id' => checkoutDeliveryShiftId(),
         'payment_method' => PaymentGatewaySetting::KEY_COD,
         'terms' => true,
     ], $overrides);
@@ -119,11 +126,16 @@ test('checkout props omit branch keys', function () {
             ->has('deliveryMethods', 2)
             ->where('deliveryMethods.0.id', 'regular')
             ->where('deliveryMethods.0.label', 'Same day delivery')
-            ->where('deliveryMethods.0.requiresSlot', false)
+            ->where('deliveryMethods.0.requiresSlot', true)
+            ->where('deliveryMethods.0.requiresDate', false)
             ->where('deliveryMethods.1.id', 'express')
             ->where('deliveryMethods.1.label', 'Late delivery')
             ->where('deliveryMethods.1.requiresSlot', true)
-            ->has('deliveryMethods.1.timeSlots', 4)
+            ->where('deliveryMethods.1.requiresDate', true)
+            ->where('deliveryMethods.1.minDate', '2026-11-10')
+            ->where('deliveryMethods.1.maxDate', '2026-11-23')
+            ->has('deliveryMethods.0.timeSlots', 2)
+            ->has('deliveryMethods.1.timeSlots', 3)
             ->missing('timeSlots')
             ->missing('deliveryMethods.0.formattedFee')
             ->missing('deliveryMethods.1.formattedFee')
@@ -212,7 +224,7 @@ test('platform branch and driver staff cannot place a storefront order', functio
     'driver' => ['driver', UserType::DRIVER],
 ]);
 
-test('express checkout without a time slot is rejected', function () {
+test('checkout without a delivery shift is rejected', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'express-needs-slot']);
     storefrontCheckoutBranchWithStock($product);
@@ -227,6 +239,7 @@ test('express checkout without a time slot is rejected', function () {
         ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
+            'delivery_date' => '2026-11-10',
             'time_slot_id' => '',
         ]))
         ->assertRedirect(route('checkout'))
@@ -235,10 +248,11 @@ test('express checkout without a time slot is rejected', function () {
     expect(Order::query()->count())->toBe(0);
 });
 
-test('regular checkout does not require a delivery date or time slot', function () {
+test('same-day checkout stores today and the chosen delivery shift', function () {
     $user = User::factory()->create();
-    $product = storefrontCheckoutProduct(['slug' => 'regular-no-slot']);
+    $product = storefrontCheckoutProduct(['slug' => 'regular-with-shift']);
     storefrontCheckoutBranchWithStock($product);
+    $shiftId = checkoutDeliveryShiftId();
 
     $this->actingAs($user, 'customer')
         ->post(route('cart.store'), [
@@ -250,28 +264,25 @@ test('regular checkout does not require a delivery date or time slot', function 
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'regular',
             'delivery_date' => null,
-            'time_slot_id' => null,
+            'time_slot_id' => $shiftId,
         ]))
         ->assertRedirect();
 
     $order = Order::query()->firstOrFail();
 
     expect($order->delivery_method)->toBe('regular')
-        ->and($order->delivery_date)->toBeNull()
-        ->and($order->time_slot)->toBeNull();
+        ->and($order->delivery_date?->toDateString())->toBe('2026-11-09')
+        ->and($order->delivery_shift_id)->toBe($shiftId)
+        ->and($order->time_slot)->not->toBeNull();
 });
 
-test('express checkout stores today and the chosen slot without a customer date', function () {
-    $user = User::factory()->create();
-    $product = storefrontCheckoutProduct(['slug' => 'express-with-slot']);
-    storefrontCheckoutBranchWithStock($product);
+test('same-day checkout rejects a shift that has already started', function () {
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 14:11:00', config('app.timezone')));
 
-    $slot = DeliveryMethod::query()
-        ->where('key', 'express')
-        ->firstOrFail()
-        ->timeSlots()
-        ->orderBy('sort')
-        ->firstOrFail();
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'regular-past-shift']);
+    storefrontCheckoutBranchWithStock($product);
+    $morning = DeliveryShift::query()->where('name', 'Morning Delivery')->firstOrFail();
 
     $this->actingAs($user, 'customer')
         ->post(route('cart.store'), [
@@ -280,18 +291,94 @@ test('express checkout stores today and the chosen slot without a customer date'
         ]);
 
     $this->actingAs($user, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->has('deliveryMethods.0.timeSlots', 1)
+            ->where('deliveryMethods.0.id', 'regular')
+            ->where('deliveryMethods.0.timeSlots.0.name', 'Evening Delivery')
+            ->where('deliveryMethods.1.requiresDate', true)
+            ->where('deliveryMethods.1.minDate', '2026-11-10')
+            ->where('deliveryMethods.1.maxDate', '2026-11-23'));
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'regular',
+            'time_slot_id' => $morning->id,
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors('time_slot_id');
+});
+
+test('late delivery requires a future date within fourteen days', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'express-with-shift']);
+    storefrontCheckoutBranchWithStock($product);
+    $shiftId = checkoutDeliveryShiftId();
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
-            'delivery_date' => now()->addWeek()->toDateString(),
-            'time_slot_id' => (string) $slot->id,
+            'delivery_date' => '2026-11-09',
+            'time_slot_id' => $shiftId,
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors('delivery_date');
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'express',
+            'delivery_date' => '2026-11-24',
+            'time_slot_id' => $shiftId,
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors('delivery_date');
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'express',
+            'delivery_date' => '2026-11-23',
+            'time_slot_id' => $shiftId,
         ]))
         ->assertRedirect();
 
     $order = Order::query()->firstOrFail();
 
     expect($order->delivery_method)->toBe('express')
-        ->and($order->delivery_date?->toDateString())->toBe(now()->toDateString())
-        ->and($order->time_slot)->toBe($slot->label);
+        ->and($order->delivery_date?->toDateString())->toBe('2026-11-23')
+        ->and($order->delivery_shift_id)->toBe($shiftId);
+});
+
+test('same-day method is omitted when no eligible shifts remain', function () {
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 22:00:00', config('app.timezone')));
+
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'no-same-day-left']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->has('deliveryMethods', 1)
+            ->where('deliveryMethods.0.id', 'express'));
 });
 
 test('pinning a location quotes the distance-based shipping fee', function () {

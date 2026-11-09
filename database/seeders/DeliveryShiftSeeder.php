@@ -19,18 +19,38 @@ class DeliveryShiftSeeder extends Seeder
 
         $windows = [
             [
-                'name' => 'Morning Delivery',
+                'name' => 'Early Morning Delivery ',
+                'start_time' => '07:00',
+                'end_time' => '09:00',
+            ],
+            [
+                'name' => 'Morning Delivery ',
                 'start_time' => '09:00',
+                'end_time' => '11:00',
+            ],
+            [
+                'name' => 'Late Morning Delivery ',
+                'start_time' => '11:00',
                 'end_time' => '13:00',
             ],
             [
-                'name' => 'Afternoon Delivery',
+                'name' => 'Afternoon Delivery ',
                 'start_time' => '13:00',
+                'end_time' => '15:00',
+            ],
+            [
+                'name' => 'Late Afternoon Delivery ',
+                'start_time' => '15:00',
                 'end_time' => '17:00',
             ],
             [
-                'name' => 'Evening Delivery',
+                'name' => 'Evening Delivery ',
                 'start_time' => '17:00',
+                'end_time' => '19:00',
+            ],
+            [
+                'name' => 'Night Delivery ',
+                'start_time' => '19:00',
                 'end_time' => '21:00',
             ],
         ];
@@ -49,7 +69,7 @@ class DeliveryShiftSeeder extends Seeder
                     ],
                 );
             },
-            '3 delivery shifts ready.',
+            fn (): string => sprintf('%d delivery shifts ready.', count($windows)),
         );
     }
 }

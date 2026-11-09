@@ -76,11 +76,16 @@ class DeliverySettingsService
                 'label' => 'Same day delivery',
                 'description' => 'Standard delivery for eligible orders.',
                 'fee' => 0,
-                'requires_slot' => false,
+                'requires_slot' => true,
                 'status' => true,
                 'sort' => 0,
             ],
         );
+
+        DeliveryMethod::query()
+            ->where('key', 'regular')
+            ->where('requires_slot', false)
+            ->update(['requires_slot' => true]);
 
         $express = DeliveryMethod::query()->firstOrCreate(
             ['key' => 'express'],
