@@ -504,6 +504,8 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::delete('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'destroy'])
             ->name('platform.products.variants.destroy');
 
+        Route::put('products/{product}/packages-enabled', [PlatformProductPackageController::class, 'updateEnabled'])
+            ->name('platform.products.packages-enabled');
         Route::post('products/{product}/packages', [PlatformProductPackageController::class, 'store'])
             ->middleware('precognitive')
             ->name('platform.products.packages.store');

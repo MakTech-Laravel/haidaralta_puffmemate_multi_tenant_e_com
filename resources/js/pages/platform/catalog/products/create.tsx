@@ -31,6 +31,7 @@ export default function PlatformProductsCreate({
                     showBranchNotice
                     enableSuggestions
                     wholesaleFields
+                    packageDraftFields
                     returnTo={returnTo}
                     cancelHref={ProductController.index.url()}
                 />

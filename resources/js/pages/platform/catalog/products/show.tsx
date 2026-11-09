@@ -116,6 +116,7 @@ type Product = {
         sort_order: number;
     }[];
     status: boolean;
+    packages_enabled?: boolean;
     variants: ProductVariant[];
     packages: CatalogProductPackage[];
     created_at: string | null;
@@ -930,6 +931,7 @@ export default function PlatformProductsShow({
                 <ProductPackagesCard
                     productSlug={product.slug}
                     productName={product.name}
+                    packagesEnabled={product.packages_enabled ?? true}
                     packages={product.packages ?? []}
                 />
             </div>

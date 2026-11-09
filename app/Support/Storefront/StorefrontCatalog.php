@@ -417,7 +417,7 @@ class StorefrontCatalog
                 ])
                 ->values()
                 ->all(),
-            'packages' => (bool) config('catalog.show_product_packages')
+            'packages' => ProductPackagePricing::productPackagesEnabled($product)
                 ? $product->packages
                     ->where('status', true)
                     ->map(function ($package) use ($price): array {
@@ -687,6 +687,7 @@ class StorefrontCatalog
 
         $query = Product::query()
             ->where('status', true)
+            ->where('packages_enabled', true)
             ->whereHas('packages', fn (Builder $packages) => $packages->enabled())
             ->with([
                 'categories:id,name,slug',

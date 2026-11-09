@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Platform;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Platform\StoreProductPackageRequest;
 use App\Http\Requests\Platform\UpdateProductPackageRequest;
+use App\Http\Requests\Platform\UpdateProductPackagesEnabledRequest;
 use App\Models\Product;
 use App\Models\ProductPackage;
 use App\Services\Catalog\ProductPackageService;
@@ -14,6 +15,25 @@ use Illuminate\Http\RedirectResponse;
 class ProductPackageController extends Controller
 {
     public function __construct(private ProductPackageService $packages) {}
+
+    public function updateEnabled(
+        UpdateProductPackagesEnabledRequest $request,
+        Product $product,
+    ): RedirectResponse {
+        abort_unless((bool) config('catalog.show_product_packages'), 404);
+
+        $product->forceFill([
+            'packages_enabled' => $request->boolean('packages_enabled'),
+        ])->save();
+
+        Toast::success(
+            $product->packages_enabled
+                ? 'Product packages enabled for storefront.'
+                : 'Product packages disabled for storefront.',
+        );
+
+        return back();
+    }
 
     public function store(StoreProductPackageRequest $request, Product $product): RedirectResponse
     {

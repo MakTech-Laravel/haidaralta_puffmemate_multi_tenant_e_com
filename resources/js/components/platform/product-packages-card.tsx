@@ -27,6 +27,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { usePermission } from '@/hooks/use-permissions';
 
 export type CatalogProductPackage = {
@@ -41,12 +43,14 @@ export type CatalogProductPackage = {
 type ProductPackagesCardProps = {
     productSlug: string;
     productName: string;
+    packagesEnabled: boolean;
     packages: CatalogProductPackage[];
 };
 
 export function ProductPackagesCard({
     productSlug,
     productName,
+    packagesEnabled,
     packages,
 }: ProductPackagesCardProps) {
     const { catalog } = usePage().props;
@@ -59,6 +63,7 @@ export function ProductPackagesCard({
         null,
     );
     const [processing, setProcessing] = useState(false);
+    const [togglingEnabled, setTogglingEnabled] = useState(false);
 
     const openCreate = () => {
         setEditingPackage(null);
@@ -163,12 +168,55 @@ export function ProductPackagesCard({
                             Quantity tiers and package prices for this product
                         </CardDescription>
                     </div>
-                    {canManageCatalog ? (
-                        <Button size="sm" onClick={openCreate}>
-                            <Plus className="size-4" />
-                            Add package
-                        </Button>
-                    ) : null}
+                    <div className="flex flex-wrap items-center gap-3">
+                        {canManageCatalog ? (
+                            <div className="flex items-center gap-2">
+                                <Switch
+                                    id="packages-enabled"
+                                    checked={packagesEnabled}
+                                    disabled={togglingEnabled}
+                                    onCheckedChange={(checked) => {
+                                        setTogglingEnabled(true);
+                                        router.put(
+                                            ProductPackageController.updateEnabled.url(
+                                                productSlug,
+                                            ),
+                                            {
+                                                packages_enabled: checked,
+                                            },
+                                            {
+                                                preserveScroll: true,
+                                                onFinish: () =>
+                                                    setTogglingEnabled(false),
+                                            },
+                                        );
+                                    }}
+                                />
+                                <Label
+                                    htmlFor="packages-enabled"
+                                    className="text-sm font-normal"
+                                >
+                                    Available on storefront
+                                </Label>
+                            </div>
+                        ) : (
+                            <Badge
+                                variant={
+                                    packagesEnabled ? 'default' : 'secondary'
+                                }
+                            >
+                                {packagesEnabled
+                                    ? 'Storefront on'
+                                    : 'Storefront off'}
+                            </Badge>
+                        )}
+                        {canManageCatalog ? (
+                            <Button size="sm" onClick={openCreate}>
+                                <Plus className="size-4" />
+                                Add package
+                            </Button>
+                        ) : null}
+                    </div>
                 </CardHeader>
                 <CardContent className="px-5">
                     <DataTable

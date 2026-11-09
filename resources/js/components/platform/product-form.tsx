@@ -6,6 +6,11 @@ import ProductController from '@/actions/App/Http/Controllers/Platform/ProductCo
 import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
+import {
+    emptyProductPackageDraft,
+    ProductPackagesDraftFields,
+    type ProductPackageDraft,
+} from '@/components/platform/product-packages-draft-fields';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -126,6 +131,8 @@ interface ProductFormProps {
     branchOpsFields?: boolean;
     /** Platform catalog: edit the default wholesale price and minimum quantity. */
     wholesaleFields?: boolean;
+    /** Platform create only: draft packages submitted with the new product. */
+    packageDraftFields?: boolean;
     /** Hide gallery when backend ignores it (branch create). Default true. */
     showGallery?: boolean;
     returnTo?: string | null;
@@ -175,6 +182,7 @@ export function ProductForm({
     excludeProductId = null,
     branchOpsFields = false,
     wholesaleFields = false,
+    packageDraftFields = false,
     showGallery = true,
     returnTo = null,
     cancelHref,
@@ -187,6 +195,8 @@ export function ProductForm({
         (portal !== 'branch' || catalog.branch_can_manage_catalog_pricing);
     const showBranchOps = branchOpsFields && showBranchPricing;
     const showBranchQuantityOnly = branchOpsFields && !showBranchPricing;
+    const showPackageDrafts =
+        packageDraftFields && !isEdit && catalog.show_product_packages;
     const [slugTouched, setSlugTouched] = useState(isEdit);
     const [skuTouched, setSkuTouched] = useState(isEdit);
     const [suggestionQuery, setSuggestionQuery] = useState('');
@@ -283,6 +293,12 @@ export function ProductForm({
                       defaults?.min_wholesale_qty !== undefined
                           ? String(defaults.min_wholesale_qty)
                           : '',
+              }
+            : {}),
+        ...(showPackageDrafts
+            ? {
+                  packages_enabled: true,
+                  packages: [emptyProductPackageDraft(0)] as ProductPackageDraft[],
               }
             : {}),
         ...(isEdit ? { _method: 'put' } : {}),
@@ -433,6 +449,8 @@ export function ProductForm({
                 quantity,
                 wholesale_price,
                 min_wholesale_qty,
+                packages_enabled,
+                packages,
                 ...rest
             } = form as typeof form & {
                 selling_price?: string;
@@ -441,11 +459,26 @@ export function ProductForm({
                 quantity?: number;
                 wholesale_price?: string;
                 min_wholesale_qty?: string;
+                packages_enabled?: boolean;
+                packages?: ProductPackageDraft[];
             };
 
             const filteredSpecifications = specifications.filter(
                 (row) => row.label.trim() !== '' || row.value.trim() !== '',
             );
+
+            const filteredPackages = (packages ?? [])
+                .filter((row) => row.label.trim() !== '')
+                .map((row, index) => ({
+                    label: row.label.trim(),
+                    quantity: row.quantity,
+                    price: row.price,
+                    status: row.status,
+                    sort_order:
+                        row.sort_order.trim() === ''
+                            ? String(index)
+                            : row.sort_order,
+                }));
 
             return {
                 ...rest,
@@ -508,6 +541,12 @@ export function ProductForm({
                               min_wholesale_qty.trim() === ''
                                   ? null
                                   : min_wholesale_qty,
+                      }
+                    : {}),
+                ...(showPackageDrafts
+                    ? {
+                          packages_enabled: packages_enabled ?? true,
+                          packages: JSON.stringify(filteredPackages),
                       }
                     : {}),
             };
@@ -1639,6 +1678,29 @@ export function ProductForm({
                     </div>
                 </section>
             </div>
+
+            {showPackageDrafts ? (
+                <ProductPackagesDraftFields
+                    packagesEnabled={Boolean(
+                        (data as typeof data & { packages_enabled?: boolean })
+                            .packages_enabled,
+                    )}
+                    packages={
+                        (
+                            data as typeof data & {
+                                packages?: ProductPackageDraft[];
+                            }
+                        ).packages ?? [emptyProductPackageDraft(0)]
+                    }
+                    errors={errors}
+                    onPackagesEnabledChange={(value) =>
+                        setData('packages_enabled' as never, value as never)
+                    }
+                    onPackagesChange={(nextPackages) =>
+                        setData('packages' as never, nextPackages as never)
+                    }
+                />
+            ) : null}
 
             <div className="bg-background/95 supports-[backdrop-filter]:bg-background/80 sticky bottom-0 z-10 -mx-2 flex flex-wrap items-center justify-end gap-3 border-t px-2 py-4 backdrop-blur">
                 <Button variant="secondary" asChild>
