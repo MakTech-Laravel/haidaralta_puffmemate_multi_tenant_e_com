@@ -11,6 +11,7 @@ use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\Geo\Polygon;
 use Database\Seeders\ApplicationSettingsSeeder;
 
@@ -214,6 +215,8 @@ test('accepting late delivery places the order, flags late lines, and reserves o
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), areaCheckoutPayload([
             'accept_late_delivery' => true,
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
         ]))
         ->assertRedirect();
 
@@ -225,6 +228,55 @@ test('accepting late delivery places the order, flags late lines, and reserves o
         ->and($item->is_late_delivery)->toBeTrue()
         ->and(StockTransfer::query()->count())->toBe(0)
         ->and($inventory->fresh()->reserved_quantity)->toBe(2);
+});
+
+test('same day delivery is rejected on delivery_method when items are on late delivery', function () {
+    $user = User::factory()->create();
+    $product = areaCheckoutProduct('area-shortfall-same-day');
+    [$branch] = areaCheckoutBranchWithZone();
+
+    Inventory::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'quantity' => 1,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 3]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.store'), areaCheckoutPayload([
+            'accept_late_delivery' => true,
+            'delivery_method' => 'regular',
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors(['delivery_method' => DeliveryShiftAvailability::SAME_DAY_LATE_ITEMS_MESSAGE]);
+
+    expect(Order::query()->count())->toBe(0);
+});
+
+test('same day delivery still works when every item is in stock', function () {
+    $user = User::factory()->create();
+    $product = areaCheckoutProduct('area-in-stock-same-day');
+    [$branch] = areaCheckoutBranchWithZone();
+
+    Inventory::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'quantity' => 5,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 2]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), areaCheckoutPayload(['delivery_method' => 'regular']))
+        ->assertRedirect();
+
+    expect(Order::query()->count())->toBe(1);
 });
 
 test('shipping quote reports shortfall lines for the matched area branch', function () {

@@ -68,29 +68,66 @@ test('php fpm receives runtime environment variables', function () {
         ->toContain('listen = 127.0.0.1:9000');
 });
 
-test('the final image excludes frontend and development tooling', function () {
+test('the dockerfile is self-contained for Coolify git auto-deploy and keeps tooling out of production', function () {
     $dockerfile = deploymentFile('Dockerfile');
-    $productionStage = str($dockerfile)->after('FROM php:8.4-fpm-bookworm AS production')->toString();
+    $base = deploymentFile('Dockerfile.base');
+    $productionStage = str($dockerfile)->after('AS production')->toString();
+    $runtimeBaseStage = str($dockerfile)->after('AS runtime-base')->before('FROM runtime-base AS build')->toString();
+
+    expect($base)
+        ->toContain('pcntl pdo_mysql pdo_pgsql zip')
+        ->toContain('postgresql-client-18')
+        ->toContain('procps')
+        ->toContain('libwebp7')
+        ->toContain('nginx')
+        ->toContain('supervisor')
+        ->toContain('php-runtime')
+        ->not->toContain('nano')
+        ->not->toContain('maktech-laravel')
+        ->not->toContain('puffmemate-php')
+        ->not->toContain('node:');
 
     expect($dockerfile)
-        ->toContain('COPY --from=node:24-bookworm-slim')
+        ->toContain('FROM php:8.4-fpm-bookworm AS runtime-base')
+        ->toContain('FROM runtime-base AS build')
+        ->toContain('FROM runtime-base AS production')
         ->toContain('ENV CI=true')
         ->toContain('COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./')
         ->toContain('corepack enable pnpm')
         ->toContain('pnpm install --frozen-lockfile')
-        ->toContain('pnpm generate:pwa-assets')
         ->toContain('pnpm run build')
         ->toContain('composer install')
-        ->toContain('pcntl pdo_mysql pdo_pgsql zip')
         ->toContain('--no-dev')
+        ->toContain('/usr/local/bin/node')
+        ->toContain('/usr/local/lib/node_modules/corepack')
+        ->toContain('ARG VITE_APP_NAME=App')
+        ->not->toContain('COPY --from=node:24-bookworm-slim /usr/local/ /usr/local/')
+        ->not->toContain('pnpm generate:pwa-assets')
         ->not->toContain('key:generate')
         ->not->toContain('npm ci')
+        ->not->toContain('maktech-laravel')
         ->not->toMatch('/(?:^|&&|RUN)\s+npm\s+/m')
+        ->and($runtimeBaseStage)
+        ->toContain('$PHPIZE_DEPS')
+        ->toContain('postgresql-client-18')
         ->and($productionStage)
-        ->toContain('curl')
-        ->toContain('nano')
         ->toContain('HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3')
         ->toContain('http://127.0.0.1/up')
         ->not->toContain('node_modules')
-        ->not->toContain('apt-get install -y --no-install-recommends $PHPIZE_DEPS');
+        ->not->toContain('nano')
+        ->not->toContain('$PHPIZE_DEPS')
+        ->not->toContain('pnpm ')
+        ->not->toContain('corepack ');
+});
+
+test('the reusable base dockerfile matches the runtime-base stage contract', function () {
+    $base = deploymentFile('Dockerfile.base');
+
+    expect($base)
+        ->toContain('$PHPIZE_DEPS')
+        ->toContain('docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp')
+        ->toContain('pecl install redis')
+        ->toContain('postgresql-client-18')
+        ->toContain('procps')
+        ->toContain('php-runtime');
 });

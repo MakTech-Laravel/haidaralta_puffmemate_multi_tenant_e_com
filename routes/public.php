@@ -8,6 +8,7 @@ use App\Http\Controllers\Storefront\CheckoutController;
 use App\Http\Controllers\Storefront\CmsPageController;
 use App\Http\Controllers\Storefront\ContactInquiryController;
 use App\Http\Controllers\Storefront\HomeController;
+use App\Http\Controllers\Storefront\OrderTrackingController;
 use App\Http\Controllers\Storefront\PackController;
 use App\Http\Controllers\Storefront\PacksSavesController;
 use App\Http\Controllers\Storefront\ProductController;
@@ -55,6 +56,11 @@ Route::middleware('ensure.storefront.customer')->group(function () {
     Route::get('/checkout/confirmation/{order:order_number}', [CheckoutController::class, 'confirmation'])
         ->name('checkout.confirmation');
 });
+
+// Guest order page: reachable only through the signed link shown after checkout.
+Route::get('/order-status/{order:order_number}', [OrderTrackingController::class, 'show'])
+    ->middleware(['signed', 'throttle:60,1'])
+    ->name('orders.track');
 
 Route::get('/about', fn () => app(CmsPageController::class)('about'))->name('about');
 Route::get('/faqs', fn () => app(CmsPageController::class)('faqs'))->name('faqs');
