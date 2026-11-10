@@ -31,6 +31,7 @@ export type LiveDriver = {
         heading: number | null;
         speed: number | null;
         accuracy: number | null;
+        coarse: boolean;
     } | null;
     order: {
         number: string | null;
@@ -150,6 +151,7 @@ export function DriverLiveBoard({
                     heading: event.heading,
                     speed: event.speed,
                     accuracy: event.accuracy,
+                    coarse: event.coarse,
                 },
             };
         });
@@ -234,8 +236,12 @@ export function DriverLiveBoard({
                               lng: driver.position.lng,
                               kind: 'driver' as const,
                               label: initials(driver.name),
-                              muted: driver.signal !== 'live',
-                              title: driver.name,
+                              muted:
+                                  driver.signal !== 'live' ||
+                                  driver.position.coarse,
+                              title: driver.position.coarse
+                                  ? `${driver.name} (approximate location)`
+                                  : driver.name,
                               onClick: () => setSelectedId(driver.id),
                           },
                       ]
@@ -354,7 +360,7 @@ export function DriverLiveBoard({
                                     <span className="text-muted-foreground block truncate text-xs">
                                         {driver.signal === 'none'
                                             ? 'No signal yet'
-                                            : `Seen ${ago(now - (driver.position?.ts ?? now))}`}
+                                            : `Seen ${ago(now - (driver.position?.ts ?? now))}${driver.position?.coarse ? ' · approximate location' : ''}`}
                                         {driver.order?.number
                                             ? ` · #${driver.order.number} ${driver.order.status_label}`
                                             : ' · Free'}

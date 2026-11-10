@@ -57,6 +57,7 @@ class LocationController extends Controller
         return response()->json([
             'tracking' => true,
             'accepted' => $outcome->accepted,
+            'coarse' => $outcome->coarse,
             'reason' => $outcome->reason,
         ]);
     }

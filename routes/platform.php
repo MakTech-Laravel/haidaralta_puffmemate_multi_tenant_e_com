@@ -721,6 +721,9 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
 
         Route::get('map-provider', [PlatformMapProviderSettingsController::class, 'edit'])
             ->name('platform.settings.map-provider.edit');
+        Route::post('map-provider/activate', [PlatformMapProviderSettingsController::class, 'activate'])
+            ->middleware('throttle:10,1')
+            ->name('platform.settings.map-provider.activate');
         Route::put('map-provider/selection', [PlatformMapProviderSettingsController::class, 'updateSelection'])
             ->name('platform.settings.map-provider.selection');
         Route::put('map-provider/providers/{provider}', [PlatformMapProviderSettingsController::class, 'updateProvider'])

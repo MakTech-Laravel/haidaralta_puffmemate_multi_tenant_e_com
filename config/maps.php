@@ -23,6 +23,8 @@ return [
             'class' => OpenStreetMapProvider::class,
             'label' => 'OpenStreetMap',
             'description' => 'Free, no key needed. Public OSM servers are for light use; point the URLs below at a commercial tile/geocoder host for heavy traffic.',
+            'tagline' => 'Free. Nothing to set up. A good place to start.',
+            'help' => null,
             'env' => [
                 'public_key' => null,
                 'server_key' => null,
@@ -43,6 +45,16 @@ return [
             'class' => MapboxProvider::class,
             'label' => 'Mapbox',
             'description' => 'Map tiles, address search and routing. One public token is enough; add a secret token to keep server calls off the public token.',
+            'tagline' => 'Nice-looking maps with a free monthly allowance. Needs one key.',
+            'help' => [
+                'url' => 'https://account.mapbox.com/access-tokens/',
+                'url_label' => 'Open the Mapbox tokens page',
+                'steps' => [
+                    'Create a free account at mapbox.com (or sign in).',
+                    'Open the tokens page and copy the "Default public token". It starts with pk.',
+                    'Paste it into the box below and press "Save and use Mapbox".',
+                ],
+            ],
             'env' => [
                 'public_key' => env('MAPBOX_PUBLIC_TOKEN'),
                 'server_key' => env('MAPBOX_SECRET_TOKEN'),
@@ -68,6 +80,17 @@ return [
             'class' => GoogleMapsProvider::class,
             'label' => 'Google Maps',
             'description' => 'Most detailed data, billed per request. Two keys are needed: one for the map in the browser, one for server-side address search and routing.',
+            'tagline' => 'The most detailed maps. You pay per use. Needs two keys.',
+            'help' => [
+                'url' => 'https://console.cloud.google.com/google/maps-apis/credentials',
+                'url_label' => 'Open Google Cloud (Maps keys)',
+                'steps' => [
+                    'Sign in to Google Cloud, pick your project and make sure billing is on.',
+                    'Turn on three services: "Maps JavaScript API", "Geocoding API" and "Routes API".',
+                    'Create two keys. Key 1 (for the map): limit it to your website address. Key 2 (for address search and routes): limit it to your server IP address.',
+                    'Paste both keys below and press "Save and use Google Maps".',
+                ],
+            ],
             'env' => [
                 'public_key' => env('GOOGLE_MAPS_PUBLIC_KEY'),
                 'server_key' => env('GOOGLE_MAPS_SERVER_KEY'),

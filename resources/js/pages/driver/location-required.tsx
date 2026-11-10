@@ -1,64 +1,107 @@
 import { Head, Link, router, usePage } from '@inertiajs/react';
 import { Loader2, MapPin, MapPinOff } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import type { ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
-    GEOLOCATION_OPTIONS,
-    sendReading,
+    getCurrentPositionWithFallback,
+    sendReadingDetailed,
     toReading,
 } from '@/lib/driver-location';
 import type { DriverTrackingConfig } from '@/lib/driver-location';
+import { detectDeviceOs, locationHelp } from '@/lib/location-help';
+import type { LocationProblem } from '@/lib/location-help';
 import { logout } from '@/routes';
 
 type Props = {
     intended: string;
 };
 
-type State = 'idle' | 'requesting' | 'denied' | 'weak' | 'error';
-
-const COPY: Record<Exclude<State, 'idle' | 'requesting'>, string> = {
-    denied: 'Location is blocked for this site. Open your browser settings, allow Location for this app, then try again.',
-    weak: 'We could not get a good GPS fix. Move to an open area, keep this screen on, and try again.',
-    error: 'Something went wrong while sending your location. Check your connection and try again.',
-};
+/** What a rejected reading means for the driver, in plain words. */
+function problemFromReason(reason: string | null): LocationProblem {
+    switch (reason) {
+        case 'inaccurate':
+            return 'inaccurate';
+        case 'too_old':
+            return 'old';
+        case 'jump':
+            return 'jump';
+        default:
+            return 'network';
+    }
+}
 
 export default function DriverLocationRequired({ intended }: Props) {
     const { driverTracking } = usePage<{
         driverTracking: DriverTrackingConfig | null;
     }>().props;
-    const [state, setState] = useState<State>('idle');
+    const [requesting, setRequesting] = useState(false);
+    const [problem, setProblem] = useState<LocationProblem | null>(null);
+    const [detail, setDetail] = useState<string | null>(null);
+    const [accuracy, setAccuracy] = useState<number | null>(null);
+    const os = useMemo(() => detectDeviceOs(), []);
+    const help = problem ? locationHelp(problem, os) : null;
 
-    const share = useCallback(() => {
+    const share = useCallback(async () => {
         if (!driverTracking || !('geolocation' in navigator)) {
-            setState('error');
+            setProblem('unavailable');
 
             return;
         }
 
-        setState('requesting');
+        setRequesting(true);
+        setProblem(null);
+        setDetail(null);
+        setAccuracy(null);
 
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                const result = await sendReading(
-                    driverTracking.location_url,
-                    toReading(position),
-                );
+        try {
+            const position = await getCurrentPositionWithFallback();
 
-                if (result === 'accepted' || result === 'stop') {
-                    router.visit(intended);
+            setAccuracy(Math.round(position.coords.accuracy));
 
-                    return;
-                }
+            const { result, reason } = await sendReadingDetailed(
+                driverTracking.location_url,
+                toReading(position),
+            );
 
-                setState(result === 'ignored' ? 'weak' : 'error');
-            },
-            (error) =>
-                setState(
-                    error.code === error.PERMISSION_DENIED ? 'denied' : 'weak',
-                ),
-            { ...GEOLOCATION_OPTIONS, maximumAge: 0 },
-        );
+            // out_of_order / superseded mean a fresh position is already stored, which is all
+            // the gate needs. An approximate position (a computer without GPS) is accepted too.
+            if (
+                result === 'accepted' ||
+                result === 'stop' ||
+                reason === 'out_of_order' ||
+                reason === 'superseded'
+            ) {
+                router.visit(intended);
+
+                return;
+            }
+
+            setProblem(
+                result === 'ignored' ? problemFromReason(reason) : 'network',
+            );
+        } catch (error) {
+            const geolocationError = error as GeolocationPositionError;
+            const code = geolocationError.code;
+
+            setDetail(
+                `${geolocationError.message ?? 'Unknown error'} (code ${code ?? '?'})`,
+            );
+
+            if (code === 1) {
+                // The browser says "Allowed" but the device still refuses: the block is at the
+                // device level, not in the browser's site settings.
+                const state = await navigator.permissions
+                    ?.query({ name: 'geolocation' })
+                    .then((permission) => permission.state)
+                    .catch(() => null);
+
+                setProblem(state === 'granted' ? 'system' : 'denied');
+            } else {
+                setProblem(code === 3 ? 'timeout' : 'unavailable');
+            }
+        } finally {
+            setRequesting(false);
+        }
     }, [driverTracking, intended]);
 
     useEffect(() => {
@@ -67,23 +110,21 @@ export default function DriverLocationRequired({ intended }: Props) {
             ?.query({ name: 'geolocation' })
             .then((permission) => {
                 if (permission.state === 'granted') {
-                    share();
+                    void share();
                 }
             })
             .catch(() => undefined);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const blocked = state === 'denied' || state === 'weak' || state === 'error';
-
     return (
         <>
             <Head title="Share your location" />
 
-            <main className="bg-background text-foreground flex min-h-svh items-center justify-center px-4 py-10">
+            <main className="bg-background text-foreground flex min-h-svh items-center justify-center px-4 py-8">
                 <div className="border-border bg-card w-full max-w-md space-y-6 rounded-2xl border p-6 text-center shadow-sm sm:p-8">
                     <span className="bg-muted mx-auto flex size-14 items-center justify-center rounded-full">
-                        {state === 'denied' ? (
+                        {problem === 'denied' ? (
                             <MapPinOff
                                 className="text-destructive size-7"
                                 aria-hidden
@@ -107,25 +148,44 @@ export default function DriverLocationRequired({ intended }: Props) {
                         </p>
                     </div>
 
-                    {blocked && (
-                        <p
+                    {help ? (
+                        <div
                             role="alert"
                             data-test="driver-location-gate-message"
-                            className="bg-muted text-foreground rounded-lg p-3 text-sm"
+                            className="bg-muted text-foreground rounded-lg p-4 text-left text-sm"
                         >
-                            {COPY[state as keyof typeof COPY]}
-                        </p>
-                    )}
+                            <p className="font-semibold">{help.headline}</p>
+                            {problem === 'inaccurate' && accuracy ? (
+                                <p className="text-muted-foreground mt-1">
+                                    Your device reported about{' '}
+                                    {accuracy >= 1000
+                                        ? `${(accuracy / 1000).toFixed(0)} km`
+                                        : `${accuracy} m`}{' '}
+                                    of error.
+                                </p>
+                            ) : null}
+                            <ol className="mt-2 list-decimal space-y-1 pl-5">
+                                {help.steps.map((step) => (
+                                    <li key={step}>{step}</li>
+                                ))}
+                            </ol>
+                            {detail ? (
+                                <p className="text-muted-foreground mt-3 text-xs">
+                                    Details: {detail}
+                                </p>
+                            ) : null}
+                        </div>
+                    ) : null}
 
                     <Button
                         type="button"
                         size="lg"
                         className="h-12 w-full"
-                        onClick={share}
-                        disabled={state === 'requesting'}
+                        onClick={() => void share()}
+                        disabled={requesting}
                         data-test="driver-location-allow"
                     >
-                        {state === 'requesting' ? (
+                        {requesting ? (
                             <>
                                 <Loader2
                                     className="animate-spin"
@@ -133,7 +193,7 @@ export default function DriverLocationRequired({ intended }: Props) {
                                 />
                                 Getting your location…
                             </>
-                        ) : blocked ? (
+                        ) : problem ? (
                             'Try again'
                         ) : (
                             'Allow location'
@@ -153,6 +213,3 @@ export default function DriverLocationRequired({ intended }: Props) {
         </>
     );
 }
-
-// Full-screen prompt: no driver chrome, so nothing else is reachable while it is shown.
-DriverLocationRequired.layout = (page: ReactNode) => page;
