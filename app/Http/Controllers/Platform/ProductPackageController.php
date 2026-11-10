@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Platform\MoveProductPackageRequest;
 use App\Http\Requests\Platform\StoreProductPackageRequest;
 use App\Http\Requests\Platform\UpdateProductPackageRequest;
 use App\Http\Requests\Platform\UpdateProductPackagesEnabledRequest;
@@ -10,6 +11,7 @@ use App\Models\Product;
 use App\Models\ProductPackage;
 use App\Services\Catalog\ProductPackageService;
 use App\Support\Toast;
+use DomainException;
 use Illuminate\Http\RedirectResponse;
 
 class ProductPackageController extends Controller
@@ -72,9 +74,27 @@ class ProductPackageController extends Controller
         abort_unless((bool) config('catalog.show_product_packages'), 404);
         abort_unless($package->product_id === $product->id, 404);
 
-        $this->packages->delete($package);
+        try {
+            $this->packages->delete($package);
+        } catch (DomainException $exception) {
+            Toast::error($exception->getMessage());
+
+            return back();
+        }
 
         Toast::success('Package deleted.');
+
+        return back();
+    }
+
+    public function move(
+        MoveProductPackageRequest $request,
+        Product $product,
+        ProductPackage $package,
+    ): RedirectResponse {
+        abort_unless($package->product_id === $product->id, 404);
+
+        $this->packages->move($package, $request->string('direction')->toString());
 
         return back();
     }

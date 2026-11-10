@@ -18,7 +18,7 @@ interface ProductPackageFormDefaults {
     quantity?: number;
     price?: string | number | null;
     status?: boolean;
-    sort_order?: number;
+    is_default?: boolean;
 }
 
 interface ProductPackageFormProps {
@@ -63,12 +63,10 @@ export function ProductPackageForm({
                 ? String(defaults.price)
                 : '',
         status: defaults?.status ?? true,
-        sort_order:
-            defaults?.sort_order !== undefined && defaults?.sort_order !== null
-                ? String(defaults.sort_order)
-                : '0',
         ...(isEdit ? { _method: 'put' } : {}),
     });
+
+    const isDefaultPackage = isEdit && defaults?.is_default === true;
 
     useEffect(() => {
         setValidationTimeout(500);
@@ -92,8 +90,15 @@ export function ProductPackageForm({
                     value={data.label}
                     onChange={(event) => setData('label', event.target.value)}
                     required
+                    disabled={isDefaultPackage}
                     placeholder="e.g. Pack of 5"
                 />
+                {isDefaultPackage ? (
+                    <p className="text-muted-foreground text-xs">
+                        The default package keeps its label and quantity. Only
+                        the price and enabled state can change.
+                    </p>
+                ) : null}
                 <InputError message={errors.label} />
             </div>
 
@@ -110,6 +115,7 @@ export function ProductPackageForm({
                             setData('quantity', event.target.value)
                         }
                         required
+                        disabled={isDefaultPackage}
                     />
                     <InputError message={errors.quantity} />
                 </div>
@@ -130,21 +136,6 @@ export function ProductPackageForm({
                     />
                     <InputError message={errors.price} />
                 </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-                <Label htmlFor="package-sort-order">Sort order</Label>
-                <Input
-                    id="package-sort-order"
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={data.sort_order}
-                    onChange={(event) =>
-                        setData('sort_order', event.target.value)
-                    }
-                />
-                <InputError message={errors.sort_order} />
             </div>
 
             <div className="flex items-center gap-2">

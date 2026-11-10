@@ -27,7 +27,13 @@ beforeEach(function () {
     $this->seed(ApplicationSettingsSeeder::class);
     app(PaymentGatewaySettingsService::class)->ensureDefaults();
     app(DeliverySettingsService::class)->ensureDefaults();
+    seedCheckoutDeliveryShifts();
     config(['catalog.show_product_packages' => true]);
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 10:00:00', config('app.timezone')));
+});
+
+afterEach(function () {
+    Carbon\Carbon::setTestNow();
 });
 
 function productPackageCheckoutBranchWithStock(Product $product, int $quantity = 10): Branch
@@ -55,6 +61,27 @@ function productPackageCheckoutBranchWithStock(Product $product, int $quantity =
     ]);
 
     return $branch;
+}
+
+/**
+ * @param  array<string, mixed>  $overrides
+ * @return array<string, mixed>
+ */
+function productPackageCheckoutPayload(array $overrides = []): array
+{
+    return array_merge([
+        'name' => 'Ada Lovelace',
+        'mobile' => '0410123456',
+        'address' => '1 Test Street',
+        'city' => 'Sydney',
+        'postal_code' => '2000',
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'delivery_method' => 'regular',
+        'time_slot_id' => checkoutDeliveryShiftId(),
+        'payment_method' => PaymentGatewaySetting::KEY_COD,
+        'terms' => true,
+    ], $overrides);
 }
 
 test('platform admin can create multiple packages for a product', function () {
@@ -334,18 +361,7 @@ test('enabled package uses package price in cart and reserves multiplied invento
         ->and($item->quantity)->toBe(2);
 
     $this->actingAs($user, 'customer')
-        ->post(route('checkout.store'), [
-            'name' => 'Ada Lovelace',
-            'mobile' => '0410123456',
-            'address' => '1 Test Street',
-            'city' => 'Sydney',
-            'postal_code' => '2000',
-            'latitude' => -33.8688,
-            'longitude' => 151.2093,
-            'delivery_method' => 'regular',
-            'payment_method' => PaymentGatewaySetting::KEY_COD,
-            'terms' => true,
-        ])
+        ->post(route('checkout.store'), productPackageCheckoutPayload())
         ->assertRedirect();
 
     $orderItem = OrderItem::query()->firstOrFail();
@@ -391,18 +407,7 @@ test('disabling a package after cart add blocks checkout', function () {
     $package->forceFill(['status' => false])->save();
 
     $this->actingAs($user, 'customer')
-        ->post(route('checkout.store'), [
-            'name' => 'Ada Lovelace',
-            'mobile' => '0410123456',
-            'address' => '1 Test Street',
-            'city' => 'Sydney',
-            'postal_code' => '2000',
-            'latitude' => -33.8688,
-            'longitude' => 151.2093,
-            'delivery_method' => 'regular',
-            'payment_method' => PaymentGatewaySetting::KEY_COD,
-            'terms' => true,
-        ])
+        ->post(route('checkout.store'), productPackageCheckoutPayload())
         ->assertSessionHasErrors('cart');
 
     expect(OrderItem::query()->count())->toBe(0);
@@ -437,18 +442,7 @@ test('regular purchase still works when all packages are disabled', function () 
         ->and((float) $item->price_snapshot)->toBe(55.0);
 
     $this->actingAs($user, 'customer')
-        ->post(route('checkout.store'), [
-            'name' => 'Ada Lovelace',
-            'mobile' => '0410123456',
-            'address' => '1 Test Street',
-            'city' => 'Sydney',
-            'postal_code' => '2000',
-            'latitude' => -33.8688,
-            'longitude' => 151.2093,
-            'delivery_method' => 'regular',
-            'payment_method' => PaymentGatewaySetting::KEY_COD,
-            'terms' => true,
-        ])
+        ->post(route('checkout.store'), productPackageCheckoutPayload())
         ->assertRedirect();
 
     $orderItem = OrderItem::query()->firstOrFail();
@@ -493,12 +487,14 @@ test('platform product create can include nested packages', function () {
     $product = Product::query()->where('slug', 'create-with-packages')->firstOrFail();
 
     expect($product->packages_enabled)->toBeTrue()
-        ->and($product->packages()->count())->toBe(2)
+        ->and($product->packages()->count())->toBe(3)
+        ->and($product->packages()->where('is_default', true)->count())->toBe(1)
         ->and($product->packages()->where('label', 'Pack of 2')->where('status', true)->exists())->toBeTrue()
         ->and($product->packages()->where('label', 'Pack of 5')->where('status', false)->exists())->toBeTrue();
 });
 
-test('platform product create without packages still works', function () {
+test('platform product create without packages creates the default single item package from the selling price', function () {
+    config(['catalog.show_branch_pricing' => false]);
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $category = Category::factory()->create();
 
@@ -509,13 +505,185 @@ test('platform product create without packages still works', function () {
             'slug' => 'create-without-packages',
             'sku' => 'SKU-CWOP',
             'status' => true,
+            'selling_price' => 45.5,
         ])
         ->assertRedirect(route('platform.products.show', 'create-without-packages'));
 
     $product = Product::query()->where('slug', 'create-without-packages')->firstOrFail();
+    $default = $product->packages()->sole();
 
     expect($product->packages_enabled)->toBeTrue()
-        ->and($product->packages()->count())->toBe(0);
+        ->and($default->is_default)->toBeTrue()
+        ->and($default->label)->toBe('1 Item')
+        ->and($default->quantity)->toBe(1)
+        ->and($default->price)->toBe('45.50')
+        ->and($default->status)->toBeTrue();
+});
+
+test('platform product create keeps the edited price, status and position of the default package', function () {
+    config(['catalog.show_branch_pricing' => false]);
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Create With Edited Default',
+            'slug' => 'create-with-edited-default',
+            'sku' => 'SKU-CWED',
+            'status' => true,
+            'selling_price' => 100,
+            'packages' => [
+                [
+                    'label' => 'Pack of 5',
+                    'quantity' => 5,
+                    'price' => 400,
+                    'status' => true,
+                    'sort_order' => 0,
+                ],
+                [
+                    'label' => 'Renamed By Client',
+                    'quantity' => 9,
+                    'price' => 90,
+                    'status' => false,
+                    'is_default' => true,
+                    'sort_order' => 1,
+                ],
+            ],
+        ])
+        ->assertRedirect(route('platform.products.show', 'create-with-edited-default'));
+
+    $product = Product::query()->where('slug', 'create-with-edited-default')->firstOrFail();
+    $ordered = $product->packages()->ordered()->get();
+
+    expect($ordered->pluck('label')->all())->toBe(['Pack of 5', '1 Item'])
+        ->and($ordered[1]->is_default)->toBeTrue()
+        ->and($ordered[1]->quantity)->toBe(1)
+        ->and($ordered[1]->price)->toBe('90.00')
+        ->and($ordered[1]->status)->toBeFalse();
+});
+
+test('platform product create requires a price for non-default packages', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $category = Category::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.store'), [
+            'category_ids' => [$category->id],
+            'name' => 'Create Missing Price',
+            'slug' => 'create-missing-price',
+            'sku' => 'SKU-CMP',
+            'status' => true,
+            'packages' => [
+                [
+                    'label' => 'Pack of 5',
+                    'quantity' => 5,
+                    'price' => null,
+                ],
+            ],
+        ])
+        ->assertSessionHasErrors('packages.0.price');
+
+    expect(Product::query()->where('slug', 'create-missing-price')->exists())->toBeFalse();
+});
+
+test('default package cannot be deleted', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create();
+    $default = ProductPackage::factory()->default()->create(['product_id' => $product->id]);
+
+    $this->actingAs($admin, 'platform')
+        ->from(route('platform.products.edit', $product))
+        ->delete(route('platform.products.packages.destroy', [$product, $default]))
+        ->assertRedirect(route('platform.products.edit', $product));
+
+    expect($default->fresh()->trashed())->toBeFalse();
+});
+
+test('default package only accepts price and status changes', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create();
+    $default = ProductPackage::factory()->default()->create([
+        'product_id' => $product->id,
+        'price' => 50,
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.products.packages.update', [$product, $default]), [
+            'label' => 'Renamed',
+            'quantity' => 4,
+            'price' => 62.5,
+            'status' => false,
+        ])
+        ->assertRedirect();
+
+    expect($default->fresh())
+        ->label->toBe('1 Item')
+        ->quantity->toBe(1)
+        ->price->toBe('62.50')
+        ->status->toBeFalse()
+        ->is_default->toBeTrue();
+});
+
+test('added package is appended after the existing packages', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create();
+    ProductPackage::factory()->default()->create(['product_id' => $product->id, 'sort_order' => 0]);
+    ProductPackage::factory()->create(['product_id' => $product->id, 'label' => 'Pack of 2', 'sort_order' => 4]);
+
+    $this->actingAs($admin, 'platform')
+        ->post(route('platform.products.packages.store', $product), [
+            'label' => 'Pack of 9',
+            'quantity' => 9,
+            'price' => 500,
+        ])
+        ->assertRedirect();
+
+    expect($product->packages()->ordered()->pluck('label')->all())
+        ->toBe(['1 Item', 'Pack of 2', 'Pack of 9']);
+});
+
+test('platform admin can move packages up and down', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create();
+    $first = ProductPackage::factory()->default()->create(['product_id' => $product->id, 'sort_order' => 0]);
+    $second = ProductPackage::factory()->create(['product_id' => $product->id, 'label' => 'Pack of 2', 'sort_order' => 0]);
+    $third = ProductPackage::factory()->create(['product_id' => $product->id, 'label' => 'Pack of 5', 'sort_order' => 7]);
+
+    $orderedIds = fn (): array => $product->packages()->ordered()->pluck('id')->all();
+
+    $this->actingAs($admin, 'platform')
+        ->patch(route('platform.products.packages.move', [$product, $third]), ['direction' => 'up'])
+        ->assertRedirect();
+
+    expect($orderedIds())->toBe([$first->id, $third->id, $second->id]);
+
+    $this->actingAs($admin, 'platform')
+        ->patch(route('platform.products.packages.move', [$product, $first]), ['direction' => 'down'])
+        ->assertRedirect();
+
+    expect($orderedIds())->toBe([$third->id, $first->id, $second->id]);
+
+    $this->actingAs($admin, 'platform')
+        ->patch(route('platform.products.packages.move', [$product, $third]), ['direction' => 'up'])
+        ->assertRedirect();
+
+    expect($orderedIds())->toBe([$third->id, $first->id, $second->id]);
+});
+
+test('moving a package rejects an unknown direction and a package of another product', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $product = Product::factory()->create();
+    $package = ProductPackage::factory()->create(['product_id' => $product->id]);
+    $foreign = ProductPackage::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->patch(route('platform.products.packages.move', [$product, $package]), ['direction' => 'sideways'])
+        ->assertSessionHasErrors('direction');
+
+    $this->actingAs($admin, 'platform')
+        ->patch(route('platform.products.packages.move', [$product, $foreign]), ['direction' => 'up'])
+        ->assertNotFound();
 });
 
 test('platform admin can toggle product packages_enabled without changing package statuses', function () {
@@ -631,18 +799,7 @@ test('disabling product packages after cart add blocks checkout', function () {
     $product->forceFill(['packages_enabled' => false])->save();
 
     $this->actingAs($user, 'customer')
-        ->post(route('checkout.store'), [
-            'name' => 'Ada Lovelace',
-            'mobile' => '0410123456',
-            'address' => '1 Test Street',
-            'city' => 'Sydney',
-            'postal_code' => '2000',
-            'latitude' => -33.8688,
-            'longitude' => 151.2093,
-            'delivery_method' => 'regular',
-            'payment_method' => PaymentGatewaySetting::KEY_COD,
-            'terms' => true,
-        ])
+        ->post(route('checkout.store'), productPackageCheckoutPayload())
         ->assertSessionHasErrors('cart');
 
     expect(OrderItem::query()->count())->toBe(0)

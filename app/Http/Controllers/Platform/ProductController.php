@@ -256,6 +256,7 @@ class ProductController extends Controller
                         'quantity' => $package->quantity,
                         'price' => $package->price,
                         'status' => (bool) $package->status,
+                        'is_default' => (bool) $package->is_default,
                         'sort_order' => $package->sort_order,
                     ])
                     ->values()

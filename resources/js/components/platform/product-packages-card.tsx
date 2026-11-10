@@ -1,6 +1,6 @@
 import { router, usePage } from '@inertiajs/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import ProductPackageController from '@/actions/App/Http/Controllers/Platform/ProductPackageController';
 import { ConfirmDeleteDialog } from '@/components/admin/confirm-delete-dialog';
@@ -37,6 +37,7 @@ export type CatalogProductPackage = {
     quantity: number;
     price: string | number;
     status: boolean;
+    is_default?: boolean;
     sort_order: number;
 };
 
@@ -64,6 +65,26 @@ export function ProductPackagesCard({
     );
     const [processing, setProcessing] = useState(false);
     const [togglingEnabled, setTogglingEnabled] = useState(false);
+    const [moving, setMoving] = useState(false);
+    const packageCount = (packages ?? []).length;
+
+    const movePackage = (
+        pkg: CatalogProductPackage,
+        direction: 'up' | 'down',
+    ) => {
+        setMoving(true);
+        router.patch(
+            ProductPackageController.move.url({
+                product: productSlug,
+                package: pkg.id,
+            }),
+            { direction },
+            {
+                preserveScroll: true,
+                onFinish: () => setMoving(false),
+            },
+        );
+    };
 
     const openCreate = () => {
         setEditingPackage(null);
@@ -86,9 +107,14 @@ export function ProductPackagesCard({
                 accessorKey: 'label',
                 header: 'Label',
                 cell: ({ row }) => (
-                    <DataTableTruncated className="font-medium">
-                        {row.original.label}
-                    </DataTableTruncated>
+                    <div className="flex items-center gap-2">
+                        <DataTableTruncated className="font-medium">
+                            {row.original.label}
+                        </DataTableTruncated>
+                        {row.original.is_default ? (
+                            <Badge variant="secondary">Default</Badge>
+                        ) : null}
+                    </div>
                 ),
             },
             {
@@ -120,6 +146,39 @@ export function ProductPackagesCard({
 
         if (canManageCatalog) {
             cols.push({
+                id: 'order',
+                header: 'Order',
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-1">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            disabled={moving || row.index === 0}
+                            onClick={() => movePackage(row.original, 'up')}
+                            aria-label={`Move ${row.original.label} up`}
+                        >
+                            <ArrowUp className="size-4" />
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="size-8"
+                            disabled={
+                                moving || row.index === packageCount - 1
+                            }
+                            onClick={() => movePackage(row.original, 'down')}
+                            aria-label={`Move ${row.original.label} down`}
+                        >
+                            <ArrowDown className="size-4" />
+                        </Button>
+                    </div>
+                ),
+            });
+
+            cols.push({
                 id: 'actions',
                 header: 'Actions',
                 cell: ({ row }) => (
@@ -131,14 +190,20 @@ export function ProductPackagesCard({
                                     icon: Pencil,
                                     onSelect: () => openEdit(row.original),
                                 },
-                                {
-                                    label: 'Delete',
-                                    icon: Trash2,
-                                    destructive: true,
-                                    separatorBefore: true,
-                                    onSelect: () =>
-                                        setDeletingPackageId(row.original.id),
-                                },
+                                ...(row.original.is_default
+                                    ? []
+                                    : [
+                                          {
+                                              label: 'Delete',
+                                              icon: Trash2,
+                                              destructive: true,
+                                              separatorBefore: true,
+                                              onSelect: () =>
+                                                  setDeletingPackageId(
+                                                      row.original.id,
+                                                  ),
+                                          },
+                                      ]),
                             ]}
                         />
                     </div>
@@ -147,7 +212,7 @@ export function ProductPackagesCard({
         }
 
         return cols;
-    }, [canManageCatalog]);
+    }, [canManageCatalog, moving, packageCount, productSlug]);
 
     const payload = useMemo(
         () => toClientDataTablePayload(packages ?? []),
@@ -269,7 +334,7 @@ export function ProductPackagesCard({
                                       quantity: editingPackage.quantity,
                                       price: editingPackage.price,
                                       status: editingPackage.status,
-                                      sort_order: editingPackage.sort_order,
+                                      is_default: editingPackage.is_default,
                                   }
                                 : undefined
                         }
