@@ -881,13 +881,61 @@ test('a failing sms sender does not stop an order from being placed', function (
     expect(Order::query()->count())->toBe(1);
 });
 
-test('a guest cannot order with the phone of a staff user', function () {
-    $product = storefrontCheckoutProduct(['slug' => 'guest-staff-phone-item']);
+test('a guest can order with the phone of a platform, branch or driver user without logging in', function (UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-role-phone-item-'.$type->value]);
+    storefrontCheckoutBranchWithStock($product);
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
+
+    $staff = User::factory()->create([
+        'name' => 'Role Owner',
+        'phone' => Phone::toE164('0410123456'),
+        'user_type' => $type,
+    ]);
+    $usersBefore = User::query()->count();
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload(['name' => 'Someone At The Door']))
+        ->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->customer_id)->toBe($staff->id)
+        ->and($staff->fresh()->user_type)->toBe($type)
+        ->and($staff->fresh()->name)->toBe('Role Owner')
+        ->and(User::query()->count())->toBe($usersBefore)
+        ->and($order->shipping_address_snapshot['name'])->toBe('Someone At The Door');
+
+    $link = collect($sms->messages)
+        ->where('to', Phone::toE164('0410123456'))
+        ->first(fn (array $message): bool => str_contains($message['message'], '/order-status/'));
+
+    expect($link)->not->toBeNull();
+
+    preg_match('~https?://\S+~', $link['message'], $match);
+
+    $this->get($match[0])
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/order-tracking')
+            ->where('order.orderNumber', $order->order_number));
+
+    $this->flushSession();
+    $this->get(route('checkout.confirmation', $order))->assertNotFound();
+})->with([
+    'platform user' => [UserType::PLATFORM],
+    'branch user' => [UserType::BRANCH],
+    'driver user' => [UserType::DRIVER],
+]);
+
+test('a guest cannot order with the phone of an inactive staff user', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-inactive-staff-item']);
     storefrontCheckoutBranchWithStock($product);
 
     User::factory()->create([
         'phone' => Phone::toE164('0410123456'),
-        'user_type' => UserType::PLATFORM,
+        'user_type' => UserType::DRIVER,
+        'is_active' => false,
     ]);
 
     $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);

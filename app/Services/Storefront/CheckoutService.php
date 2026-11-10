@@ -4,6 +4,7 @@ namespace App\Services\Storefront;
 
 use App\Actions\Order\PlaceOrderAction;
 use App\Actions\Order\PlacePackOrderAction;
+use App\Enums\UserType;
 use App\Models\DeliveryMethod;
 use App\Models\DeliveryShift;
 use App\Models\Order;
@@ -479,17 +480,42 @@ class CheckoutService
     }
 
     /**
-     * Resolve the customer for a guest checkout from the mobile number, the same
-     * way a driver sale does: reuse the account that owns the number (provisional
-     * or registered, no login needed) or create a provisional one from the name
-     * and mobile. Guests never overwrite the account's own name or address.
+     * Resolve the customer for a guest checkout from the mobile number. The
+     * account that owns the number is reused whatever its role, with no login
+     * needed: a platform, branch or driver user (phones are unique across all
+     * users, so the order attaches to that user), or a registered or provisional
+     * customer. An unknown number gets a provisional customer from the name and
+     * mobile, the same way a driver sale does. Guests never overwrite the
+     * account's own name or address.
      *
      * @param  array<string, mixed>  $data
      */
     private function resolveGuestCustomer(array $data): User
     {
+        $owner = $this->customers->findAccountByPhone((string) $data['mobile']);
+
+        if ($owner !== null && $owner->user_type !== UserType::CUSTOMER) {
+            $customer = $owner;
+        } else {
+            $customer = $this->resolveCustomerAccount($data);
+        }
+
+        if (! $customer->is_active) {
+            throw ValidationException::withMessages([
+                'mobile' => "This number can't be used for checkout.",
+            ]);
+        }
+
+        return $customer;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveCustomerAccount(array $data): User
+    {
         try {
-            $customer = DB::transaction(fn (): User => $this->customers->resolve(
+            return DB::transaction(fn (): User => $this->customers->resolve(
                 null,
                 (string) $data['mobile'],
                 (string) $data['name'],
@@ -504,14 +530,6 @@ class CheckoutService
 
             throw $exception;
         }
-
-        if (! $customer->is_active) {
-            throw ValidationException::withMessages([
-                'mobile' => "This number can't be used for checkout.",
-            ]);
-        }
-
-        return $customer;
     }
 
     /**
