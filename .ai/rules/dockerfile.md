@@ -1,35 +1,41 @@
 ---
 paths:
     - Dockerfile
+    - Dockerfile.base
 ---
 
 # Dockerfile
 
+## Coolify git auto-deploy (primary)
+
+Root `Dockerfile` is self-contained for Coolify **Dockerfile** pack + git auto-deploy. Stages: `runtime-base` → `build` → `production`. Do not require a pre-pulled GHCR base or Coolify “Docker Image” pack for normal releases. When only app code changes, BuildKit should cache `runtime-base` (no PHP recompile).
+
+Reusable image names (any Laravel project): `php-runtime:8.4` (`Dockerfile.base`) and `app`. Keep `Dockerfile.base` in sync with the `runtime-base` stage.
+
+## Nginx / entrypoint / supervisord
+
+No Docker-speed changes belong in `docker/nginx.conf`, `docker/entrypoint.sh`, or `docker/supervisord.conf`. They already run Nginx, PHP-FPM, Horizon, `pulse:check`, and the scheduler. Do not add Reverb/Postgres/Redis servers here.
+
 ## Keep main production processes together
 
-The main Coolify application image runs Nginx, PHP-FPM, Laravel Horizon, `pulse:check`, and the scheduler under Supervisor. Reverb, PostgreSQL, Redis server, and Meilisearch remain separate resources and must never be started or proxied locally by this image.
+The Coolify application image runs Nginx, PHP-FPM, Laravel Horizon, `pulse:check`, and the scheduler under Supervisor. Reverb, PostgreSQL, Redis server, and Meilisearch remain separate resources and must never be started or proxied locally by this image.
 
 ## FCM_SW_SHOW_NOTIFICATION runtime
 
-FCM_SW_SHOW_NOTIFICATION is runtime (production ENV default false / Coolify override). Do not add it as a Vite build ARG; VITE_FIREBASE_* stay build-time only.
+FCM_SW_SHOW_NOTIFICATION is runtime (production ENV default false / Coolify override). Do not add it as a Vite build ARG; VITE_FIREBASE_* stay build-time only. Default `VITE_APP_NAME` in the Dockerfile is generic (`App`); pass the real product name via Coolify build args.
 
 ## postgresql-client for Spatie backups
 
-Production image must include `postgresql-client-18` from PGDG (not Debian’s default `postgresql-client` 15.x) so `pg_dump`/`psql` match Coolify Postgres 18. A lower client major aborts with “server version mismatch”. Postgres remains a separate Coolify resource; only client tools belong in the app image alongside libpq5. Keep QUEUE_TIMEOUT ≥ 600 and Horizon `stopwaitsecs` above that so RunBackupJob / RestoreDatabaseFromBackupJob can finish. Install `procps` so Pulse `pulse:check` can read CPU via `top` (memory already works from `/proc/meminfo`); without it Servers card shows 0% CPU.
+`runtime-base` / `Dockerfile.base` must include `postgresql-client-18` from PGDG (not Debian’s default `postgresql-client` 15.x) so `pg_dump`/`psql` match Coolify Postgres 18. Install `procps` so Pulse `pulse:check` can read CPU via `top`. Keep QUEUE_TIMEOUT ≥ 600 and Horizon `stopwaitsecs` above that.
 
-## App image pg_dump must match Postgres major
+## PWA assets are committed — do not regenerate in Docker
 
-Coolify Postgres is 18.x. Install postgresql-client-18 from PGDG in the production Dockerfile — Debian bookworm postgresql-client is 15.x and Spatie backup aborts with server version mismatch. Rebuild/redeploy the app image after changing clients.
+Icons/splashes live under `public/pwa/` (committed). The app image runs `pnpm run build` only — do not run `pnpm generate:pwa-assets` in Docker. Regenerate locally when `mark.svg` or `pwa-assets.config.ts` changes. PWA_SW_ENABLED is runtime (default true).
 
-## Pulse CPU needs procps in the app image
+## Build stage needs PHP + minimal Node for Wayfinder
 
-Install procps in the production image so Pulse pulse:check can sample CPU with top. Without it Servers shows 0% CPU while memory/disk still work via /proc.
+`@laravel/vite-plugin-wayfinder` runs Artisan during Vite. Copy only `node` + `corepack` from `node:24-bookworm-slim` (not all of `/usr/local`). Use a build-only dummy `APP_KEY` — never the production key. Final production stage must not contain Node, pnpm, or Composer.
 
-## Generate PWA assets in the image build
-Run pnpm generate:pwa-assets before pnpm run build. No new VITE_* PWA args. PWA_SW_ENABLED is runtime (default true), same pattern as FCM_SW_SHOW_NOTIFICATION.
+## PHP base needs ext-exif + GD WebP
 
-## PHP build image needs ext-exif
-Build-stage docker-php-ext-install must include exif. Spatie image/medialibrary require ext-exif; without it composer install --no-dev fails in Coolify. Production already copies PHP extensions from build.
-
-## GD must include WebP for MediaUploadService
-Build-stage GD needs `libwebp-dev` and `docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp`. Production must install runtime `libwebp7`. Without WebP, Spatie Image’s GD driver fatals on `imagewebp()` when `MediaUploadService` converts raster uploads to WebP. Rebuild/redeploy after changing these packages.
+`runtime-base` must include exif and GD with freetype/jpeg/webp (`libwebp7` at runtime). Keep `pdo_mysql` and `pdo_pgsql`. Do not install `nano`.

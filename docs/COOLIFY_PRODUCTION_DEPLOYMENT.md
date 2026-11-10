@@ -2,27 +2,68 @@
 
 ## Architecture
 
-Deploy this repository as one Coolify **Application** using the root `Dockerfile` build pack. The resulting replaceable container listens on port `80` and runs Nginx, PHP-FPM, Laravel Horizon, `pulse:check`, and the Laravel scheduler under Supervisor. Do not run `queue:work` alongside Horizon on the same Redis queues.
+Deploy this repository as one Coolify **Application** with **Git source** + **Dockerfile** build pack and **auto-deploy on push**. No Coolify UI pack switch and no GHCR pull are required for day-to-day releases.
+
+The root `Dockerfile` is self-contained:
+
+1. `runtime-base` — PHP 8.4 extensions, nginx, supervisor, `postgresql-client-18`, `procps` (cached across deploys when unchanged)
+2. `build` — Composer + minimal Node/pnpm + Vite
+3. `production` — app files only (no Node/Composer)
+
+Reusable names (copy this Docker layout to other MakTech Laravel apps):
+
+| Artifact | Name |
+| -------- | ---- |
+| Runtime base (optional copy for other repos) | `php-runtime:8.4` (`Dockerfile.base`) |
+| Local app image tag | `app` |
+
+`docker/nginx.conf`, `docker/entrypoint.sh`, and `docker/supervisord.conf` need **no changes** for this layout — they already run Nginx, PHP-FPM, Horizon, `pulse:check`, and the scheduler.
 
 PostgreSQL, Redis, and Meilisearch are separate Coolify resources. Laravel Reverb is a separate Git repository, Dockerfile, Coolify Application, domain, and deployment lifecycle. This image does not contain or start any of those servers and does not expose ports `5432`, `6379`, `7700`, `8080`, or `9000`.
 
 ## Coolify Application Settings
 
-| Setting                | Value            |
-| ---------------------- | ---------------- |
-| Build pack             | Dockerfile       |
-| Dockerfile             | `Dockerfile`     |
-| Internal port          | `80`             |
-| Health path            | `/up`            |
-| Expected health status | `200`            |
-| Health interval        | `30s`            |
-| Health timeout         | `5s`             |
-| Health retries         | `3`              |
-| Stop Grace Period      | `120s` initially |
+| Setting                | Value |
+| ---------------------- | ----- |
+| Source                 | Git (existing) |
+| Build pack             | **Dockerfile** |
+| Dockerfile             | `Dockerfile` |
+| Auto-deploy on push    | **On** |
+| Internal port          | `80` |
+| Health path            | `/up` |
+| Expected health status | `200` |
+| Health interval        | `30s` |
+| Health timeout         | `5s` |
+| Health retries         | `3` |
+| Stop Grace Period      | `120s` initially (≥ `700s` if long backup jobs) |
+
+**Build arguments (allowlist only — do not pass all env as build args):** public `VITE_*` only (`VITE_APP_NAME`, `VITE_REVERB_*`, `VITE_FIREBASE_*`, `VITE_ERROR_BOUNDARY_DEBUG`). Runtime secrets (`APP_KEY`, `DB_*`, `REDIS_*`, AWS, mail, etc.) must stay **runtime env**, never build args (avoids `SecretsUsedInArgOrEnv` and cache busts).
 
 `/up` is Laravel's built-in health route. It proves Nginx, PHP-FPM, and Laravel bootstrap without making transient dependency failures trigger restart cascades. Monitor PostgreSQL, Redis, Meilisearch, and Reverb separately for readiness and dependency diagnostics.
 
 The 120-second stop grace must stay above Horizon worker timeout (`QUEUE_TIMEOUT=600` / Horizon `timeout` 600) and Supervisor Horizon `stopwaitsecs` (660). Coolify's grace period must remain longer than Supervisor's Horizon `stopwaitsecs` when jobs can run that long — raise Coolify stop grace to at least `700s` if backup/restore jobs run in this container.
+
+## Deploy speed expectations (git auto-deploy)
+
+| Case | What Coolify rebuilds | Typical time |
+| ---- | --------------------- | ------------ |
+| App/code/`VITE_*` only | `build` + `production` (`runtime-base` **CACHED**) | Much faster than cold (often ~10–20 min depending on Vite) |
+| `Dockerfile` / `runtime-base` packages change | Full PHP compile + apt | Cold path (can still be 30–60+ min once) |
+| BuildKit cache pruned on VPS | Full rebuild | Cold path again |
+
+Keep Coolify disk free so Docker layer cache is not constantly pruned.
+
+GitHub Actions Docker publish workflows are **not used** — Coolify builds from git. Keep `.github/workflows/tests.yml` for CI checks only.
+
+### Local smoke (Docker Desktop)
+
+```sh
+docker build -t app:local .
+docker run --rm -d --name app-smoke -p 8080:80 -e APP_KEY=base64:… -e APP_ENV=local … app:local
+curl -f http://127.0.0.1:8080/up
+```
+
+Final image must not contain Node/pnpm/Composer.
 
 ## Runtime Environment
 
@@ -53,7 +94,7 @@ DB_PASSWORD=...
 DB_SSLMODE=prefer
 ```
 
-Platform Spatie backups shell out to `pg_dump` / `psql` **inside the PUFFMEMATE app container**, then connect to the separate Postgres resource via `DB_HOST`. Set `POSTGRES_BINARY_PATH=/usr/bin` so Spatie’s db-dumper finds the binaries. The production Dockerfile installs **`postgresql-client-18` from PGDG** (Coolify Postgres is 18.x; Debian’s stock client is 15.x and fails with a version mismatch). Do not put dump/restore tools only on the database container. After changing the Dockerfile, rebuild and redeploy the app image.
+Platform Spatie backups shell out to `pg_dump` / `psql` **inside the app container**, then connect to the separate Postgres resource via `DB_HOST`. Set `POSTGRES_BINARY_PATH=/usr/bin` so Spatie’s db-dumper finds the binaries. The `runtime-base` stage installs **`postgresql-client-18` from PGDG** (Coolify Postgres is 18.x; Debian’s stock client is 15.x and fails with a version mismatch). Do not put dump/restore tools only on the database container. After changing the Dockerfile runtime-base packages, rebuild and redeploy the app image.
 
 Backup zips live on the `backups` disk at `storage/app/private/spatie-backups`. Mount a Coolify persistent volume for at least `storage/app/private` (or the backups path) — otherwise redeploys wipe zip inventory. Optional: `BACKUP_ARCHIVE_PASSWORD`, `BACKUP_MAIL_TO` (leave empty to disable backup mail notifications).
 
@@ -134,9 +175,7 @@ Mail credentials and any service credentials used by the application must also b
 
 ## Build-Time Public Variables
 
-Vite compiles `VITE_*` values into public browser bundles during the Docker build. Changing them in Coolify after the image has built does not modify the bundle; rebuild the image after changing one. Never place secrets in a `VITE_*` variable.
-
-Required build args (Dockerfile already accepts them):
+Vite compiles `VITE_*` values into public browser bundles during the Coolify Docker build. Changing them after the image has built does not modify the bundle — set them as Coolify **build arguments** (allowlist only) and redeploy. Never place secrets in a `VITE_*` variable. Dockerfile default `VITE_APP_NAME=App` is generic; override per project (e.g. `PuffMeMate`).
 
 ```dotenv
 VITE_APP_NAME=PuffMeMate
@@ -154,6 +193,8 @@ VITE_FIREBASE_APP_ID=
 VITE_FIREBASE_MEASUREMENT_ID=
 VITE_FIREBASE_VAPID_KEY=
 ```
+
+PWA icons under `public/pwa/` are committed; the image build does not run `pnpm generate:pwa-assets`.
 
 Firebase Admin credentials and SW toast behavior are **runtime** Coolify variables (not build args). Mount or ship `FIREBASE_CREDENTIALS` JSON at the path you set; defaults avoid duplicate OS toasts:
 
@@ -295,13 +336,13 @@ Redis sessions support multiple replicas without sticky sessions. Use secure coo
 ## Deploy and Roll Back
 
 1. Provision private PostgreSQL and Redis resources, plus Meilisearch and Reverb only when those application features exist.
-2. Configure runtime secrets and public build variables in Coolify.
-3. Build the root Dockerfile and review image-build logs.
-4. Run `php artisan migrate --force --isolated` as the explicit release command.
-5. Deploy the image, confirm all four Supervisor programs are running, and verify `/up` returns `200`.
+2. Configure **runtime** secrets in Coolify; allowlist only public `VITE_*` as build args.
+3. Push to the connected git branch (auto-deploy). Confirm Coolify logs show `runtime-base` **CACHED** on code-only changes.
+4. Run `php artisan migrate --force --isolated` as the explicit release command when migrations ship.
+5. Confirm Supervisor programs (nginx, php-fpm, horizon, pulse:check, scheduler) and `/up` → `200`.
 6. Smoke-test authentication and each portal using the production domain.
 
-For rollback, retain the previous immutable image and deploy it without changing `APP_KEY`. Application rollback does not reverse migrations automatically. Roll back code only when the database remains backward-compatible; otherwise use a reviewed forward-fix or a separately tested migration rollback. Restore user files from the configured persistent store, not from a replaced container.
+For rollback, redeploy the previous Coolify deployment / image without changing `APP_KEY`. Application rollback does not reverse migrations automatically. Roll back code only when the database remains backward-compatible; otherwise use a reviewed forward-fix or a separately tested migration rollback. Restore user files from the configured persistent store, not from a replaced container.
 
 ## Production Checklist
 
@@ -310,5 +351,7 @@ For rollback, retain the previous immutable image and deploy it without changing
 - Confirm Coolify proxy addresses fall within the private ranges trusted in `bootstrap/app.php` and `docker/nginx.conf`; narrow those ranges when stable addresses are known.
 - Full-document Inertia pages (typed `/login`, or 302 from a protected route) must not 502. `docker/nginx.conf` raises FastCGI buffers so Vite `Link: modulepreload` headers fit. Inertia client visits skip Blade/`@vite` and would still work even with the old buffers. After deploy, hard-refresh `https://puffmemate.maktechlaravel.cloud/login` (not the homepage Log in link) to confirm.
 - Set `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`, and a production `APP_URL`.
-- Confirm no `.env`, credentials, `node_modules`, Git metadata, or build toolchain exists in the final image.
+- Confirm no `.env`, credentials, `node_modules`, Node, Composer, Git metadata, or `$PHPIZE_DEPS` exists in the final image.
+- Confirm Coolify does **not** inject runtime secrets as Docker build args (no `SecretsUsedInArgOrEnv` for `APP_KEY` / `DB_PASSWORD` / AWS keys) — allowlist `VITE_*` only.
 - Monitor HTTP latency/errors, queue depth/latency/failures, worker RSS, database connections, Redis memory, and scheduler failures.
+- Keep enough free disk so Coolify does not prune BuildKit cache every deploy (otherwise `runtime-base` goes cold again).
