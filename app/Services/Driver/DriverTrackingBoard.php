@@ -99,6 +99,7 @@ class DriverTrackingBoard
                     'heading' => $position['heading'],
                     'speed' => $position['speed'],
                     'accuracy' => $position['accuracy'],
+                    'coarse' => $position['coarse'],
                 ],
                 'order' => $delivery === null ? null : [
                     'number' => $delivery->order?->order_number,

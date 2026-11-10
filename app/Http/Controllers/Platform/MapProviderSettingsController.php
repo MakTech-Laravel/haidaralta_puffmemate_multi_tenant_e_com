@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Platform;
 
 use App\Enums\MapCapability;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Platform\ActivateMapProviderRequest;
 use App\Http\Requests\Platform\UpdateMapProviderRequest;
 use App\Http\Requests\Platform\UpdateMapSelectionRequest;
 use App\Services\Maps\MapDashboardPayload;
+use App\Services\Maps\MapProviderActivator;
 use App\Services\Maps\MapProviderCatalog;
 use App\Services\Maps\MapSettingsService;
 use App\Services\Maps\MapUsageRecorder;
@@ -23,11 +25,26 @@ class MapProviderSettingsController extends Controller
         private readonly MapDashboardPayload $payload,
         private readonly MapProviderCatalog $catalog,
         private readonly MapUsageRecorder $usage,
+        private readonly MapProviderActivator $activator,
     ) {}
 
     public function edit(): Response
     {
         return Inertia::render('platform/settings/map-provider', $this->payload->build());
+    }
+
+    /**
+     * The simple page: save the key, check it, and switch everything over in one step.
+     */
+    public function activate(ActivateMapProviderRequest $request): RedirectResponse
+    {
+        $data = $request->validated();
+
+        $result = $this->activator->activate($data['provider'], $data, $request->user()?->id);
+
+        $result['ok'] ? Toast::success($result['message']) : Toast::error($result['message']);
+
+        return redirect()->route('platform.settings.map-provider.edit');
     }
 
     public function updateSelection(UpdateMapSelectionRequest $request): RedirectResponse
