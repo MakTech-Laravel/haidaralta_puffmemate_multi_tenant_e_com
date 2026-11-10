@@ -14,7 +14,8 @@ export type LocationReading = {
     accuracy: number | null;
     speed: number | null;
     heading: number | null;
-    recorded_at: string;
+    /** Seconds since the device took this fix. Used instead of a clock time so a wrong phone clock cannot make the server reject it. */
+    age_seconds: number;
 };
 
 /**
@@ -47,7 +48,10 @@ export function toReading(position: GeolocationPosition): LocationReading {
             heading !== null && Number.isFinite(heading)
                 ? Math.round(heading) % 361
                 : null,
-        recorded_at: new Date(position.timestamp).toISOString(),
+        age_seconds: Math.max(
+            0,
+            Math.round((Date.now() - position.timestamp) / 1000),
+        ),
     };
 }
 
@@ -55,6 +59,18 @@ export async function sendReading(
     url: string,
     reading: LocationReading,
 ): Promise<SendResult> {
+    return (await sendReadingDetailed(url, reading)).result;
+}
+
+export async function sendReadingDetailed(
+    url: string,
+    reading: LocationReading,
+): Promise<{ result: SendResult; reason: string | null }> {
+    const outcome = (result: SendResult, reason: string | null = null) => ({
+        result,
+        reason,
+    });
+
     try {
         const response = await fetch(url, {
             method: 'POST',
@@ -69,11 +85,11 @@ export async function sendReading(
         });
 
         if (response.status === 204) {
-            return 'stop';
+            return outcome('stop');
         }
 
         if (response.status === 423) {
-            return 'blocked';
+            return outcome('blocked');
         }
 
         // A redirect (e.g. session expired) lands on an HTML page, not our JSON.
@@ -82,14 +98,19 @@ export async function sendReading(
             response.redirected ||
             !response.headers.get('content-type')?.includes('json')
         ) {
-            return 'error';
+            return outcome('error');
         }
 
-        const body = (await response.json()) as { accepted?: boolean };
+        const body = (await response.json()) as {
+            accepted?: boolean;
+            reason?: string | null;
+        };
 
-        return body.accepted ? 'accepted' : 'ignored';
+        return body.accepted
+            ? outcome('accepted')
+            : outcome('ignored', body.reason ?? null);
     } catch {
-        return 'error';
+        return outcome('error');
     }
 }
 
@@ -107,6 +128,33 @@ export function distanceMeters(
             Math.sin(dLng / 2) ** 2;
 
     return 6371000 * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
+}
+
+/**
+ * One position for the permission prompt. Tries a precise fix first; when the device cannot give
+ * one in time (typical for laptops and desktops without GPS) it falls back to the coarser
+ * network position instead of failing. A denied permission is never retried.
+ */
+export function getCurrentPositionWithFallback(): Promise<GeolocationPosition> {
+    return new Promise((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+            resolve,
+            (error) => {
+                if (error.code === error.PERMISSION_DENIED) {
+                    reject(error);
+
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(resolve, reject, {
+                    enableHighAccuracy: false,
+                    maximumAge: 60000,
+                    timeout: 15000,
+                });
+            },
+            { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 },
+        );
+    });
 }
 
 export const GEOLOCATION_OPTIONS: PositionOptions = {

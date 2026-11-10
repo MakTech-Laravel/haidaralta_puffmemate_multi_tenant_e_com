@@ -45,8 +45,13 @@ return [
         'stale_after_seconds' => (int) env('DRIVER_TRACKING_STALE_AFTER', 120),
         // How long the last known position is kept in the cache (seconds).
         'last_position_ttl_seconds' => (int) env('DRIVER_TRACKING_POSITION_TTL', 300),
-        // Ignore readings less accurate than this (metres).
-        'max_accuracy_meters' => (int) env('DRIVER_TRACKING_MAX_ACCURACY', 100),
+        // Ignore readings less accurate than this (metres). Laptops and desktops without GPS report
+        // a few hundred metres from Wi-Fi, so the limit is generous; the live map shows the accuracy.
+        'max_accuracy_meters' => (int) env('DRIVER_TRACKING_MAX_ACCURACY', 1500),
+        // Between max_accuracy_meters and this limit a reading is kept as "approximate" (a computer
+        // without GPS gives an area of ~25 km): it counts as sharing but is shown as rough on the map
+        // and never recorded as a path. Beyond this limit it is dropped.
+        'max_coarse_accuracy_meters' => (int) env('DRIVER_TRACKING_MAX_COARSE_ACCURACY', 100000),
         // Reject a reading that implies a faster trip than this (km/h).
         'max_speed_kmh' => (int) env('DRIVER_TRACKING_MAX_SPEED', 200),
         // Reject readings whose device timestamp is older than this (seconds).

@@ -21,10 +21,12 @@ class StoreDriverLocationRequest extends FormRequest
         return [
             'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'accuracy' => ['nullable', 'numeric', 'min:0', 'max:100000'],
+            'accuracy' => ['nullable', 'numeric', 'min:0', 'max:100000000'],
             'speed' => ['nullable', 'numeric', 'min:0', 'max:200'],
             'heading' => ['nullable', 'integer', 'between:0,360'],
             'recorded_at' => ['nullable', 'date'],
+            // Seconds since the device took the fix: immune to a wrong device clock.
+            'age_seconds' => ['nullable', 'numeric', 'min:0', 'max:3600'],
         ];
     }
 
@@ -36,7 +38,11 @@ class StoreDriverLocationRequest extends FormRequest
      */
     public function reading(): array
     {
-        $recordedAt = $this->filled('recorded_at') ? Carbon::parse($this->input('recorded_at')) : now();
+        $recordedAt = match (true) {
+            $this->filled('age_seconds') => now()->subSeconds((int) round((float) $this->input('age_seconds'))),
+            $this->filled('recorded_at') => Carbon::parse($this->input('recorded_at')),
+            default => now(),
+        };
 
         if ($recordedAt->isFuture()) {
             $recordedAt = now();

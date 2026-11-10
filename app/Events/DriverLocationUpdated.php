@@ -34,6 +34,7 @@ class DriverLocationUpdated implements ShouldBroadcastNow
         public ?float $speed = null,
         public ?float $accuracy = null,
         public ?int $fulfillmentId = null,
+        public bool $coarse = false,
     ) {}
 
     public static function branchChannel(int $branchId): string
@@ -61,7 +62,7 @@ class DriverLocationUpdated implements ShouldBroadcastNow
     }
 
     /**
-     * @return array{driver_id: int, branch_ids: list<int>, lat: float, lng: float, ts: int, heading: int|null, speed: float|null, accuracy: float|null, fulfillment_id: int|null}
+     * @return array{driver_id: int, branch_ids: list<int>, lat: float, lng: float, ts: int, heading: int|null, speed: float|null, accuracy: float|null, fulfillment_id: int|null, coarse: bool}
      */
     public function broadcastWith(): array
     {
@@ -75,6 +76,7 @@ class DriverLocationUpdated implements ShouldBroadcastNow
             'speed' => $this->speed,
             'accuracy' => $this->accuracy,
             'fulfillment_id' => $this->fulfillmentId,
+            'coarse' => $this->coarse,
         ];
     }
 }

@@ -141,11 +141,73 @@ test('inaccurate readings are ignored', function () {
     Event::fake([DriverLocationUpdated::class]);
     scheduleDriverOnDuty($this->driver, $this->branch);
 
-    pingLocation($this, $this->driver, ['accuracy' => 500])
+    pingLocation($this, $this->driver, ['accuracy' => 200000])
         ->assertOk()
         ->assertJson(['accepted' => false, 'reason' => 'inaccurate']);
 
     expect(app(DriverLocationService::class)->lastPosition($this->driver->id))->toBeNull();
+});
+
+test('an approximate location from a computer without GPS counts as sharing but is flagged', function () {
+    Event::fake([DriverLocationUpdated::class]);
+    driverPortalOrder($this->driver, ['status' => FulfillmentStatus::OutForDelivery]);
+
+    pingLocation($this, $this->driver, ['accuracy' => 25000])
+        ->assertOk()
+        ->assertJson(['accepted' => true, 'coarse' => true]);
+
+    expect(app(DriverLocationService::class)->lastPosition($this->driver->id)['coarse'])->toBeTrue()
+        ->and(DriverLocation::query()->count())->toBe(0);
+
+    Event::assertDispatched(DriverLocationUpdated::class, fn (DriverLocationUpdated $event) => $event->coarse === true && $event->accuracy === 25000.0);
+});
+
+test('an approximate reading never replaces a fresh precise one', function () {
+    scheduleDriverOnDuty($this->driver, $this->branch);
+
+    pingLocation($this, $this->driver)->assertOk()->assertJson(['coarse' => false]);
+    $this->travel(5)->seconds();
+
+    pingLocation($this, $this->driver, ['accuracy' => 25000, 'latitude' => -33.5])
+        ->assertOk()
+        ->assertJson(['accepted' => false, 'reason' => 'superseded']);
+
+    expect(app(DriverLocationService::class)->lastPosition($this->driver->id)['lat'])->toBe(-33.8688);
+});
+
+test('a precise reading after an approximate one is accepted without a speed check', function () {
+    scheduleDriverOnDuty($this->driver, $this->branch);
+
+    pingLocation($this, $this->driver, ['accuracy' => 25000, 'latitude' => -33.5])->assertOk();
+    $this->travel(5)->seconds();
+
+    pingLocation($this, $this->driver)
+        ->assertOk()
+        ->assertJson(['accepted' => true, 'coarse' => false]);
+});
+
+test('a computer with a coarse wifi position is still accepted', function () {
+    scheduleDriverOnDuty($this->driver, $this->branch);
+
+    pingLocation($this, $this->driver, ['accuracy' => 800])
+        ->assertOk()
+        ->assertJson(['accepted' => true]);
+});
+
+test('the age of a fix is trusted instead of the device clock', function () {
+    scheduleDriverOnDuty($this->driver, $this->branch);
+
+    // A phone whose clock is an hour off still sends a fresh fix: only its age matters.
+    pingLocation($this, $this->driver, [
+        'recorded_at' => now()->subHour()->toIso8601String(),
+        'age_seconds' => 3,
+    ])
+        ->assertOk()
+        ->assertJson(['accepted' => true]);
+
+    pingLocation($this, $this->driver, ['age_seconds' => 600])
+        ->assertOk()
+        ->assertJson(['accepted' => false, 'reason' => 'too_old']);
 });
 
 test('stale device readings are ignored', function () {
