@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
             CategorySeeder::class,
             ExtendedCategorySeeder::class,
             ProductSeeder::class,
-            ExtendedProductSeeder::class,
+            // ExtendedProductSeeder::class,
             PriceRangeSeeder::class,
             CheckoutSettingsSeeder::class,
             DeliveryShiftSeeder::class,

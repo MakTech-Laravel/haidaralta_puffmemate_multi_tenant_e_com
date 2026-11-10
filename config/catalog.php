@@ -19,8 +19,9 @@ return [
     | Homepage product rails
     |--------------------------------------------------------------------------
     |
-    | Maximum products per tagged homepage carousel (New Arrivals, Best
-    | Selling, etc.). Each rail filters active products by that tag only.
+    | Maximum products per homepage carousel, applied to each rail on its own.
+    | New Arrivals: active products tagged new_arrival, newest first. Best
+    | Selling: active products ranked by units sold on delivered, paid orders.
     |
     */
 

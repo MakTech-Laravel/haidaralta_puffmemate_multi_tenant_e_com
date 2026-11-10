@@ -99,6 +99,33 @@ test('cigarettes storefront page lists only the owner-approved range, not child 
             ->has('products', 15));
 });
 
+test('tobacco category holds only the owner-approved range', function () {
+    $tobacco = Category::query()->where('slug', 'tobacco')->firstOrFail();
+
+    expect($tobacco->products()->pluck('slug')->sort()->values()->all())->toBe([
+        'royal-bourbon-premium-ryo-40g',
+        'tobacco-100g',
+        'violin-premium-ryo-40g',
+    ])
+        ->and(Product::query()->doesntHave('categories')->exists())->toBeFalse()
+        ->and(Product::query()->whereIn('slug', ['iqos-iluma-starter-kit', 'terea-tobacco-sticks-20', 'terea-menthol-sticks-20', 'drum-original-hand-rolling-tobacco-50g'])->exists())->toBeFalse()
+        ->and((float) Product::query()->where('slug', 'tobacco-100g')->value('selling_price'))->toBe(50.0);
+});
+
+test('nicotine pouches category holds only the owner-approved range', function () {
+    $pouches = Category::query()->where('slug', 'nicotine-pouches')->firstOrFail();
+
+    expect($pouches->products()->pluck('slug')->sort()->values()->all())->toBe([
+        'zyn-nic-chewable-flavored',
+        'zyn-or-velo',
+    ])
+        ->and(Product::query()->doesntHave('categories')->exists())->toBeFalse()
+        ->and(Product::query()->whereIn('slug', ['nordic-mint-pouches', 'citrus-chill-pouches', 'velo-cool-mint-pouches', 'puffmemate-spearmint-pouches', 'nordic-coffee-pouches'])->exists())->toBeFalse()
+        ->and((float) Product::query()->where('slug', 'zyn-or-velo')->value('selling_price'))->toBe(20.0)
+        ->and((float) Product::query()->where('slug', 'zyn-nic-chewable-flavored')->value('selling_price'))->toBe(25.0)
+        ->and(Category::query()->where('slug', 'vapes')->firstOrFail()->products()->where('slug', 'zyn-nic-chewable-flavored')->exists())->toBeTrue();
+});
+
 test('vapes category holds only the owner-approved range and shows nothing from other vape categories', function () {
     $vapes = Category::query()->where('slug', 'vapes')->firstOrFail();
 

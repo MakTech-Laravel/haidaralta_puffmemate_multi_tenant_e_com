@@ -31,15 +31,12 @@ beforeEach(function () {
 test('catalog seeder attaches committed public images as media without moving the originals', function () {
     $category = Category::query()->where('slug', 'cigarettes')->firstOrFail();
     $storefrontProduct = Product::query()->where('slug', 'marlboro-gold-soft-pack-20s')->firstOrFail();
-    $remoteProduct = Product::query()->where('slug', 'horizon-red-soft-pack-25s')->firstOrFail();
 
     expect($category->hasMedia('image'))->toBeTrue()
         ->and($category->getFirstMedia('image')->file_name)->toBe('category-cigarettes.png')
         ->and($category->imageUrl())->toBe($category->getFirstMediaUrl('image'))
         ->and($storefrontProduct->getFirstMedia('image')->file_name)->toBe('marlboro-gold.webp')
-        ->and(is_file(public_path('images/catalog/products/marlboro-gold.webp')))->toBeTrue()
-        ->and($remoteProduct->getFirstMedia('image')->file_name)->toStartWith('horizon-red-soft-pack-25s')
-        ->and(Media::query()->where('collection_name', 'gallery')->exists())->toBeTrue();
+        ->and(is_file(public_path('images/catalog/products/marlboro-gold.webp')))->toBeTrue();
 });
 
 test('catalog seeder does not duplicate media when re-run', function () {
