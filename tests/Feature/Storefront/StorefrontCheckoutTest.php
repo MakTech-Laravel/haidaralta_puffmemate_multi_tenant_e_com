@@ -26,6 +26,7 @@ use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\Geo\Polygon;
 use App\Support\Phone;
 use Database\Seeders\ApplicationSettingsSeeder;
@@ -822,6 +823,8 @@ test('a cart with local shortfall accepts late delivery on one fulfillment witho
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), checkoutPayload([
             'accept_late_delivery' => true,
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
         ]))
         ->assertRedirect();
 
@@ -883,6 +886,8 @@ test('placing a multi-line area order with a late line issues a flat number of i
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), checkoutPayload([
             'accept_late_delivery' => true,
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
         ]))
         ->assertRedirect();
 

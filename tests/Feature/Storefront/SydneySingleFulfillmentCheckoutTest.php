@@ -23,6 +23,7 @@ use App\Services\Order\DriverAssignmentService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
 use App\Services\Sms\FakeSmsSender;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\Geo\Polygon;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -87,7 +88,8 @@ test('a sydney customer with a late line gets one area fulfillment without a sto
             'postal_code' => '2000',
             'latitude' => -33.8688,
             'longitude' => 151.2093,
-            'delivery_method' => 'regular',
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
             'time_slot_id' => checkoutDeliveryShiftId(),
             'payment_method' => PaymentGatewaySetting::KEY_COD,
             'accept_late_delivery' => true,

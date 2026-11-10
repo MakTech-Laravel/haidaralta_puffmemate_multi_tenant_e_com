@@ -25,6 +25,29 @@ import type {
 
 const AU_COUNTRY = 'au';
 
+/**
+ * Error keys that render under their own control (here or in the order summary), or are
+ * helper data rather than a message. Anything else falls back to the alert at the top.
+ */
+const FIELD_ERROR_KEYS = new Set([
+    'name',
+    'mobile',
+    'address',
+    'latitude',
+    'longitude',
+    'city',
+    'postal_code',
+    'save_as_default',
+    'delivery_method',
+    'delivery_date',
+    'time_slot_id',
+    'payment_method',
+    'coupon',
+    'terms',
+    'accept_late_delivery',
+    'late_delivery_products',
+]);
+
 export type CheckoutDetails = {
     name: string;
     mobile: string;
@@ -46,6 +69,8 @@ type CheckoutFormProps = {
     deliveryMethods: StorefrontDeliveryMethod[];
     paymentMethods: StorefrontPaymentMethod[];
     errors?: Record<string, string>;
+    /** Shown under the delivery method cards (server error or the Same day / late-items conflict). */
+    deliveryMethodError?: string;
     onChange: <K extends keyof CheckoutDetails>(
         key: K,
         value: CheckoutDetails[K],
@@ -117,6 +142,7 @@ export function CheckoutForm({
     deliveryMethods,
     paymentMethods,
     errors = {},
+    deliveryMethodError,
     onChange,
     onPinSelect,
     className,
@@ -147,7 +173,11 @@ export function CheckoutForm({
           ? 'Pay on delivery'
           : null;
 
-    const errorMessages = Object.values(errors).flatMap((value) => {
+    const errorMessages = Object.entries(errors).flatMap(([key, value]) => {
+        if (FIELD_ERROR_KEYS.has(key)) {
+            return [];
+        }
+
         if (typeof value === 'string' && value.trim() !== '') {
             return [value];
         }
@@ -195,8 +225,10 @@ export function CheckoutForm({
                                 }
                                 placeholder="Enter full name"
                                 autoComplete="name"
+                                aria-invalid={Boolean(errors.name)}
                                 className={fieldClass}
                             />
+                            <FieldError message={errors.name} />
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-mobile">
@@ -213,8 +245,10 @@ export function CheckoutForm({
                                 }
                                 placeholder="0400 000 000"
                                 autoComplete="tel"
+                                aria-invalid={Boolean(errors.mobile)}
                                 className={fieldClass}
                             />
+                            <FieldError message={errors.mobile} />
                         </div>
                     </div>
                 </CardContent>
@@ -278,6 +312,7 @@ export function CheckoutForm({
                                     onChange('longitude', '');
                                 }}
                             />
+                            <FieldError message={errors.address} />
                         </div>
                         <CheckoutMapDialog
                             latitude={details.latitude}
@@ -319,6 +354,7 @@ export function CheckoutForm({
                             </AlertDescription>
                         </Alert>
                     ) : null}
+                    <FieldError message={errors.latitude ?? errors.longitude} />
                     <div className="grid gap-4 sm:grid-cols-2">
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-city">
@@ -332,8 +368,10 @@ export function CheckoutForm({
                                 }
                                 placeholder="Suburb or city"
                                 autoComplete="address-level2"
+                                aria-invalid={Boolean(errors.city)}
                                 className={fieldClass}
                             />
+                            <FieldError message={errors.city} />
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-postcode">
@@ -347,8 +385,10 @@ export function CheckoutForm({
                                 }
                                 placeholder="4000"
                                 autoComplete="postal-code"
+                                aria-invalid={Boolean(errors.postal_code)}
                                 className={fieldClass}
                             />
+                            <FieldError message={errors.postal_code} />
                         </div>
                     </div>
                     {isGuest ? null : (
@@ -433,6 +473,9 @@ export function CheckoutForm({
                             );
                         })}
                     </div>
+                    <FieldError
+                        message={deliveryMethodError ?? errors.delivery_method}
+                    />
                     {showTimeSlots || showDeliveryDate ? (
                         <div className="space-y-4">
                             <p className="text-muted-foreground text-sm">
@@ -576,6 +619,7 @@ export function CheckoutForm({
                             );
                         })}
                     </div>
+                    <FieldError message={errors.payment_method} />
                     <p className="text-muted-foreground text-sm">
                         Have your chosen payment method ready when the driver
                         arrives.
