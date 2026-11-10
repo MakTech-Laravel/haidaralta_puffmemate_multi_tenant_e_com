@@ -11,7 +11,6 @@ use App\Models\Product;
 use App\Models\ProductPackage;
 use App\Services\Catalog\ProductPackageService;
 use App\Support\Toast;
-use DomainException;
 use Illuminate\Http\RedirectResponse;
 
 class ProductPackageController extends Controller
@@ -74,13 +73,7 @@ class ProductPackageController extends Controller
         abort_unless((bool) config('catalog.show_product_packages'), 404);
         abort_unless($package->product_id === $product->id, 404);
 
-        try {
-            $this->packages->delete($package);
-        } catch (DomainException $exception) {
-            Toast::error($exception->getMessage());
-
-            return back();
-        }
+        $this->packages->delete($package);
 
         Toast::success('Package deleted.');
 

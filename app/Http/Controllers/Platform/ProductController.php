@@ -126,6 +126,13 @@ class ProductController extends Controller
             ->map(fn ($id): int => (int) $id)
             ->all();
 
+        if ((bool) config('catalog.show_product_packages') && $request->exists('packages')) {
+            $data['packages_enabled'] = $request->boolean('packages_enabled', true);
+            $data['packages'] = $request->input('packages', []);
+        } else {
+            unset($data['packages'], $data['packages_enabled']);
+        }
+
         $product = $this->products->update(
             $product,
             $data,
@@ -256,7 +263,6 @@ class ProductController extends Controller
                         'quantity' => $package->quantity,
                         'price' => $package->price,
                         'status' => (bool) $package->status,
-                        'is_default' => (bool) $package->is_default,
                         'sort_order' => $package->sort_order,
                     ])
                     ->values()

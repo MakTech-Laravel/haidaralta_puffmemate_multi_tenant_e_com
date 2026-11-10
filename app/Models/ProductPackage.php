@@ -17,7 +17,6 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $quantity
  * @property string $price
  * @property bool $status
- * @property bool $is_default
  * @property int $sort_order
  * @property-read Product|null $product
  */
@@ -25,11 +24,6 @@ class ProductPackage extends Model
 {
     /** @use HasFactory<ProductPackageFactory> */
     use AuditsChanges, HasFactory, SoftDeletes;
-
-    /**
-     * Label of the single-unit package created with every new product.
-     */
-    public const DEFAULT_LABEL = '1 Item';
 
     /**
      * @var list<string>
@@ -40,7 +34,6 @@ class ProductPackage extends Model
         'quantity',
         'price',
         'status',
-        'is_default',
         'sort_order',
     ];
 
@@ -79,7 +72,6 @@ class ProductPackage extends Model
             'quantity' => 'integer',
             'price' => 'decimal:2',
             'status' => 'boolean',
-            'is_default' => 'boolean',
             'sort_order' => 'integer',
         ];
     }

@@ -6,10 +6,8 @@ import {
     type ProductSpecificationRow,
     type ProductTagValue,
 } from '@/components/platform/product-form';
-import {
-    ProductPackagesCard,
-    type CatalogProductPackage,
-} from '@/components/platform/product-packages-card';
+import type { CatalogProductPackage } from '@/components/platform/product-packages-card';
+import type { ProductPackageDraft } from '@/components/platform/product-packages-draft-fields';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 type CategoryOption = {
@@ -51,6 +49,18 @@ type Product = {
     packages?: CatalogProductPackage[];
 };
 
+function toPackageDrafts(
+    packages: CatalogProductPackage[] | undefined,
+): ProductPackageDraft[] {
+    return (packages ?? []).map((pkg) => ({
+        id: pkg.id,
+        label: pkg.label,
+        quantity: String(pkg.quantity),
+        price: String(pkg.price),
+        status: pkg.status,
+    }));
+}
+
 export default function PlatformProductsEdit({
     product,
     categoryOptions,
@@ -84,6 +94,7 @@ export default function PlatformProductsEdit({
                     isEdit
                     enableSuggestions
                     wholesaleFields
+                    packageDraftFields
                     excludeProductId={product.id}
                     defaults={{
                         category_ids: product.category_ids,
@@ -106,16 +117,10 @@ export default function PlatformProductsEdit({
                         wholesale_price: product.wholesale_price ?? '',
                         min_wholesale_qty: product.min_wholesale_qty ?? null,
                         status: product.status,
+                        packages_enabled: product.packages_enabled ?? true,
+                        packages: toPackageDrafts(product.packages),
                     }}
                     cancelHref={ProductController.show.url(product.slug)}
-                />
-
-                <ProductPackagesCard
-                    productSlug={product.slug}
-                    productName={product.name}
-                    packagesEnabled={product.packages_enabled ?? true}
-                    packages={product.packages ?? []}
-                    sellingPrice={product.selling_price}
                 />
             </div>
         </>
