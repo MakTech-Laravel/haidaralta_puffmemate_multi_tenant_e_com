@@ -231,6 +231,31 @@ test('placing a pack order creates order lines, decrements pack qty, and leaves 
         ->and(session()->has(PackCheckoutSession::SESSION_KEY))->toBeFalse();
 });
 
+test('placing a pack order texts the public view order link', function () {
+    $user = User::factory()->create(['phone' => '+61410123456']);
+    $offer = packBuyOffer(quantity: 4, packPrice: 80);
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
+
+    $this->actingAs($user, 'customer')
+        ->post(route('packs-saves.buy', [
+            'branch' => $offer['branch']->slug,
+            'pack' => $offer['pack']->slug,
+        ]), ['quantity' => 1])
+        ->assertRedirect(route('checkout'));
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), packCheckoutPayload())
+        ->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->firstOrFail();
+    $linkMessages = collect($sms->messages)
+        ->filter(fn (array $message): bool => str_contains($message['message'], '/order-status/'));
+
+    expect($linkMessages)->toHaveCount(1)
+        ->and($linkMessages->first()['message'])->toContain($order->order_number);
+});
+
 test('buy now rejects sold-out packs', function () {
     $user = User::factory()->create();
     $offer = packBuyOffer(quantity: 1);

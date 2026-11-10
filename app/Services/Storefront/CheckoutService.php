@@ -4,7 +4,7 @@ namespace App\Services\Storefront;
 
 use App\Actions\Order\PlaceOrderAction;
 use App\Actions\Order\PlacePackOrderAction;
-use App\Enums\CustomerRegistrationStatus;
+use App\Enums\UserType;
 use App\Models\DeliveryMethod;
 use App\Models\DeliveryShift;
 use App\Models\Order;
@@ -18,6 +18,7 @@ use App\Services\Order\BranchDeliveryQuote;
 use App\Services\Order\ShippingCalculator;
 use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\MediaUrl;
+use App\Support\Order\OrderTrackingLink;
 use App\Support\OrderItemPackageDisplay;
 use App\Support\ProductPackagePricing;
 use App\Support\Storefront\PackCheckoutSession;
@@ -311,7 +312,7 @@ class CheckoutService
      *     discount: string|null,
      *     deliveryFee: string,
      *     total: string,
-     *     viewOrderUrl: string|null
+     *     viewOrderUrl: string
      * }
      */
     public function confirmation(Order $order, bool $canViewOrder = true): array
@@ -354,7 +355,10 @@ class CheckoutService
                 : null,
             'deliveryFee' => '$'.number_format((float) $order->delivery_fee, 2),
             'total' => '$'.number_format((float) $order->total_amount, 2),
-            'viewOrderUrl' => $canViewOrder ? route('customer.orders.show', $order) : null,
+            // Owners open their account order page; guests get the signed public link.
+            'viewOrderUrl' => $canViewOrder
+                ? route('customer.orders.show', $order)
+                : OrderTrackingLink::url($order),
         ];
     }
 
@@ -476,26 +480,56 @@ class CheckoutService
     }
 
     /**
-     * Reuse or create a provisional customer for a guest checkout. A phone that
-     * already belongs to a registered account must log in instead.
+     * Resolve the customer for a guest checkout from the mobile number. The
+     * account that owns the number is reused whatever its role, with no login
+     * needed: a platform, branch or driver user (phones are unique across all
+     * users, so the order attaches to that user), or a registered or provisional
+     * customer. An unknown number gets a provisional customer from the name and
+     * mobile, the same way a driver sale does. Guests never overwrite the
+     * account's own name or address.
      *
      * @param  array<string, mixed>  $data
      */
     private function resolveGuestCustomer(array $data): User
     {
-        $existing = $this->customers->findByPhone((string) $data['mobile']);
+        $owner = $this->customers->findAccountByPhone((string) $data['mobile']);
 
-        if ($existing !== null && $existing->registration_status === CustomerRegistrationStatus::Registered) {
+        if ($owner !== null && $owner->user_type !== UserType::CUSTOMER) {
+            $customer = $owner;
+        } else {
+            $customer = $this->resolveCustomerAccount($data);
+        }
+
+        if (! $customer->is_active) {
             throw ValidationException::withMessages([
-                'mobile' => 'This number already has an account. Please log in to place your order.',
+                'mobile' => "This number can't be used for checkout.",
             ]);
         }
 
-        return DB::transaction(fn (): User => $this->customers->resolve(
-            null,
-            (string) $data['mobile'],
-            (string) $data['name'],
-        ));
+        return $customer;
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function resolveCustomerAccount(array $data): User
+    {
+        try {
+            return DB::transaction(fn (): User => $this->customers->resolve(
+                null,
+                (string) $data['mobile'],
+                (string) $data['name'],
+            ));
+        } catch (ValidationException $exception) {
+            // The resolver reports phone problems under `phone`; the checkout field is `mobile`.
+            if (isset($exception->errors()['phone'])) {
+                throw ValidationException::withMessages([
+                    'mobile' => $exception->errors()['phone'][0],
+                ]);
+            }
+
+            throw $exception;
+        }
     }
 
     /**

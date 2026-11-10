@@ -47,6 +47,8 @@ type CheckoutOrderSummaryProps = {
     shortfallLines?: CheckoutShortfallLine[];
     acceptLateDelivery?: boolean;
     acceptLateError?: string;
+    /** Same day is selected while some items are on late delivery. */
+    sameDayLateConflict?: boolean;
     cartUrl?: string;
     onAcceptLateDeliveryChange?: (accepted: boolean) => void;
     onCouponChange: (value: string) => void;
@@ -75,6 +77,7 @@ export function CheckoutOrderSummary({
     shortfallLines = [],
     acceptLateDelivery = false,
     acceptLateError,
+    sameDayLateConflict = false,
     cartUrl = '/cart',
     onAcceptLateDeliveryChange,
     onCouponChange,
@@ -346,7 +349,9 @@ export function CheckoutOrderSummary({
                 <p className="text-muted-foreground mt-2 text-xs">
                     {requiresLateDelivery && !acceptLateDelivery
                         ? 'Accept late delivery for unavailable items, or remove them from your cart, then place your order.'
-                        : 'Fill every required field, including an Express time slot when Express is selected, then place your order.'}
+                        : sameDayLateConflict
+                          ? 'Same day delivery is not available for late-delivery items. Choose Late delivery, or remove those items, then place your order.'
+                          : 'Fill every required field, including an Express time slot when Express is selected, then place your order.'}
                 </p>
             ) : null}
 

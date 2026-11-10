@@ -2,16 +2,20 @@
 
 namespace App\Services\Order;
 
+use App\Contracts\SendsSms;
 use App\Enums\NotificationType;
 use App\Enums\OtpPurpose;
 use App\Mail\OrderPlacementCodeMail;
 use App\Models\Order;
 use App\Services\Notifications\NotificationService;
 use App\Services\OtpService;
+use App\Support\Order\OrderTrackingLink;
+use App\Support\Phone;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use Throwable;
 
 class OrderPlacementNotifier
 {
@@ -22,7 +26,34 @@ class OrderPlacementNotifier
     public function __construct(
         private OtpService $otp,
         private NotificationService $notifications,
+        private SendsSms $sms,
     ) {}
+
+    /**
+     * Text the customer the public "view order" link as soon as the order is placed,
+     * whether it opened Pending or Placed. Separate from the delivery-code message.
+     */
+    public function sendViewLink(Order $order): void
+    {
+        $phone = $this->phone($order);
+
+        if ($phone === null) {
+            return;
+        }
+
+        // Checkout stores the number as typed; SMS gateways expect E.164.
+        try {
+            $phone = Phone::toE164($phone);
+        } catch (Throwable) {
+            // Keep the stored number when it cannot be normalised.
+        }
+
+        $this->sms->send($phone, __(':app: we received your order :number. View it here: :url', [
+            'app' => config('app.name'),
+            'number' => $order->order_number,
+            'url' => OrderTrackingLink::url($order),
+        ]));
+    }
 
     /**
      * Send the delivery code. It stays valid until the order is delivered,
