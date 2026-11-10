@@ -13,6 +13,8 @@ export type DriverLocationEvent = {
     speed: number | null;
     accuracy: number | null;
     fulfillment_id: number | null;
+    /** Only an approximate position (a computer without GPS). */
+    coarse: boolean;
 };
 
 /**

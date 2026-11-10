@@ -196,3 +196,89 @@ test('the connection test explains when no key is saved', function () {
             'message' => 'Google Maps: No API key is configured for this provider.',
         ]);
 });
+
+function mapboxGeocodeHit(): array
+{
+    return ['features' => [[
+        'properties' => ['full_address' => 'Sydney NSW, Australia', 'coordinates' => ['latitude' => -33.87, 'longitude' => 151.21]],
+    ]]];
+}
+
+test('one step saves the key, checks it and switches every feature to the provider', function () {
+    Http::fake(['api.mapbox.com/*' => Http::response(mapboxGeocodeHit())]);
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.settings.map-provider.activate'), ['provider' => 'mapbox', 'public_key' => 'pk.test', 'daily_limit' => 800])
+        ->assertRedirect(route('platform.settings.map-provider.edit'))
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'Mapbox is now used for the map, address search and routes.']);
+
+    $settings = app(MapSettingsService::class)->settings();
+
+    expect([$settings->display_provider, $settings->geocoding_provider, $settings->routing_provider])->each->toBe('mapbox')
+        ->and($settings->fallback_provider)->toBe('osm')
+        ->and(app(MapSettingsService::class)->row('mapbox')->daily_limit)->toBe(800);
+});
+
+test('a key that the provider rejects changes nothing that is in use', function () {
+    Http::fake(['api.mapbox.com/*' => Http::response(['message' => 'Not Authorized - Invalid Token'], 401)]);
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.settings.map-provider.activate'), ['provider' => 'mapbox', 'public_key' => 'pk.wrong'])
+        ->assertRedirect()
+        ->assertInertiaFlash('toast', [
+            'type' => 'error',
+            'message' => 'We saved the key, but Mapbox did not accept it. Check that you copied the whole key and that every service listed in the steps is turned on. Nothing was switched, so your maps keep working as before.',
+        ]);
+
+    expect(app(MapSettingsService::class)->settings()->display_provider)->toBe('osm');
+});
+
+test('a provider without any key asks for the key instead of switching', function () {
+    Http::fake();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.settings.map-provider.activate'), ['provider' => 'google'])
+        ->assertInertiaFlash('toast', ['type' => 'error', 'message' => 'Google Maps needs a key before it can be used. Paste your key and try again.']);
+
+    Http::assertNothingSent();
+    expect(app(MapSettingsService::class)->settings()->display_provider)->toBe('osm');
+});
+
+test('with only the browser key google serves the map and says what still uses OpenStreetMap', function () {
+    Http::fake();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.settings.map-provider.activate'), ['provider' => 'google', 'public_key' => 'browser-key'])
+        ->assertInertiaFlash('toast', [
+            'type' => 'success',
+            'message' => 'Google Maps is now used for the map. Address search and routes still use OpenStreetMap until that key is added.',
+        ]);
+
+    $settings = app(MapSettingsService::class)->settings();
+
+    expect($settings->display_provider)->toBe('google')
+        ->and($settings->geocoding_provider)->toBe('osm')
+        ->and($settings->routing_provider)->toBe('osm');
+});
+
+test('choosing OpenStreetMap again switches everything back without any request', function () {
+    Http::fake(['api.mapbox.com/*' => Http::response(mapboxGeocodeHit())]);
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.settings.map-provider.activate'), ['provider' => 'mapbox', 'public_key' => 'pk.test']);
+
+    Http::fake();
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.settings.map-provider.activate'), ['provider' => 'osm'])
+        ->assertInertiaFlash('toast', ['type' => 'success', 'message' => 'OpenStreetMap is now used for the map and address search. Drivers see straight-line distances instead of road routes.']);
+
+    Http::assertNothingSent();
+    expect(app(MapSettingsService::class)->settings()->display_provider)->toBe('osm')
+        ->and(app(MapSettingsService::class)->settings()->geocoding_provider)->toBe('osm');
+});
+
+test('activation only accepts providers from the code registry and needs the settings permission', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.settings.map-provider.activate'), ['provider' => 'bing'])
+        ->assertSessionHasErrors('provider');
+});

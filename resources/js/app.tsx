@@ -36,6 +36,11 @@ void createInertiaApp({
     title: (title) =>
         title ? `${title} - ${resolvedAppName}` : resolvedAppName,
     layout: (name) => {
+        // The location prompt is a bare full-screen page: no driver menu, header or tracker around it.
+        if (name === 'driver/location-required') {
+            return undefined;
+        }
+
         switch (true) {
             case name.startsWith('storefront/'):
                 return StorefrontLayout;

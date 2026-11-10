@@ -63,6 +63,8 @@ class MapDashboardPayload
             'key' => $key,
             'label' => (string) ($config['label'] ?? $key),
             'description' => (string) ($config['description'] ?? ''),
+            'tagline' => (string) ($config['tagline'] ?? ''),
+            'help' => $config['help'] ?? null,
             'is_enabled' => (bool) ($row?->is_enabled ?? true),
             'capabilities' => array_map(
                 fn (MapCapability $capability): string => $capability->value,

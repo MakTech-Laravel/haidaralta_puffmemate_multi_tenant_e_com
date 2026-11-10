@@ -40,9 +40,16 @@ class DriverLocationService
         $recordedAt = $reading['recorded_at'];
         $timestamp = $recordedAt->getTimestamp();
 
-        if (isset($reading['accuracy']) && $reading['accuracy'] > $config['max_accuracy_meters']) {
+        $accuracy = $reading['accuracy'] ?? null;
+
+        // A computer without GPS reports an area of a few km. That is too rough to follow a
+        // delivery but still proves the driver is sharing, so it is kept as "approximate".
+        // Beyond max_coarse_accuracy_meters a reading says nothing useful and is dropped.
+        if ($accuracy !== null && $accuracy > $config['max_coarse_accuracy_meters']) {
             return DriverLocationOutcome::ignored('inaccurate');
         }
+
+        $coarse = $accuracy !== null && $accuracy > $config['max_accuracy_meters'];
 
         if ($timestamp < now()->getTimestamp() - $config['max_reading_age_seconds']) {
             return DriverLocationOutcome::ignored('too_old');
@@ -52,11 +59,19 @@ class DriverLocationService
         $previous = Cache::get(self::cacheKey($driver->id));
 
         if ($previous !== null) {
+            $previousCoarse = (bool) ($previous['coarse'] ?? false);
+
             if ($timestamp <= $previous['ts']) {
                 return DriverLocationOutcome::ignored('out_of_order');
             }
 
-            if ($this->impliedSpeedKmh($previous, $reading, $timestamp) > $config['max_speed_kmh']) {
+            // A rough reading never replaces a fresh precise one (e.g. the same driver on a phone).
+            if ($coarse && ! $previousCoarse && $previous['ts'] >= now()->getTimestamp() - (int) $config['stale_after_seconds']) {
+                return DriverLocationOutcome::ignored('superseded');
+            }
+
+            // Speed only makes sense between two precise readings.
+            if (! $coarse && ! $previousCoarse && $this->impliedSpeedKmh($previous, $reading, $timestamp) > $config['max_speed_kmh']) {
                 return DriverLocationOutcome::ignored('jump');
             }
         }
@@ -64,7 +79,8 @@ class DriverLocationService
         $entry = [
             'lat' => $reading['latitude'],
             'lng' => $reading['longitude'],
-            'accuracy' => $reading['accuracy'] ?? null,
+            'coarse' => $coarse,
+            'accuracy' => $accuracy,
             'speed' => $reading['speed'] ?? null,
             'heading' => $reading['heading'] ?? null,
             'ts' => $timestamp,
@@ -79,7 +95,8 @@ class DriverLocationService
         ];
 
         $shouldBroadcast = $this->movedEnough($entry, 'bc', $config['min_broadcast_distance_meters'], $config['broadcast_heartbeat_seconds']);
-        $shouldCrumb = $this->movedEnough($entry, 'crumb', $config['breadcrumb_min_distance_meters'], $config['breadcrumb_heartbeat_seconds']);
+        // Approximate positions never become path breadcrumbs.
+        $shouldCrumb = ! $coarse && $this->movedEnough($entry, 'crumb', $config['breadcrumb_min_distance_meters'], $config['breadcrumb_heartbeat_seconds']);
 
         if ($shouldBroadcast || $shouldCrumb) {
             $entry['fulfillment_id'] = $this->activeFulfillmentId($driver);
@@ -114,18 +131,19 @@ class DriverLocationService
                 $entry['speed'],
                 $entry['accuracy'],
                 $entry['fulfillment_id'],
+                $coarse,
             );
         }
 
         Cache::put(self::cacheKey($driver->id), $entry, (int) $config['last_position_ttl_seconds']);
 
-        return new DriverLocationOutcome(tracking: true, accepted: true, broadcast: $shouldBroadcast);
+        return new DriverLocationOutcome(tracking: true, accepted: true, broadcast: $shouldBroadcast, coarse: $coarse);
     }
 
     /**
      * Last known position of a driver, or null when none was received recently.
      *
-     * @return array{lat: float, lng: float, accuracy: float|null, speed: float|null, heading: int|null, ts: int, fulfillment_id: int|null, branch_ids: list<int>}|null
+     * @return array{lat: float, lng: float, coarse: bool, accuracy: float|null, speed: float|null, heading: int|null, ts: int, fulfillment_id: int|null, branch_ids: list<int>}|null
      */
     public function lastPosition(int $driverId): ?array
     {
@@ -138,6 +156,7 @@ class DriverLocationService
         return [
             'lat' => $entry['lat'],
             'lng' => $entry['lng'],
+            'coarse' => (bool) ($entry['coarse'] ?? false),
             'accuracy' => $entry['accuracy'],
             'speed' => $entry['speed'],
             'heading' => $entry['heading'],
