@@ -7,8 +7,10 @@ import {
     Mail,
     MapPin,
     Package,
+    PackagePlus,
     Phone,
     ReceiptText,
+    Trash2,
     Truck,
     UserRound,
 } from 'lucide-react';
@@ -18,6 +20,7 @@ import OrderAssignController from '@/actions/App/Http/Controllers/Branch/OrderAs
 import OrderAssignHistoryController from '@/actions/App/Http/Controllers/Branch/Reports/OrderAssignHistoryController';
 import OrderController from '@/actions/App/Http/Controllers/Branch/OrderController';
 import StockTransferController from '@/actions/App/Http/Controllers/Branch/StockTransferController';
+import { ConfirmActionDialog } from '@/components/orders/confirm-action-dialog';
 import {
     HeaderFact,
     SectionCard,
@@ -128,11 +131,17 @@ type FulfillmentDetail = {
         } | null;
     };
     items: {
+        id: number;
         name: string;
         image: string;
+        packageLabel?: string | null;
         quantity: number;
         unitPriceLabel: string;
         subtotalLabel: string;
+        isLateDelivery?: boolean;
+        isRemoved?: boolean;
+        canRemoveLate?: boolean;
+        canCollectLate?: boolean;
     }[];
     timeline: {
         key: string;
@@ -192,6 +201,11 @@ export default function BranchOrderShow({
     );
     const [assignReason, setAssignReason] = useState('');
     const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [lateConfirm, setLateConfirm] = useState<{
+        type: 'collect' | 'remove';
+        itemId: number;
+        itemName: string;
+    } | null>(null);
     const processing = pendingAction !== null;
     const isReassign = fulfillment.driverId !== null;
     const needsAssignReason =
@@ -220,13 +234,48 @@ export default function BranchOrderShow({
         .filter(Boolean)
         .join(' ');
     const hasStreetAddress = Boolean(address?.address || cityLine);
-    const itemCount = fulfillment.items.reduce(
-        (sum, item) => sum + item.quantity,
-        0,
-    );
+    const itemCount = fulfillment.items
+        .filter((item) => !item.isRemoved)
+        .reduce((sum, item) => sum + item.quantity, 0);
 
     const spinnerFor = (key: string) =>
         pendingAction === key ? <Spinner /> : null;
+
+    const confirmLateAction = () => {
+        if (!lateConfirm) {
+            return;
+        }
+
+        if (lateConfirm.type === 'remove') {
+            setPendingAction(`remove-late-${lateConfirm.itemId}`);
+            router.post(
+                OrderController.removeLateItem.url([
+                    branch.slug,
+                    fulfillment.id,
+                    lateConfirm.itemId,
+                ]),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => setPendingAction(null),
+                },
+            );
+        } else {
+            setPendingAction(`collect-late-${lateConfirm.itemId}`);
+            router.post(
+                OrderController.collectLateItem.url([
+                    branch.slug,
+                    fulfillment.id,
+                    lateConfirm.itemId,
+                ]),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => setPendingAction(null),
+                },
+            );
+        }
+    };
 
     const post = (key: string, url: string) => {
         setPendingAction(key);
@@ -450,30 +499,106 @@ export default function BranchOrderShow({
                                         {itemCount === 1 ? '' : 's'}
                                     </span>
                                 </div>
-                                <ul className="divide-border max-h-[26rem] divide-y overflow-y-auto">
-                                    {fulfillment.items.map((item, index) => (
+                                <ul className="divide-border max-h-[26rem] divide-y overflow-y-auto px-2">
+                                    {fulfillment.items.map((item) => (
                                         <li
-                                            key={`${item.name}-${index}`}
-                                            className="flex items-center gap-3 py-3"
+                                            key={item.id}
+                                            className="flex flex-col gap-2 py-3"
                                         >
-                                            <div className="bg-muted size-14 shrink-0 overflow-hidden rounded-lg border">
-                                                <StorefrontProductImage
-                                                    src={item.image}
-                                                    alt={item.name}
-                                                />
-                                            </div>
-                                            <div className="min-w-0 flex-1">
-                                                <p className="text-foreground line-clamp-2 text-sm font-medium">
-                                                    {item.name}
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-muted size-14 shrink-0 overflow-hidden rounded-lg border">
+                                                    <StorefrontProductImage
+                                                        src={item.image}
+                                                        alt={item.name}
+                                                    />
+                                                </div>
+                                                <div className="min-w-0 flex-1">
+                                                    <p
+                                                        className={
+                                                            item.isRemoved
+                                                                ? 'text-muted-foreground line-clamp-2 text-sm font-medium line-through'
+                                                                : 'text-foreground line-clamp-2 text-sm font-medium'
+                                                        }
+                                                    >
+                                                        {item.name}
+                                                    </p>
+                                                    <p className="text-muted-foreground mt-0.5 text-xs">
+                                                        {[
+                                                            item.packageLabel,
+                                                            `Qty ${item.quantity}`,
+                                                            item.unitPriceLabel,
+                                                            item.isLateDelivery
+                                                                ? 'Late delivery'
+                                                                : null,
+                                                            item.isRemoved
+                                                                ? 'Removed'
+                                                                : null,
+                                                        ]
+                                                            .filter(Boolean)
+                                                            .join(' · ')}
+                                                    </p>
+                                                </div>
+                                                <p
+                                                    className={
+                                                        item.isRemoved
+                                                            ? 'text-muted-foreground shrink-0 text-sm font-semibold tabular-nums line-through'
+                                                            : 'text-foreground shrink-0 text-sm font-semibold tabular-nums'
+                                                    }
+                                                >
+                                                    {item.subtotalLabel}
                                                 </p>
-                                                <p className="text-muted-foreground mt-0.5 text-xs">
-                                                    Qty {item.quantity} ·{' '}
-                                                    {item.unitPriceLabel}
-                                                </p>
                                             </div>
-                                            <p className="text-foreground shrink-0 text-sm font-semibold tabular-nums">
-                                                {item.subtotalLabel}
-                                            </p>
+                                            {item.canCollectLate ||
+                                            item.canRemoveLate ? (
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {item.canCollectLate ? (
+                                                        <Button
+                                                            type="button"
+                                                            size="sm"
+                                                            disabled={
+                                                                processing
+                                                            }
+                                                            onClick={() =>
+                                                                setLateConfirm({
+                                                                    type: 'collect',
+                                                                    itemId: item.id,
+                                                                    itemName:
+                                                                        item.name,
+                                                                })
+                                                            }
+                                                        >
+                                                            {spinnerFor(
+                                                                `collect-late-${item.id}`,
+                                                            )}
+                                                            Collect
+                                                        </Button>
+                                                    ) : null}
+                                                    {item.canRemoveLate ? (
+                                                        <Button
+                                                            type="button"
+                                                            variant="destructive"
+                                                            size="sm"
+                                                            disabled={
+                                                                processing
+                                                            }
+                                                            onClick={() =>
+                                                                setLateConfirm({
+                                                                    type: 'remove',
+                                                                    itemId: item.id,
+                                                                    itemName:
+                                                                        item.name,
+                                                                })
+                                                            }
+                                                        >
+                                                            {spinnerFor(
+                                                                `remove-late-${item.id}`,
+                                                            )}
+                                                            <Trash2 data-icon="inline-start" />
+                                                            Remove
+                                                        </Button>
+                                                    ) : null}
+                                                </div>
+                                            ) : null}
                                         </li>
                                     ))}
                                 </ul>
@@ -1054,6 +1179,38 @@ export default function BranchOrderShow({
                     </aside>
                 </div>
             </div>
+
+            <ConfirmActionDialog
+                open={lateConfirm !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setLateConfirm(null);
+                    }
+                }}
+                icon={
+                    lateConfirm?.type === 'remove' ? Trash2 : PackagePlus
+                }
+                variant={
+                    lateConfirm?.type === 'remove' ? 'destructive' : 'default'
+                }
+                title={
+                    lateConfirm?.type === 'remove'
+                        ? 'Remove late item'
+                        : 'Collect late stock'
+                }
+                description={
+                    lateConfirm === null
+                        ? ''
+                        : lateConfirm.type === 'remove'
+                          ? `Remove “${lateConfirm.itemName}” from this order? The customer will be notified.`
+                          : `Collect stock for “${lateConfirm.itemName}” and reserve it for this order? Remove will no longer be available for this line.`
+                }
+                confirmLabel={
+                    lateConfirm?.type === 'remove' ? 'Remove' : 'Collect'
+                }
+                processing={processing}
+                onConfirm={confirmLateAction}
+            />
         </>
     );
 }

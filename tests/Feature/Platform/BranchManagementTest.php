@@ -3,6 +3,7 @@
 use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Models\Branch;
+use App\Models\BranchArea;
 use App\Models\User;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
@@ -349,6 +350,42 @@ test('platform branch show includes map links when the branch has a pin', functi
             ->component('platform/branches/show')
             ->where('branch.map.google', 'https://www.google.com/maps?q=-33.8708000,151.2073000')
             ->where('branch.map.open_street_map', 'https://www.openstreetmap.org/?mlat=-33.8708000&mlon=151.2073000#map=16/-33.8708000/151.2073000')
+        );
+});
+
+test('platform branch show lists areas assigned to that branch', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $branch = Branch::factory()->create([
+        'slug' => 'areas-on-show',
+        'code' => 'AOS-001',
+        'status' => true,
+    ]);
+    (new RolesAndPermissionsSeeder)->seedBranchRolesForBranch($branch);
+
+    $owned = BranchArea::factory()->forBranch($branch)->create([
+        'name' => 'Owned Show Area',
+        'city' => 'Sydney',
+        'state' => 'NSW',
+        'is_active' => true,
+    ]);
+    BranchArea::factory()->forBranch(
+        Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail(),
+    )->create([
+        'name' => 'Other Branch Area',
+    ]);
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.branches.show', $branch))
+        ->assertOk()
+        ->assertInertia(fn ($page) => $page
+            ->component('platform/branches/show')
+            ->where('branch.areas_count', 1)
+            ->has('branch.areas', 1)
+            ->where('branch.areas.0.id', $owned->id)
+            ->where('branch.areas.0.name', 'Owned Show Area')
+            ->where('branch.areas.0.city', 'Sydney')
+            ->where('branch.areas.0.state', 'NSW')
+            ->where('branch.areas.0.is_active', true)
         );
 });
 

@@ -63,7 +63,9 @@ class Order extends Model implements DataTableConfigurable
         'delivery_method',
         'delivery_date',
         'time_slot',
+        'delivery_shift_id',
         'notes',
+        'accepts_late_delivery',
         'pack_id',
         'pack_quantity',
     ];
@@ -123,6 +125,14 @@ class Order extends Model implements DataTableConfigurable
     public function coupon(): BelongsTo
     {
         return $this->belongsTo(Coupon::class);
+    }
+
+    /**
+     * @return BelongsTo<DeliveryShift, $this>
+     */
+    public function deliveryShift(): BelongsTo
+    {
+        return $this->belongsTo(DeliveryShift::class);
     }
 
     /**
@@ -232,6 +242,7 @@ class Order extends Model implements DataTableConfigurable
             'total_amount' => 'decimal:2',
             'delivery_date' => 'date',
             'pack_quantity' => 'integer',
+            'accepts_late_delivery' => 'boolean',
         ];
     }
 }

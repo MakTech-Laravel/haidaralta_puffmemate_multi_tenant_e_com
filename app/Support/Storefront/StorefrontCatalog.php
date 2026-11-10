@@ -3,17 +3,22 @@
 namespace App\Support\Storefront;
 
 use App\Enums\DiscountType;
+use App\Enums\OrderStatus;
+use App\Enums\PaymentStatus;
 use App\Enums\ProductTag;
 use App\Models\Branch;
 use App\Models\Category;
 use App\Models\Inventory;
+use App\Models\OrderItem;
 use App\Models\Pack;
 use App\Models\PackItem;
 use App\Models\Product;
+use App\Models\ProductPackage;
 use App\Models\ProductReview;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\CompactNumber;
 use App\Support\MediaUrl;
+use App\Support\ProductPackagePricing;
 use App\Support\ProductSpecifications;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -312,10 +317,49 @@ class StorefrontCatalog
             ->where('status', true)
             ->whereJsonContains('tags', $tag->value)
             ->with(['categories:id,name,slug', 'media'])
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->limit(max(1, $limit));
 
         return $query->get()
+            ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Active products ranked by units actually sold, highest first. Tags and categories play no part.
+     *
+     * A sale counts only for a delivered order whose payment is collected or verified, so pending,
+     * cancelled, failed, unpaid and refunded orders (a refund leaves the order delivered but sets
+     * payment_status to refunded) are excluded, as are items removed from an order.
+     * Ties fall back to the product name, then id. Products with no counted sales never appear.
+     *
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string}>
+     */
+    public static function bestSellingProducts(?Branch $branch = null, ?int $limit = null): array
+    {
+        $limit ??= (int) config('catalog.home_products_max');
+
+        $sales = OrderItem::query()
+            ->selectRaw('order_items.product_id, SUM(order_items.quantity) as total_sold')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', OrderStatus::Delivered->value)
+            ->whereIn('orders.payment_status', [PaymentStatus::Collected->value, PaymentStatus::Verified->value])
+            ->whereNull('order_items.removed_at')
+            ->groupBy('order_items.product_id')
+            ->havingRaw('SUM(order_items.quantity) > 0');
+
+        return Product::query()
+            ->select('products.*')
+            ->joinSub($sales, 'sales', 'sales.product_id', '=', 'products.id')
+            ->where('products.status', true)
+            ->with(['categories:id,name,slug', 'media'])
+            ->orderByDesc('sales.total_sold')
+            ->orderBy('products.name')
+            ->orderBy('products.id')
+            ->limit(max(1, $limit))
+            ->get()
             ->map(fn (Product $product): array => self::mapProductCard($product, $branch))
             ->values()
             ->all();
@@ -330,10 +374,20 @@ class StorefrontCatalog
             $product = Product::query()
                 ->where('status', true)
                 ->where('slug', $product)
-                ->with(['categories:id,name,slug', 'media', 'variants'])
+                ->with([
+                    'categories:id,name,slug',
+                    'media',
+                    'variants',
+                    'packages' => fn ($query) => $query->enabled()->ordered(),
+                ])
                 ->first();
         } else {
-            $product->loadMissing(['categories:id,name,slug', 'media', 'variants']);
+            $product->loadMissing([
+                'categories:id,name,slug',
+                'media',
+                'variants',
+                'packages' => fn ($query) => $query->enabled()->ordered(),
+            ]);
         }
 
         if ($product === null || ! $product->status) {
@@ -383,6 +437,7 @@ class StorefrontCatalog
             'images' => $gallery !== [] ? $gallery : [$image],
             'price' => $displayPrice,
             'compareAtPrice' => $compareAt === null ? '' : BranchProductPriceDisplay::formatAud((float) $compareAt),
+            'unitPriceAmount' => $price['amount'] === null ? null : (float) $price['amount'],
             'availability' => $branch === null
                 ? 'Select a branch'
                 : ($stock > 0 ? 'Available' : 'Out of stock'),
@@ -404,6 +459,39 @@ class StorefrontCatalog
                 ])
                 ->values()
                 ->all(),
+            'packages' => ProductPackagePricing::productPackagesEnabled($product)
+                ? $product->packages
+                    ->where('status', true)
+                    ->map(function ($package) use ($price): array {
+                        $unitAmount = $price['amount'] === null ? null : (float) $price['amount'];
+                        $quantity = (int) $package->quantity;
+                        $packPrice = (float) $package->price;
+                        $unitTotal = $unitAmount === null
+                            ? null
+                            : round($unitAmount * $quantity, 2);
+                        $savings = $unitTotal === null
+                            ? null
+                            : round($unitTotal - $packPrice, 2);
+
+                        return [
+                            'id' => $package->id,
+                            'label' => $package->label,
+                            'quantity' => $quantity,
+                            'price' => $packPrice,
+                            'formattedPrice' => BranchProductPriceDisplay::formatAud($packPrice),
+                            'unitTotal' => $unitTotal,
+                            'formattedUnitTotal' => $unitTotal === null
+                                ? ''
+                                : BranchProductPriceDisplay::formatAud($unitTotal),
+                            'savings' => $savings,
+                            'formattedSavings' => $savings === null
+                                ? ''
+                                : BranchProductPriceDisplay::formatAud(abs($savings)),
+                        ];
+                    })
+                    ->values()
+                    ->all()
+                : [],
             'specifications' => ProductSpecifications::forDisplay(
                 $categoryName,
                 $product->brand,
@@ -625,6 +713,86 @@ class StorefrontCatalog
             'category' => $categoryName,
             'image' => $product->imageUrl(MediaUrl::DEFAULT_FALLBACK),
             'views' => CompactNumber::format((int) $product->views),
+        ];
+    }
+
+    /**
+     * Enabled products that have at least one enabled package.
+     *
+     * @return list<array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string, views: string, packageCount: int, fromLabel: string}>
+     */
+    public static function productsWithEnabledPackages(?string $search = null, ?string $sort = null): array
+    {
+        if (! ProductPackagePricing::packagesEnabled()) {
+            return [];
+        }
+
+        $query = Product::query()
+            ->where('status', true)
+            ->where('packages_enabled', true)
+            ->whereHas('packages', fn (Builder $packages) => $packages->enabled())
+            ->with([
+                'categories:id,name,slug',
+                'media',
+                'packages' => fn ($packages) => $packages->enabled()->ordered(),
+            ])
+            ->withMin(
+                ['packages as lowest_package_price' => fn ($packages) => $packages->enabled()],
+                'price',
+            );
+
+        if (is_string($search) && $search !== '') {
+            $query->where(function (Builder $builder) use ($search): void {
+                $builder->where('name', 'like', '%'.$search.'%')
+                    ->orWhere('brand', 'like', '%'.$search.'%')
+                    ->orWhere('sku', 'like', '%'.$search.'%')
+                    ->orWhere('description', 'like', '%'.$search.'%')
+                    ->orWhereHas(
+                        'packages',
+                        fn (Builder $packages) => $packages
+                            ->enabled()
+                            ->where('label', 'like', '%'.$search.'%'),
+                    );
+            });
+        }
+
+        match ($sort) {
+            'price_asc' => $query->orderBy('lowest_package_price'),
+            'price_desc' => $query->orderByDesc('lowest_package_price'),
+            'newest' => $query->orderByDesc('created_at'),
+            default => $query->orderBy('name'),
+        };
+
+        return $query->orderBy('id')
+            ->get()
+            ->map(fn (Product $product): array => self::mapPackagedProductCard($product))
+            ->values()
+            ->all();
+    }
+
+    /**
+     * @return array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string, views: string, packageCount: int, fromLabel: string}
+     */
+    public static function mapPackagedProductCard(Product $product): array
+    {
+        $packages = $product->packages
+            ->filter(fn (ProductPackage $package): bool => (bool) $package->status)
+            ->values();
+
+        $lowest = $packages
+            ->sortBy(fn (ProductPackage $package): array => [(float) $package->price, $package->sort_order, $package->id])
+            ->first();
+
+        $card = self::mapProductCard($product);
+
+        return [
+            ...$card,
+            'price' => $lowest instanceof ProductPackage
+                ? BranchProductPriceDisplay::formatAud((float) $lowest->price)
+                : $card['price'],
+            'compareAtPrice' => '',
+            'packageCount' => $packages->count(),
+            'fromLabel' => $lowest instanceof ProductPackage ? $lowest->label : '',
         ];
     }
 

@@ -36,6 +36,7 @@ type AreaRow = {
     is_active: boolean;
     created_at: string | null;
     branch: { id: number; name: string; slug: string } | null;
+    branches?: { id: number; name: string; slug: string }[];
 };
 
 type SelectedBranch = { id: number; name: string; slug: string };
@@ -90,8 +91,16 @@ export default function PlatformBranchAreasIndex({
             },
             {
                 id: 'branch',
-                header: 'Branch',
-                cell: ({ row }) => row.original.branch?.name ?? '—',
+                header: 'Branches',
+                cell: ({ row }) => {
+                    const names =
+                        row.original.branches?.map((item) => item.name) ??
+                        (row.original.branch
+                            ? [row.original.branch.name]
+                            : []);
+
+                    return names.length > 0 ? names.join(', ') : '—';
+                },
             },
             {
                 accessorKey: 'address',

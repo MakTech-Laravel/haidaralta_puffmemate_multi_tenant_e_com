@@ -104,6 +104,17 @@ class OrderFulfillment extends Model implements DataTableConfigurable
     }
 
     /**
+     * Active late-delivery lines that still need Collect or Remove before pickup.
+     */
+    public function hasUnresolvedLateItems(): bool
+    {
+        return $this->items()
+            ->whereNull('removed_at')
+            ->where('is_late_delivery', true)
+            ->exists();
+    }
+
+    /**
      * @return HasMany<OrderStatusHistory, $this>
      */
     public function statusHistories(): HasMany

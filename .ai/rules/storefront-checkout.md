@@ -6,13 +6,10 @@ paths:
 # Storefront Checkout
 
 ## Checkout delivery methods are not free
-DeliveryMethod.fee is a leftover flat amount (seeded 0). Real shipping is ShippingCalculator distance cost at place(). Never label method.formattedFee as FREE. Checkout cards and the order summary say Calculated at checkout.
+DeliveryMethod.fee is a leftover flat amount (seeded 0). Real shipping is ShippingCalculator distance cost at place() via the matched branch (area polygon or nearest-active AU fallback). Never label method.formattedFee as FREE. Checkout cards and the order summary say Calculated at checkout. Cart quote/place use AU gate + area/nearest-active + late-delivery opt-in (see checkout.md / order.md); pack buy-now stays on the pack's branch.
 
 ## Delivery method cards omit shipping cost
-DeliveryMethod.fee is leftover and unused. deliveryMethods() returns id/label/description/requiresSlot/timeSlots only. Distance cost lives in the checkout summary via the shipping quote, not on the method cards.
+DeliveryMethod.fee is leftover and unused. deliveryMethods() returns id/label/description/requiresSlot/requiresDate/minDate/maxDate/timeSlots from active platform DeliveryShift rows (not DeliveryTimeSlot). Distance cost lives in the checkout summary via the shipping quote, not on the method cards.
 
-## Delivery keys are regular and express
-Checkout delivery_methods keys are `regular` (sort 0, no slot) and `express` (sort 1, requires_slot, recommended 9–12/12–3/3–6/6–9 windows). Express has no customer date; CheckoutService writes delivery_date as today and stores the chosen slot label. DeliverySLACalculator uses `express_max_transfer_hours` for express/same-day and `regular_max_transfer_hours` otherwise. Do not restore australia-wide/same-day labels or an Express date picker.
-
-## Payment methods come from payment_gateway_settings
-Checkout paymentMethods are PaymentGatewaySettingsService::enabledMethods() (cod/pos/payment_link fixed keys). PlaceOrderRequest validates payment_method with Rule::in(enabled keys). Do not hardcode the checkout payment list in React.
+## Delivery keys are regular and express with DeliveryShift
+Checkout delivery_methods keys are `regular` (Same day) and `express` (Late). Both require a DeliveryShift id in `time_slot_id`. Same day: omit method when no eligible shifts remain; server sets `delivery_date` to today and rejects shifts with `start_time` before now (app timezone). Late: customer date required in [tomorrow, today+`catalog.late_delivery_max_days`]; all active shifts selectable. Orders store shift label on `time_slot` and `delivery_shift_id` FK. DeliverySLACalculator still uses express/regular transfer hours for allocation engines — unrelated to shift selection.

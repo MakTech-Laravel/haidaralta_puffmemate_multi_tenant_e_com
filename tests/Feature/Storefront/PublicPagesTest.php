@@ -72,6 +72,43 @@ test('storefront home shares featured categories and tagged products', function 
             ->has('storefront.navCategories'));
 });
 
+test('seeded catalog contains only cigarettes, tobacco, vapes and nicotine pouches products', function () {
+    $allowed = Category::query()
+        ->whereIn('slug', ['cigarettes', 'tobacco', 'vapes', 'nicotine-pouches'])
+        ->pluck('id');
+
+    $outside = Product::query()
+        ->whereDoesntHave('categories', fn ($query) => $query->whereIn('categories.id', $allowed))
+        ->pluck('slug')
+        ->all();
+
+    expect($outside)->toBe([])
+        ->and(Product::query()->count())->toBe(25);
+
+    $this->get(route('shop'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/shop')
+            ->has('products', 25));
+});
+
+test('storefront home rails list only products from the four owner categories', function () {
+    $allowedSlugs = Product::query()
+        ->whereHas('categories', fn ($query) => $query->whereIn('slug', ['cigarettes', 'tobacco', 'vapes', 'nicotine-pouches']))
+        ->pluck('slug')
+        ->all();
+
+    $this->get(route('home'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/home')
+            // Best selling is driven by real sales, and the seeded catalog has no orders yet.
+            ->has('bestSellingProducts', 0)
+            ->has('newArrivalProducts', 8)
+            ->where('newArrivalProducts', fn ($products): bool => collect($products)
+                ->every(fn ($product): bool => in_array($product['id'], $allowedSlugs, true))));
+});
+
 test('storefront home featured categories come from the catalog database', function () {
     Storage::fake('public');
 
@@ -117,7 +154,7 @@ test('storefront home featured categories come from the catalog database', funct
             ->where('featuredCategories.1.wide', false));
 });
 
-test('storefront home best selling and new arrival products come from catalog tags', function () {
+test('storefront home new arrival products come from the new_arrival tag and best selling ignores tags', function () {
     Product::query()->get()->each(fn (Product $product) => $product->update(['tags' => []]));
 
     Product::factory()->create([
@@ -152,12 +189,7 @@ test('storefront home best selling and new arrival products come from catalog ta
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/home')
-            ->has('bestSellingProducts', 1)
-            ->where('bestSellingProducts.0.id', 'tagged-best-seller')
-            ->where('bestSellingProducts.0.name', 'Tagged Best Seller')
-            ->where('bestSellingProducts.0.description', 'Gold Pack • 20 Cigarettes')
-            ->where('bestSellingProducts.0.price', 'A$14.00')
-            ->where('bestSellingProducts.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all()))
+            ->has('bestSellingProducts', 0)
             ->has('newArrivalProducts', 1)
             ->where('newArrivalProducts.0.id', 'tagged-new-arrival')
             ->where('newArrivalProducts.0.description', 'Cool Mint • 15 pcs')
@@ -165,7 +197,7 @@ test('storefront home best selling and new arrival products come from catalog ta
             ->where('newArrivalProducts.0', fn ($card): bool => ! array_key_exists('stock', collect($card)->all())));
 });
 
-test('storefront home product rails respect home_products_max per tag', function () {
+test('storefront home new arrivals respect home_products_max and list the newest first', function () {
     config(['catalog.home_products_max' => 3]);
 
     Product::query()->get()->each(fn (Product $product) => $product->update(['tags' => []]));
@@ -199,14 +231,13 @@ test('storefront home product rails respect home_products_max per tag', function
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/home')
-            ->has('bestSellingProducts', 3)
+            ->has('bestSellingProducts', 0)
             ->has('newArrivalProducts', 3)
-            ->where('bestSellingProducts', fn ($products): bool => collect($products)->every(
-                fn ($product): bool => str_starts_with((string) $product['id'], 'best-seller-'),
-            ))
-            ->where('newArrivalProducts', fn ($products): bool => collect($products)->every(
-                fn ($product): bool => str_starts_with((string) $product['id'], 'new-arrival-'),
-            )));
+            ->where('newArrivalProducts', fn ($products): bool => collect($products)->pluck('id')->all() === [
+                'new-arrival-5',
+                'new-arrival-4',
+                'new-arrival-3',
+            ]));
 });
 
 test('storefront product cards omit stock and use catalog price without a branch', function () {
@@ -280,9 +311,11 @@ test('storefront shop page filters products by search', function () {
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/shop')
             ->where('filters.search', 'Marlboro')
-            ->where('products.0.id', 'marlboro-gold-soft-pack-20s')
-            ->where('products.0.name', 'Marlboro Gold Soft Pack 20s')
-            ->has('products', 1));
+            ->where('products', fn ($products): bool => collect($products)->pluck('id')->sort()->values()->all() === [
+                'marlboro-gold-soft-pack-20s',
+                'marlboro-ice-blast',
+                'marlboro-red',
+            ]));
 });
 
 test('storefront category page renders products for a valid slug', function () {
@@ -312,7 +345,9 @@ test('storefront category page searches within the category via scout', function
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/category')
             ->where('filters.search', 'Marlboro')
-            ->where('products.0.id', 'marlboro-gold-soft-pack-20s')
+            ->where('products', fn ($products): bool => collect($products)->contains(
+                fn ($product): bool => $product['id'] === 'marlboro-gold-soft-pack-20s',
+            ))
             ->where('products', fn ($products): bool => collect($products)->every(
                 fn ($product): bool => str_contains(strtolower((string) $product['name']), 'marlboro')
                     || str_contains(strtolower((string) $product['id']), 'marlboro'),
@@ -345,17 +380,23 @@ test('storefront category page sorts by price without a branch select', function
 test('storefront category search does not leak products from other categories', function () {
     $this->get(route('shop.category', [
         'category' => 'cigarettes',
-        'search' => 'IQOS',
+        'search' => 'ZYN',
     ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/category')
-            ->where('filters.search', 'IQOS')
+            ->where('filters.search', 'ZYN')
             ->has('products', 0));
 });
 
 test('storefront category page includes products from child categories', function () {
-    $child = Category::query()->where('slug', 'disposables')->firstOrFail();
+    $parent = Category::query()->where('slug', 'tobacco')->firstOrFail();
+    $child = Category::query()->create([
+        'name' => 'Test Child Category',
+        'slug' => 'test-child-category',
+        'parent_id' => $parent->id,
+        'status' => true,
+    ]);
 
     $childOnly = Product::factory()->create([
         'name' => 'Child Only Disposable',
@@ -366,7 +407,7 @@ test('storefront category page includes products from child categories', functio
     ]);
     $childOnly->categories()->sync([$child->id]);
 
-    $this->get(route('shop.category', ['category' => 'vapes']))
+    $this->get(route('shop.category', ['category' => 'tobacco']))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/category')
@@ -492,8 +533,8 @@ test('storefront cart page renders', function () {
             ->missing('branches'));
 });
 
-test('storefront checkout page requires login', function () {
-    $this->get(route('checkout'))->assertRedirect(route('login'));
+test('storefront checkout page does not require login', function () {
+    $this->get(route('checkout'))->assertRedirect(route('cart'));
 });
 
 test('nav categories respect show_in_nav and nav_sort order', function () {

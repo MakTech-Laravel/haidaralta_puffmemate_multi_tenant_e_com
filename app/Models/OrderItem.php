@@ -15,12 +15,20 @@ class OrderItem extends Model
         'fulfillment_id',
         'product_id',
         'variant_id',
+        'product_package_id',
         'product_name_snapshot',
         'sku_snapshot',
         'product_snapshot',
+        'package_label_snapshot',
+        'package_quantity_snapshot',
         'quantity',
         'unit_price',
         'subtotal',
+        'is_late_delivery',
+        'local_reserved_quantity',
+        'removed_at',
+        'removed_by',
+        'removal_note',
     ];
 
     /**
@@ -30,10 +38,27 @@ class OrderItem extends Model
     {
         return [
             'product_snapshot' => 'array',
+            'package_quantity_snapshot' => 'integer',
             'quantity' => 'integer',
             'unit_price' => 'decimal:2',
             'subtotal' => 'decimal:2',
+            'is_late_delivery' => 'boolean',
+            'local_reserved_quantity' => 'integer',
+            'removed_at' => 'datetime',
         ];
+    }
+
+    public function isRemoved(): bool
+    {
+        return $this->removed_at !== null;
+    }
+
+    /**
+     * @return BelongsTo<User, $this>
+     */
+    public function removedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'removed_by');
     }
 
     /**
@@ -58,5 +83,13 @@ class OrderItem extends Model
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * @return BelongsTo<ProductPackage, $this>
+     */
+    public function package(): BelongsTo
+    {
+        return $this->belongsTo(ProductPackage::class, 'product_package_id');
     }
 }

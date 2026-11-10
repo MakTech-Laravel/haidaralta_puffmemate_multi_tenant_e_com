@@ -102,7 +102,12 @@ export function ConversationThread({
     canClose,
     endpoints,
     backUrl,
+    showSenderRole = false,
     incomingMessage = null,
+    headerTitle,
+    showBackLink = true,
+    showStatusBadge = true,
+    viewerLastReadMessageId = null,
 }: {
     conversation: ConversationSummary;
     messages: ConversationMessage[];
@@ -113,12 +118,21 @@ export function ConversationThread({
     canClose: boolean;
     endpoints: ConversationEndpoints;
     backUrl: string;
+    showSenderRole?: boolean;
     /**
      * Inbox-channel fallback. Presence MessageCreated is still the primary
      * path; this covers the case where the operator is in the thread but the
      * presence join never completed.
      */
     incomingMessage?: ConversationMessage | null;
+    /** Optional override for the thread heading (portal-specific labels). */
+    headerTitle?: string;
+    /** Hide when the portal has no inbox list (single-thread layout). */
+    showBackLink?: boolean;
+    /** Order chats keep Open/Closed; ops chats do not. */
+    showStatusBadge?: boolean;
+    /** Captured before markRead — first peer message after this shows Unread. */
+    viewerLastReadMessageId?: number | null;
 }) {
     const [messages, setMessages] = useState(initialMessages);
     const [hasMore, setHasMore] = useState(initialHasMore);
@@ -131,6 +145,7 @@ export function ConversationThread({
 
     const lastReadRef = useRef(0);
     const lastAckRef = useRef(0);
+    const unreadCutoffRef = useRef(viewerLastReadMessageId ?? 0);
 
     /**
      * `router.post` preserves this component's state, so status cannot live
@@ -357,6 +372,24 @@ export function ConversationThread({
         setMessages((current) => current.filter((one) => one.id !== clientId));
     }, []);
 
+    const firstUnreadId = useMemo(() => {
+        const cutoff = unreadCutoffRef.current;
+
+        if (cutoff <= 0) {
+            return null;
+        }
+
+        const first = messages.find(
+            (message) =>
+                !message.pending &&
+                message.type !== 'system' &&
+                message.sender?.id !== viewerId &&
+                message.id > cutoff,
+        );
+
+        return first?.id ?? null;
+    }, [messages, viewerId]);
+
     const rows = useMemo(
         () =>
             messages.map((message, index) => {
@@ -375,6 +408,7 @@ export function ConversationThread({
                     message,
                     isOwn,
                     receipt,
+                    showUnreadDivider: message.id === firstUnreadId,
                     daySeparator:
                         previous === undefined ||
                         !sameDay(previous.created_at, message.created_at)
@@ -387,32 +421,54 @@ export function ConversationThread({
                         previous.type === 'system',
                 };
             }),
-        [messages, receipts, viewerId],
+        [messages, receipts, viewerId, firstUnreadId],
     );
 
     return (
         <div className="bg-card flex h-full min-h-0 flex-col overflow-hidden rounded-xl border">
             <header className="flex flex-wrap items-center justify-between gap-3 border-b px-3 py-3 sm:px-4">
                 <div className="flex min-w-0 flex-1 items-center gap-2">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        asChild
-                        className="lg:hidden"
-                    >
-                        <Link href={backUrl} aria-label="Back to conversations">
-                            <ChevronLeft />
-                        </Link>
-                    </Button>
+                    {showBackLink ? (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            asChild
+                            className="lg:hidden"
+                        >
+                            <Link
+                                href={backUrl}
+                                aria-label="Back to conversations"
+                            >
+                                <ChevronLeft />
+                            </Link>
+                        </Button>
+                    ) : null}
                     <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2">
                             <h2 className="truncate font-semibold">
-                                Order{' '}
-                                {conversation.order?.order_number ?? 'unknown'}
+                                {headerTitle ??
+                                    (conversation.type === 'driver_ops'
+                                        ? conversation.driver?.id === viewerId
+                                            ? (conversation.branch?.name ??
+                                              'Branch chat')
+                                            : (conversation.driver?.name ??
+                                              conversation.branch?.name ??
+                                              'Driver chat')
+                                        : conversation.type ===
+                                            'platform_branch'
+                                          ? (conversation.branch?.name ??
+                                            'Branch chat')
+                                          : `Order ${conversation.order?.order_number ?? 'unknown'}`)}
                             </h2>
-                            <Badge variant={isClosed ? 'secondary' : 'default'}>
-                                {isClosed ? 'Closed' : 'Open'}
-                            </Badge>
+                            {showStatusBadge ? (
+                                <Badge
+                                    variant={
+                                        isClosed ? 'secondary' : 'default'
+                                    }
+                                >
+                                    {isClosed ? 'Closed' : 'Open'}
+                                </Badge>
+                            ) : null}
                         </div>
                         <p className="text-muted-foreground truncate text-sm">
                             {typing.length > 0 ? (
@@ -430,9 +486,12 @@ export function ConversationThread({
                                             {online.length} online ·
                                         </span>
                                     ) : null}
-                                    {conversation.branch?.name ?? 'No branch'} ·{' '}
-                                    {conversation.order?.status_label ?? '—'} ·{' '}
-                                    {conversation.participants.length}{' '}
+                                    {conversation.branch?.name ?? 'No branch'}
+                                    {conversation.type === 'driver_ops' ||
+                                    conversation.type === 'platform_branch'
+                                        ? null
+                                        : ` · ${conversation.order?.status_label ?? '—'}`}{' '}
+                                    · {conversation.participants.length}{' '}
                                     participant
                                     {conversation.participants.length === 1
                                         ? ''
@@ -500,6 +559,7 @@ export function ConversationThread({
                                 showHeader,
                                 receipt,
                                 daySeparator,
+                                showUnreadDivider,
                             }) => (
                                 <div key={message.id}>
                                     {daySeparator ? (
@@ -509,11 +569,21 @@ export function ConversationThread({
                                             </span>
                                         </div>
                                     ) : null}
+                                    {showUnreadDivider ? (
+                                        <div className="flex items-center gap-3 py-3">
+                                            <div className="bg-border h-px flex-1" />
+                                            <span className="text-primary text-xs font-medium tracking-wide uppercase">
+                                                Unread messages
+                                            </span>
+                                            <div className="bg-border h-px flex-1" />
+                                        </div>
+                                    ) : null}
                                     <ConversationMessageRow
                                         message={message}
                                         isOwn={isOwn}
                                         showHeader={showHeader}
                                         receipt={receipt}
+                                        showSenderRole={showSenderRole}
                                         onRetry={() => retry(message.id)}
                                         onDiscard={() => discard(message.id)}
                                     />

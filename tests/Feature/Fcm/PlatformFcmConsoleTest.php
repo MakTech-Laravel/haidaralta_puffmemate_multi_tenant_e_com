@@ -1,29 +1,57 @@
 <?php
 
+use App\Enums\PermissionEnum;
 use App\Enums\UserType;
 use App\Models\FcmDeviceToken;
 use App\Models\User;
+use App\Support\PlatformTeamResolver;
+use Database\Seeders\RolesAndPermissionsSeeder;
 use Kreait\Firebase\Contract\Messaging;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function () {
+    $this->seed(RolesAndPermissionsSeeder::class);
     $this->messaging = Mockery::mock(Messaging::class);
     $this->app->instance(Messaging::class, $this->messaging);
 });
+
+function platformUserWithDashboard(): User
+{
+    $user = User::factory()->create([
+        'user_type' => UserType::PLATFORM,
+        'email_verified_at' => now(),
+        'is_active' => true,
+    ]);
+
+    app(PermissionRegistrar::class)->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+    $user->givePermissionTo(PermissionEnum::VIEW_DASHBOARD->value);
+    app(PermissionRegistrar::class)->forgetCachedPermissions();
+
+    return $user;
+}
 
 test('guests are redirected from the fcm console', function () {
     $this->get(route('platform.fcm.index'))->assertRedirect(route('login'));
 });
 
 test('platform users can view the fcm console', function () {
-    $user = User::factory()->create(['user_type' => UserType::PLATFORM]);
+    $user = platformUserWithDashboard();
 
     $this->actingAs($user, 'platform')
         ->get(route('platform.fcm.index'))
         ->assertOk();
 });
 
-test('platform user can register and unregister an fcm token', function () {
+test('platform users without view-dashboard cannot open the fcm console', function () {
     $user = User::factory()->create(['user_type' => UserType::PLATFORM]);
+
+    $this->actingAs($user, 'platform')
+        ->get(route('platform.fcm.index'))
+        ->assertForbidden();
+});
+
+test('platform user can register and unregister an fcm token', function () {
+    $user = platformUserWithDashboard();
     $token = 'register-token-abcdefghijklmnopqrstuvwxyz0123456789';
 
     $this->actingAs($user, 'platform')
@@ -44,8 +72,8 @@ test('platform user can register and unregister an fcm token', function () {
 });
 
 test('register upsert reassigns token to a new user', function () {
-    $first = User::factory()->create(['user_type' => UserType::PLATFORM]);
-    $second = User::factory()->create(['user_type' => UserType::PLATFORM]);
+    $first = platformUserWithDashboard();
+    $second = platformUserWithDashboard();
     $token = 'reassign-token-abcdefghijklmnopqrstuvwxyz0123456789';
 
     FcmDeviceToken::factory()->create(['user_id' => $first->id, 'token' => $token]);
@@ -58,7 +86,7 @@ test('register upsert reassigns token to a new user', function () {
 });
 
 test('fcm test by token validates and sends', function () {
-    $user = User::factory()->create(['user_type' => UserType::PLATFORM]);
+    $user = platformUserWithDashboard();
     $token = 'send-token-abcdefghijklmnopqrstuvwxyz0123456789';
 
     $this->messaging->shouldReceive('send')->once()->andReturn(['name' => 'ok']);
@@ -75,8 +103,8 @@ test('fcm test by token validates and sends', function () {
 });
 
 test('fcm test by users sends to registered tokens', function () {
-    $admin = User::factory()->create(['user_type' => UserType::PLATFORM]);
-    $target = User::factory()->create(['user_type' => UserType::PLATFORM]);
+    $admin = platformUserWithDashboard();
+    $target = platformUserWithDashboard();
     FcmDeviceToken::factory()->create([
         'user_id' => $target->id,
         'token' => 'user-send-token-abcdefghijklmnopqrstuvwxyz',
@@ -96,7 +124,7 @@ test('fcm test by users sends to registered tokens', function () {
 });
 
 test('fcm test requires recipients for the selected mode', function () {
-    $user = User::factory()->create(['user_type' => UserType::PLATFORM]);
+    $user = platformUserWithDashboard();
 
     $this->actingAs($user, 'platform')
         ->postJson(route('platform.fcm.test'), [

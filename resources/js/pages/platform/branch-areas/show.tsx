@@ -13,14 +13,20 @@ type Branch = { id: number; name: string; slug: string };
 
 export default function PlatformBranchAreasShow({
     branch,
+    branches = [],
     area,
     canManage,
 }: {
     branch: Branch | null;
+    branches?: Branch[];
     area: BranchAreaDetailData;
     canManage: boolean;
 }) {
     const [transferOpen, setTransferOpen] = useState(false);
+    const branchNames =
+        branches.length > 0
+            ? branches.map((item) => item.name).join(', ')
+            : (branch?.name ?? null);
 
     setLayoutProps({
         breadcrumbs: [
@@ -43,7 +49,7 @@ export default function PlatformBranchAreasShow({
             <div className="flex w-full flex-col gap-4 p-2 md:p-4">
                 <BranchAreaDetail
                     area={area}
-                    branchName={branch?.name}
+                    branchName={branchNames}
                     actions={
                         <>
                             {canManage ? (
@@ -53,7 +59,7 @@ export default function PlatformBranchAreasShow({
                                         variant="secondary"
                                         onClick={() => setTransferOpen(true)}
                                     >
-                                        Change branch
+                                        Add to branch
                                     </Button>
                                     <Button asChild>
                                         <Link
@@ -89,7 +95,7 @@ export default function PlatformBranchAreasShow({
                     action={BranchAreasController.transfer.form(area.id)}
                     areaName={area.name}
                     currentBranchId={branch?.id}
-                    currentBranchName={branch?.name}
+                    currentBranchName={branchNames}
                     branchOptionsUrl={BranchAreasController.branchOptions.url()}
                 />
             ) : null}

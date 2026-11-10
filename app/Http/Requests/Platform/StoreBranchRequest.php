@@ -77,6 +77,8 @@ class StoreBranchRequest extends FormRequest
             'opening_time' => ['nullable', 'date_format:H:i'],
             'closing_time' => ['nullable', 'date_format:H:i'],
             'status' => ['sometimes', 'boolean'],
+            'area_ids' => ['sometimes', 'array'],
+            'area_ids.*' => ['integer', 'distinct', 'exists:branch_areas,id'],
             'super_admin' => ['required', 'array'],
             'super_admin.name' => ['required', 'string', 'max:255'],
             'super_admin.phone' => ['required', 'string', ...Phone::validationRule(), Rule::unique('users', 'phone')],

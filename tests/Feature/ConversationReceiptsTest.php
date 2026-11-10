@@ -146,7 +146,8 @@ test('the thread payload carries the receipt markers the ticks are derived from'
                     ->has('last_delivered_message_id')
                     ->has('last_read_message_id'),
             )
-            ->has('thread.endpoints.delivered'));
+            ->has('thread.endpoints.delivered')
+            ->has('thread.viewerLastReadMessageId'));
 });
 
 test('the delivered endpoint rejects an operator from another branch', function () {

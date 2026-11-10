@@ -116,7 +116,39 @@ test('drivers can open chat once the order is on the way', function () {
             ->where('viewerId', $driver->id)
             ->where('canSend', true)
             ->where('channel', $order->fresh()->conversation->channelName())
-            ->has('messages'));
+            ->has('messages')
+            ->has('receipts')
+            ->has('deliveredUrl')
+            ->has('readUrl'));
+});
+
+test('driver order chat marks messages read and accepts delivery acks', function () {
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'email_verified_at' => now(),
+    ]);
+    $customer = User::factory()->create();
+    $order = driverPortalOrder(
+        $driver,
+        ['status' => FulfillmentStatus::OutForDelivery],
+        ['customer_id' => $customer->id],
+    );
+    $conversation = app(ConversationService::class)->openForOrder($order->fresh('fulfillment'));
+    $message = app(ConversationService::class)
+        ->sendMessage($conversation, $customer, 'I am downstairs.');
+
+    $this->actingAs($driver, 'driver')
+        ->get(route('driver.orders.chat', $order))
+        ->assertOk();
+
+    expect($conversation->participants()->where('user_id', $driver->id)->value('last_read_message_id'))
+        ->toBe($message->id);
+
+    $this->actingAs($driver, 'driver')
+        ->postJson(route('driver.orders.chat.delivered', $order), [
+            'message_id' => $message->id,
+        ])
+        ->assertOk();
 });
 
 test('drivers can message the customer once the order is on the way', function () {

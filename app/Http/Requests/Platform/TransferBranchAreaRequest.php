@@ -20,13 +20,14 @@ class TransferBranchAreaRequest extends FormRequest
     {
         /** @var BranchArea $area */
         $area = $this->route('area');
+        $linkedIds = $area->branches()->pluck('branches.id')->all();
 
         return [
             'to_branch_id' => [
                 'required',
                 'integer',
                 Rule::exists('branches', 'id')->where(fn ($query) => $query->where('status', true)),
-                Rule::notIn([(int) $area->branch_id]),
+                Rule::notIn($linkedIds === [] ? [0] : $linkedIds),
             ],
             'effective_date' => ['required', 'date'],
             'reason' => ['required', 'string', 'max:500'],
@@ -39,7 +40,7 @@ class TransferBranchAreaRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'to_branch_id.not_in' => 'Choose a different branch than the current owner.',
+            'to_branch_id.not_in' => 'This area is already linked to that branch.',
         ];
     }
 }

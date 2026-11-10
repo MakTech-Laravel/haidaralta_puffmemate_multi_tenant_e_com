@@ -11,6 +11,7 @@ import {
     type CheckoutDetails,
 } from '@/components/storefront/checkout/checkout-form';
 import { CheckoutOrderSummary } from '@/components/storefront/checkout/checkout-order-summary';
+import { filterUpcomingDeliverySlots } from '@/lib/delivery-shift-availability';
 import type {
     StorefrontCartItem,
     StorefrontDeliveryMethod,
@@ -24,11 +25,26 @@ type AppliedCoupon = {
     formattedDiscount: string;
 };
 
+type ShortfallLine = {
+    productId: number;
+    variantId: number | null;
+    productPackageId?: number | null;
+    productName: string;
+    packageLabel?: string | null;
+    quantity: number;
+    inventoryQuantity?: number;
+    localQuantity: number;
+    shortfall: number;
+    shortfallUnits?: number;
+};
+
 type ShippingQuote = {
     fee: number;
     formattedFee: string;
     latitude: string;
     longitude: string;
+    requiresLateDelivery: boolean;
+    shortfallLines: ShortfallLine[];
 } | null;
 
 type CheckoutPageProps = {
@@ -59,6 +75,8 @@ function checkoutCanPlaceOrder(
     details: CheckoutDetails,
     methods: StorefrontDeliveryMethod[],
     termsAccepted: boolean,
+    requiresLateDelivery: boolean,
+    acceptLateDelivery: boolean,
 ): boolean {
     const method = methods.find((row) => row.id === details.deliveryMethodId);
     const pinReady =
@@ -80,8 +98,26 @@ function checkoutCanPlaceOrder(
         return false;
     }
 
+    if (requiresLateDelivery && !acceptLateDelivery) {
+        return false;
+    }
+
+    if (method?.requiresDate && !filled(details.deliveryDate)) {
+        return false;
+    }
+
     if (method?.requiresSlot) {
-        return filled(details.timeSlotId);
+        if (!filled(details.timeSlotId)) {
+            return false;
+        }
+
+        if (!method.requiresDate) {
+            const upcoming = filterUpcomingDeliverySlots(method.timeSlots);
+
+            return upcoming.some((slot) => slot.id === details.timeSlotId);
+        }
+
+        return true;
     }
 
     return true;
@@ -100,6 +136,11 @@ export default function StorefrontCheckout({
 }: CheckoutPageProps) {
     const page = usePage<{ errors?: Record<string, string> }>();
     const defaultMethod = deliveryMethods[0];
+    const defaultSlots = defaultMethod
+        ? defaultMethod.requiresDate
+            ? defaultMethod.timeSlots
+            : filterUpcomingDeliverySlots(defaultMethod.timeSlots)
+        : [];
     const form = useForm({
         name: savedAddress?.name ?? '',
         mobile: savedAddress?.mobile ?? '',
@@ -110,16 +151,29 @@ export default function StorefrontCheckout({
         longitude: savedAddress?.longitude ?? '',
         save_as_default: false,
         delivery_method: defaultMethod?.id ?? '',
+        delivery_date: defaultMethod?.requiresDate
+            ? (defaultMethod.minDate ?? '')
+            : '',
         time_slot_id: defaultMethod?.requiresSlot
-            ? (defaultMethod.timeSlots[0]?.id ?? '')
+            ? (defaultSlots[0]?.id ?? '')
             : '',
         payment_method: paymentMethods[0]?.id ?? '',
         coupon: appliedCoupon?.code ?? '',
+        accept_late_delivery: false,
         terms: false,
     });
 
     const [couponCode, setCouponCode] = useState(appliedCoupon?.code ?? '');
-    const [quote, setQuote] = useState<ShippingQuote>(shippingQuote);
+    const [quote, setQuote] = useState<ShippingQuote>(
+        shippingQuote
+            ? {
+                  ...shippingQuote,
+                  requiresLateDelivery:
+                      shippingQuote.requiresLateDelivery ?? false,
+                  shortfallLines: shippingQuote.shortfallLines ?? [],
+              }
+            : null,
+    );
     const requestedPin = useRef<string | null>(
         shippingQuote
             ? `${shippingQuote.latitude},${shippingQuote.longitude}`
@@ -132,7 +186,12 @@ export default function StorefrontCheckout({
         errors: quoteErrors,
     } = useHttp<
         { latitude: string; longitude: string; delivery_method: string },
-        { fee: number; formattedFee: string }
+        {
+            fee: number;
+            formattedFee: string;
+            requiresLateDelivery?: boolean;
+            shortfallLines?: ShortfallLine[];
+        }
     >({
         latitude: '',
         longitude: '',
@@ -149,6 +208,7 @@ export default function StorefrontCheckout({
         longitude: form.data.longitude ?? '',
         saveAsDefault: form.data.save_as_default,
         deliveryMethodId: form.data.delivery_method,
+        deliveryDate: form.data.delivery_date,
         timeSlotId: form.data.time_slot_id,
         paymentMethodId: form.data.payment_method,
     };
@@ -186,15 +246,22 @@ export default function StorefrontCheckout({
 
         void postQuote(quoteShipping.url())
             .then((payload) => {
+                const requiresLate = Boolean(payload.requiresLateDelivery);
                 setQuote({
                     fee: payload.fee,
                     formattedFee: payload.formattedFee,
                     latitude,
                     longitude,
+                    requiresLateDelivery: requiresLate,
+                    shortfallLines: payload.shortfallLines ?? [],
                 });
+                if (!requiresLate) {
+                    form.setData('accept_late_delivery', false);
+                }
             })
             .catch(() => {
                 setQuote(null);
+                form.setData('accept_late_delivery', false);
             });
     }, [
         details.latitude,
@@ -205,6 +272,29 @@ export default function StorefrontCheckout({
         transformQuote,
     ]);
 
+    useEffect(() => {
+        const method = deliveryMethods.find(
+            (row) => row.id === form.data.delivery_method,
+        );
+
+        if (!method?.requiresSlot || method.requiresDate) {
+            return;
+        }
+
+        const upcoming = filterUpcomingDeliverySlots(method.timeSlots);
+
+        if (
+            form.data.time_slot_id !== '' &&
+            !upcoming.some((slot) => slot.id === form.data.time_slot_id)
+        ) {
+            form.setData('time_slot_id', upcoming[0]?.id ?? '');
+        }
+    }, [
+        deliveryMethods,
+        form.data.delivery_method,
+        form.data.time_slot_id,
+    ]);
+
     const onDetailChange = <K extends keyof CheckoutDetails>(
         key: K,
         value: CheckoutDetails[K],
@@ -213,24 +303,33 @@ export default function StorefrontCheckout({
             const method = deliveryMethods.find((row) => row.id === value);
 
             form.setData((current) => {
-                if (!method?.requiresSlot) {
+                if (!method) {
                     return {
                         ...current,
                         delivery_method: String(value),
+                        delivery_date: '',
                         time_slot_id: '',
                     };
                 }
 
-                const slotStillValid = method.timeSlots.some(
+                const slots = method.requiresDate
+                    ? method.timeSlots
+                    : filterUpcomingDeliverySlots(method.timeSlots);
+                const slotStillValid = slots.some(
                     (slot) => slot.id === current.time_slot_id,
                 );
 
                 return {
                     ...current,
                     delivery_method: String(value),
-                    time_slot_id: slotStillValid
-                        ? current.time_slot_id
-                        : (method.timeSlots[0]?.id ?? ''),
+                    delivery_date: method.requiresDate
+                        ? (method.minDate ?? '')
+                        : '',
+                    time_slot_id: method.requiresSlot
+                        ? slotStillValid
+                            ? current.time_slot_id
+                            : (slots[0]?.id ?? '')
+                        : '',
                 };
             });
 
@@ -247,6 +346,7 @@ export default function StorefrontCheckout({
             longitude: 'longitude',
             saveAsDefault: 'save_as_default',
             deliveryMethodId: 'delivery_method',
+            deliveryDate: 'delivery_date',
             timeSlotId: 'time_slot_id',
             paymentMethodId: 'payment_method',
         };
@@ -273,10 +373,19 @@ export default function StorefrontCheckout({
         ...quoteErrors,
     };
 
+    const requiresLateDelivery = Boolean(
+        quotedMatchesPin && quote?.requiresLateDelivery,
+    );
+    const shortfallLines = quotedMatchesPin
+        ? (quote?.shortfallLines ?? [])
+        : [];
+
     const canPlaceOrder = checkoutCanPlaceOrder(
         details,
         deliveryMethods,
         form.data.terms,
+        requiresLateDelivery,
+        form.data.accept_late_delivery,
     );
 
     return (
@@ -305,6 +414,9 @@ export default function StorefrontCheckout({
 
                             form.transform((data) => ({
                                 ...data,
+                                accept_late_delivery:
+                                    requiresLateDelivery &&
+                                    data.accept_late_delivery,
                                 coupon: couponsAllowed
                                     ? (appliedCoupon?.code ??
                                       (couponCode.trim() !== ''
@@ -354,6 +466,13 @@ export default function StorefrontCheckout({
                             termsError={errors.terms}
                             processing={form.processing}
                             canPlaceOrder={canPlaceOrder}
+                            requiresLateDelivery={requiresLateDelivery}
+                            shortfallLines={shortfallLines}
+                            acceptLateDelivery={form.data.accept_late_delivery}
+                            acceptLateError={errors.accept_late_delivery}
+                            onAcceptLateDeliveryChange={(accepted) =>
+                                form.setData('accept_late_delivery', accepted)
+                            }
                             onCouponChange={setCouponCode}
                             onApplyCoupon={() =>
                                 router.post(

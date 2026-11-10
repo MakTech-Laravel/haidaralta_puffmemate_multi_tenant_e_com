@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Concerns;
 
+use App\Enums\ConversationType;
 use App\Events\ConversationInboxUpdated;
 use App\Models\Branch;
 use App\Models\Conversation;
@@ -52,6 +53,19 @@ trait InteractsWithConversations
 
     abstract protected function conversationIndexUrl(): string;
 
+    protected function conversationType(): ConversationType
+    {
+        return ConversationType::Order;
+    }
+
+    /**
+     * Whether message DTOs include sender role labels (branch/platform yes; driver no).
+     */
+    protected function includeSenderRoleInPayload(): bool
+    {
+        return true;
+    }
+
     /**
      * The whole workspace: inbox on the left, optional thread on the right.
      *
@@ -65,6 +79,7 @@ trait InteractsWithConversations
         Request $request,
         User $viewer,
         ?Conversation $conversation = null,
+        ?int $viewerLastReadMessageId = null,
     ): array {
         $inbox = null;
 
@@ -73,6 +88,7 @@ trait InteractsWithConversations
                 $request,
                 $viewer,
                 $this->conversationBranchId(),
+                $this->conversationType(),
             ))->toArray();
         };
 
@@ -81,12 +97,23 @@ trait InteractsWithConversations
             'inboxMeta' => fn (): array => Arr::except($resolve(), 'items'),
             'thread' => $conversation === null
                 ? null
-                : $this->threadPayload($conversation, $viewer),
+                : $this->threadPayload($conversation, $viewer, $viewerLastReadMessageId),
             'viewerId' => $viewer->id,
             'viewerName' => $viewer->name,
             'indexUrl' => $this->conversationIndexUrl(),
             'inboxChannel' => ConversationInboxUpdated::channelFor($viewer->id),
         ];
+    }
+
+    /**
+     * Capture the viewer's read cursor before markRead advances it (for the
+     * in-thread "Unread messages" divider).
+     */
+    protected function viewerLastReadMessageId(Conversation $conversation, User $viewer): int
+    {
+        return (int) $conversation->participants()
+            ->where('user_id', $viewer->id)
+            ->value('last_read_message_id');
     }
 
     /**
@@ -97,20 +124,28 @@ trait InteractsWithConversations
         $branchId = $this->conversationBranchId();
 
         abort_if($branchId !== null && $conversation->branch_id !== $branchId, 404);
+        abort_if($conversation->type !== $this->conversationType(), 404);
 
         Gate::forUser($viewer)->authorize($ability, $conversation);
     }
 
     /**
+     * @param  int|null  $viewerLastReadMessageId  Captured before markRead; null means unknown (no divider).
      * @return array<string, mixed>
      */
-    protected function threadPayload(Conversation $conversation, User $viewer): array
-    {
+    protected function threadPayload(
+        Conversation $conversation,
+        User $viewer,
+        ?int $viewerLastReadMessageId = null,
+    ): array {
         $conversation->load([
             'order:id,order_number,status',
             'branch:id,name,slug',
+            'driver:id,name',
+            'driver.media',
             'participants.user:id,name',
             'participants.user.media',
+            'participants.user.roles',
         ]);
 
         $messages = $conversation->messages()
@@ -124,11 +159,12 @@ trait InteractsWithConversations
 
         return [
             'conversation' => ConversationPayload::conversation($conversation),
-            'messages' => ConversationPayload::messages($messages),
+            'messages' => ConversationPayload::messages($messages, $this->includeSenderRoleInPayload()),
             'hasMore' => $hasMore,
             'canSend' => Gate::forUser($viewer)->allows('send', $conversation),
             'canClose' => Gate::forUser($viewer)->allows('close', $conversation),
             'endpoints' => $this->conversationEndpoints($conversation),
+            'viewerLastReadMessageId' => $viewerLastReadMessageId,
         ];
     }
 
@@ -150,7 +186,7 @@ trait InteractsWithConversations
         $messages = $messages->take(self::THREAD_PAGE_SIZE)->reverse()->values();
 
         return response()->json([
-            'messages' => ConversationPayload::messages($messages),
+            'messages' => ConversationPayload::messages($messages, $this->includeSenderRoleInPayload()),
             'hasMore' => $hasMore,
         ]);
     }
@@ -162,7 +198,7 @@ trait InteractsWithConversations
     {
         $message->load(['sender:id,name', 'sender.media', 'attachments']);
 
-        return ['message' => ConversationPayload::message($message)];
+        return ['message' => ConversationPayload::message($message, $this->includeSenderRoleInPayload())];
     }
 
     /**

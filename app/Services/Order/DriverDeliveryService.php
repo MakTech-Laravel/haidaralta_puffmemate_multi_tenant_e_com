@@ -21,6 +21,8 @@ class DriverDeliveryService
 {
     public const HANDOVER_TTL_MINUTES = 120;
 
+    public const LATE_ITEMS_BLOCK_PICKUP_MESSAGE = 'Collect or remove every late-delivery item before you can pick up this order.';
+
     public function __construct(
         private FulfillmentStatusService $statuses,
         private PaymentMarkingService $payments,
@@ -39,7 +41,21 @@ class DriverDeliveryService
             ]);
         }
 
+        $this->assertNoUnresolvedLateItems($fulfillment);
+
         return $this->statuses->apply($fulfillment, FulfillmentStatus::PickedUp, $driver, 'Picked up');
+    }
+
+    /**
+     * Staff assign-with-advance and driver pick-up share this gate.
+     */
+    public function assertNoUnresolvedLateItems(OrderFulfillment $fulfillment): void
+    {
+        if ($fulfillment->hasUnresolvedLateItems()) {
+            throw ValidationException::withMessages([
+                'status' => self::LATE_ITEMS_BLOCK_PICKUP_MESSAGE,
+            ]);
+        }
     }
 
     public function startDelivery(OrderFulfillment $fulfillment, User $driver): OrderFulfillment

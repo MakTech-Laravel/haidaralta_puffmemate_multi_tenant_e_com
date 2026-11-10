@@ -83,17 +83,17 @@ export function TransferBranchAreaSheet({
                 className="flex w-full flex-col gap-0 p-0 sm:max-w-lg"
             >
                 <SheetHeader className="space-y-1.5 border-b p-6 text-left">
-                    <SheetTitle>Change branch</SheetTitle>
+                    <SheetTitle>Add to branch</SheetTitle>
                     <SheetDescription>
-                        Move “{areaName}” to another branch. An area belongs to
-                        one branch at a time; history is kept for audit.
+                        Link “{areaName}” to another branch. Existing branch
+                        links stay; history is kept for audit.
                     </SheetDescription>
                 </SheetHeader>
 
                 <div className="flex flex-1 flex-col gap-6 overflow-y-auto p-6">
                     <div className="bg-muted/50 flex flex-col gap-1.5 rounded-lg border px-4 py-3">
                         <Label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                            Current branch
+                            Already on
                         </Label>
                         <p className="text-sm font-medium">
                             {currentBranchName ?? '—'}
@@ -102,7 +102,7 @@ export function TransferBranchAreaSheet({
 
                     <div className="flex flex-col gap-2">
                         <Label>
-                            Destination branch{' '}
+                            Add to branch{' '}
                             <span className="text-primary">*</span>
                         </Label>
                         <InfiniteScrollCombobox
@@ -157,7 +157,7 @@ export function TransferBranchAreaSheet({
                             rows={3}
                             value={form.data.reason}
                             maxLength={TRANSFER_REASON_MAX}
-                            placeholder="Why is this area moving?"
+                            placeholder="Why add this area to another branch?"
                             onChange={(event) =>
                                 form.setData('reason', event.target.value)
                             }
@@ -180,7 +180,7 @@ export function TransferBranchAreaSheet({
                         onClick={submit}
                     >
                         {form.processing ? <Spinner /> : null}
-                        Change branch
+                        Add to branch
                     </Button>
                 </SheetFooter>
             </SheetContent>

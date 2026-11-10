@@ -4,26 +4,35 @@ namespace App\Services\Conversation;
 
 use App\Enums\ConversationParticipantRole;
 use App\Enums\ConversationStatus;
+use App\Enums\ConversationType;
 use App\Enums\MessageType;
 use App\Enums\OrderStatus;
+use App\Enums\PermissionEnum;
 use App\Enums\UserType;
 use App\Events\ConversationClosed;
 use App\Events\ConversationInboxUpdated;
 use App\Events\ConversationReceiptsUpdated;
 use App\Events\MessageCreated;
+use App\Models\Branch;
 use App\Models\Conversation;
 use App\Models\ConversationParticipant;
 use App\Models\Message;
 use App\Models\Order;
 use App\Models\User;
 use App\Support\ConversationUnreadCounts;
+use App\Support\PlatformTeamResolver;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Spatie\Permission\Exceptions\PermissionDoesNotExist;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 /**
- * Lifecycle for order-scoped conversations: open, join, send, read, close.
+ * Lifecycle for order-scoped and branch↔driver ops conversations.
  */
 class ConversationService
 {
@@ -52,8 +61,10 @@ class ConversationService
             }
 
             $conversation = Conversation::query()->create([
+                'type' => ConversationType::Order,
                 'order_id' => $order->id,
                 'branch_id' => $fulfillment?->branch_id,
+                'driver_id' => null,
                 'status' => ConversationStatus::Open,
             ]);
 
@@ -66,6 +77,111 @@ class ConversationService
             $systemMessage = $this->writeSystemMessage(
                 $conversation,
                 'Conversation opened for order '.$order->order_number.'.',
+            );
+
+            $this->touchLastMessage($conversation, $systemMessage);
+
+            $conversation->refresh();
+            $this->notifyInbox($conversation, $systemMessage);
+
+            return $conversation;
+        });
+    }
+
+    /**
+     * Shared branch↔driver ops thread (no order / customer). Idempotent per pair.
+     */
+    public function openDriverOps(Branch $branch, User $driver, User $actor): Conversation
+    {
+        if (! $driver->isDriver()) {
+            throw new RuntimeException('Driver ops chat requires a driver.');
+        }
+
+        $existing = Conversation::query()
+            ->where('type', ConversationType::DriverOps)
+            ->where('branch_id', $branch->id)
+            ->where('driver_id', $driver->id)
+            ->first();
+
+        if ($existing !== null) {
+            if ($actor->isBranch() || $actor->isPlatform()) {
+                $this->joinOperator($existing, $actor);
+            } elseif ($actor->isDriver() && $actor->id === $driver->id) {
+                $this->addParticipant($existing, $driver->id, ConversationParticipantRole::Driver);
+            }
+
+            return $existing->refresh();
+        }
+
+        return DB::transaction(function () use ($branch, $driver, $actor): Conversation {
+            $conversation = Conversation::query()->create([
+                'type' => ConversationType::DriverOps,
+                'order_id' => null,
+                'branch_id' => $branch->id,
+                'driver_id' => $driver->id,
+                'status' => ConversationStatus::Open,
+            ]);
+
+            $this->addParticipant($conversation, $driver->id, ConversationParticipantRole::Driver);
+
+            if ($actor->isBranch() || $actor->isPlatform()) {
+                $this->joinOperator($conversation, $actor);
+            }
+
+            $systemMessage = $this->writeSystemMessage(
+                $conversation,
+                'Chat opened with '.$driver->name.'.',
+            );
+
+            $this->touchLastMessage($conversation, $systemMessage);
+
+            $conversation->refresh();
+            $this->notifyInbox($conversation, $systemMessage);
+
+            return $conversation;
+        });
+    }
+
+    /**
+     * Shared platform↔branch ops thread (no order / customer / driver). Idempotent per branch.
+     */
+    public function openPlatformBranch(Branch $branch, User $actor): Conversation
+    {
+        if (! $actor->isPlatform() && ! $actor->isBranch()) {
+            throw new RuntimeException('Platform branch chat requires platform or branch staff.');
+        }
+
+        if ($actor->isBranch() && (int) $actor->branch_id !== (int) $branch->id) {
+            throw new RuntimeException('Branch staff may only open platform chat for their branch.');
+        }
+
+        $existing = Conversation::query()
+            ->where('type', ConversationType::PlatformBranch)
+            ->where('branch_id', $branch->id)
+            ->first();
+
+        if ($existing !== null) {
+            $this->joinOperator($existing, $actor);
+
+            return $existing->refresh();
+        }
+
+        return DB::transaction(function () use ($branch, $actor): Conversation {
+            $conversation = Conversation::query()->create([
+                'type' => ConversationType::PlatformBranch,
+                'order_id' => null,
+                'branch_id' => $branch->id,
+                'driver_id' => null,
+                'status' => ConversationStatus::Open,
+            ]);
+
+            $this->joinOperator($conversation, $actor);
+
+            $systemMessage = $this->writeSystemMessage(
+                $conversation,
+                $actor->isPlatform()
+                    ? 'Chat opened with '.$branch->name.'.'
+                    : 'Chat opened with platform.',
             );
 
             $this->touchLastMessage($conversation, $systemMessage);
@@ -314,6 +430,67 @@ class ConversationService
     {
         $participantIds = $conversation->participants()->pluck('user_id');
 
+        if ($conversation->isDriverOps()) {
+            $registrar = app(PermissionRegistrar::class);
+            $previousTeamId = $registrar->getPermissionsTeamId();
+            $registrar->setPermissionsTeamId($conversation->branch_id);
+
+            try {
+                $staffIds = $this->userIdsWithPermission(
+                    PermissionEnum::MANAGE_BRANCH_DRIVER_CHAT->value,
+                    'branch',
+                    fn (Builder $query): Builder => $query
+                        ->where('user_type', UserType::BRANCH)
+                        ->where('branch_id', $conversation->branch_id),
+                );
+            } finally {
+                $registrar->setPermissionsTeamId($previousTeamId);
+            }
+
+            return $participantIds
+                ->merge($staffIds)
+                ->push((int) $conversation->driver_id)
+                ->map(fn ($id): int => (int) $id)
+                ->filter(fn (int $id): bool => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
+        if ($conversation->isPlatformBranch()) {
+            $registrar = app(PermissionRegistrar::class);
+            $previousTeamId = $registrar->getPermissionsTeamId();
+
+            try {
+                $registrar->setPermissionsTeamId($conversation->branch_id);
+                $branchStaffIds = $this->userIdsWithPermission(
+                    PermissionEnum::MANAGE_BRANCH_PLATFORM_CHAT->value,
+                    'branch',
+                    fn (Builder $query): Builder => $query
+                        ->where('user_type', UserType::BRANCH)
+                        ->where('branch_id', $conversation->branch_id),
+                );
+
+                $registrar->setPermissionsTeamId(PlatformTeamResolver::PLATFORM_TEAM_ID);
+                $platformStaffIds = $this->userIdsWithPermission(
+                    PermissionEnum::MANAGE_PLATFORM_BRANCH_CHAT->value,
+                    'platform',
+                    fn (Builder $query): Builder => $query->where('user_type', UserType::PLATFORM),
+                );
+            } finally {
+                $registrar->setPermissionsTeamId($previousTeamId);
+            }
+
+            return $participantIds
+                ->merge($branchStaffIds)
+                ->merge($platformStaffIds)
+                ->map(fn ($id): int => (int) $id)
+                ->filter(fn (int $id): bool => $id > 0)
+                ->unique()
+                ->values()
+                ->all();
+        }
+
         $operatorIds = User::query()
             ->where('is_active', true)
             ->where(function ($query) use ($conversation): void {
@@ -331,6 +508,26 @@ class ConversationService
             ->unique()
             ->values()
             ->all();
+    }
+
+    /**
+     * Staff user ids that hold a Spatie permission, or empty when the permission
+     * row has not been seeded yet (avoids crashing inbox broadcasts).
+     *
+     * @param  callable(Builder): Builder  $scope
+     * @return Collection<int, int>
+     */
+    private function userIdsWithPermission(string $permissionName, string $guard, callable $scope): Collection
+    {
+        try {
+            $permission = Permission::findByName($permissionName, $guard);
+        } catch (PermissionDoesNotExist) {
+            return collect();
+        }
+
+        return $scope(User::query()->where('is_active', true))
+            ->permission($permission)
+            ->pluck('id');
     }
 
     /**

@@ -7,6 +7,7 @@ import {
     Boxes,
     Building2,
     CalendarClock,
+    Clock,
     ChartColumn,
     CreditCard,
     Database,
@@ -161,8 +162,9 @@ export function buildPlatformNav(
                         icon: PackagePlus,
                         permissions: ['manage-drivers'],
                     }),
-                    navSoon({
+                    navLink({
                         title: 'Live tracking',
+                        href: '/platform/driver-map',
                         icon: MapPinned,
                         permissions: ['manage-drivers'],
                     }),
@@ -179,6 +181,7 @@ export function buildPlatformNav(
                 icon: Building2,
                 permissions: [
                     'view-branches',
+                    'manage-branches',
                     'manage-branch-users',
                     'manage-branch-inventories',
                     'manage-shifts',
@@ -188,13 +191,13 @@ export function buildPlatformNav(
                         title: 'Branches',
                         href: '/platform/branches',
                         icon: Building2,
-                        permissions: ['view-branches'],
+                        permissions: ['view-branches', 'manage-branches'],
                     }),
                     navLink({
                         title: 'Areas',
                         href: '/platform/branch-areas',
                         icon: MapPinned,
-                        permissions: ['view-branches'],
+                        permissions: ['view-branches', 'manage-branches'],
                     }),
                     navLink({
                         title: 'Staff',
@@ -316,13 +319,23 @@ export function buildPlatformNav(
                 title: 'Conversations',
                 href: '/platform/conversations',
                 icon: MessagesSquare,
-                permissions: ['manage-conversations', 'manage-drivers'],
+                permissions: [
+                    'manage-conversations',
+                    'manage-platform-branch-chat',
+                    'manage-drivers',
+                ],
                 items: [
                     navLink({
                         title: 'Order chats',
                         href: '/platform/conversations',
                         icon: Inbox,
                         permissions: ['manage-conversations'],
+                    }),
+                    navLink({
+                        title: 'Branch chat',
+                        href: '/platform/branch-chats',
+                        icon: MessageCircle,
+                        permissions: ['manage-platform-branch-chat'],
                     }),
                     navSoon({
                         title: 'Driver chat',
@@ -441,6 +454,7 @@ export function buildPlatformNav(
                     'view-horizon',
                     'view-pulse',
                     'view-dashboard',
+                    'manage-catalog',
                 ],
                 items: [
                     navLink({
@@ -477,6 +491,18 @@ export function buildPlatformNav(
                         title: 'SMTP',
                         href: '/platform/settings/smtp',
                         icon: Mail,
+                        permissions: ['manage-application-settings'],
+                    }),
+                    navLink({
+                        title: 'Map provider',
+                        href: '/platform/settings/map-provider',
+                        icon: MapPin,
+                        permissions: ['manage-application-settings'],
+                    }),
+                    navLink({
+                        title: 'Delivery shifts',
+                        href: '/platform/delivery-shifts',
+                        icon: Clock,
                         permissions: ['manage-application-settings'],
                     }),
                     navLink({

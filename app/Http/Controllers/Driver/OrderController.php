@@ -2,23 +2,29 @@
 
 namespace App\Http\Controllers\Driver;
 
+use App\Actions\Order\CollectLateOrderItemAction;
+use App\Actions\Order\RemoveLateOrderItemAction;
 use App\Enums\DeliveryFailureReason;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderReturnType;
 use App\Enums\OrderSource;
+use App\Events\ConversationReceiptsUpdated;
 use App\Http\Controllers\Controller;
 use App\Models\Conversation;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
+use App\Models\OrderItem;
 use App\Services\Conversation\ConversationService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\OrderReturnService;
 use App\Support\ConversationPayload;
+use App\Support\OrderItemPackageDisplay;
 use App\Support\Toast;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -56,6 +62,8 @@ class OrderController extends Controller
         private ConversationService $conversations,
         private OrderReturnService $returns,
         private OrderPlacementNotifier $placements,
+        private RemoveLateOrderItemAction $removeLateItems,
+        private CollectLateOrderItemAction $collectLateItems,
     ) {}
 
     /**
@@ -169,6 +177,17 @@ class OrderController extends Controller
         abort_unless($fulfillment->status->allowsOrderChat(), 404);
 
         $conversation = $order->conversation;
+        $viewer = $request->user();
+        $viewerLastReadMessageId = 0;
+        $receipts = [];
+
+        if ($conversation !== null) {
+            $viewerLastReadMessageId = (int) $conversation->participants()
+                ->where('user_id', $viewer->id)
+                ->value('last_read_message_id');
+            $this->conversations->markRead($conversation, $viewer);
+            $receipts = ConversationReceiptsUpdated::receiptsFor($conversation);
+        }
 
         return Inertia::render('driver/orders/chat', [
             'order' => $this->detail($fulfillment),
@@ -177,11 +196,19 @@ class OrderController extends Controller
                 : ConversationPayload::messages(
                     $conversation->messages()->with(['sender:id,name', 'sender.media', 'attachments'])->orderBy('id')->get(),
                 ),
-            'viewerId' => (int) $request->user()->id,
+            'viewerId' => (int) $viewer->id,
             'canSend' => $conversation !== null
                 && ! $conversation->isClosed()
                 && ! $fulfillment->status->isTerminal(),
             'channel' => $conversation?->channelName(),
+            'receipts' => $receipts,
+            'viewerLastReadMessageId' => $viewerLastReadMessageId,
+            'deliveredUrl' => $conversation === null
+                ? null
+                : route('driver.orders.chat.delivered', $order),
+            'readUrl' => $conversation === null
+                ? null
+                : route('driver.orders.chat.read', $order),
         ]);
     }
 
@@ -196,6 +223,58 @@ class OrderController extends Controller
 
         $this->conversations->sendMessage($this->thread($order), $request->user(), $validated['body']);
         Toast::success('Message sent.');
+
+        return back();
+    }
+
+    public function delivered(Request $request, Order $order): JsonResponse
+    {
+        $this->owned($request, $order);
+        $conversation = $this->thread($order);
+
+        $this->conversations->markDelivered(
+            $conversation,
+            $request->user(),
+            $request->integer('message_id') ?: null,
+        );
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function read(Request $request, Order $order): JsonResponse
+    {
+        $this->owned($request, $order);
+        $conversation = $this->thread($order);
+
+        $this->conversations->markRead(
+            $conversation,
+            $request->user(),
+            $request->integer('message_id') ?: null,
+        );
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    public function removeLateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
+    {
+        $fulfillment = $this->owned($request, $order);
+        abort_unless($item->order_id === $order->id && $item->fulfillment_id === $fulfillment->id, 404);
+
+        $this->removeLateItems->handle($item, $request->user());
+
+        Toast::success('Late item removed.');
+
+        return back();
+    }
+
+    public function collectLateItem(Request $request, Order $order, OrderItem $item): RedirectResponse
+    {
+        $fulfillment = $this->owned($request, $order);
+        abort_unless($item->order_id === $order->id && $item->fulfillment_id === $fulfillment->id, 404);
+
+        $this->collectLateItems->handle($item, $request->user());
+
+        Toast::success('Late item collected and reserved.');
 
         return back();
     }
@@ -331,7 +410,7 @@ class OrderController extends Controller
             'status' => $fulfillment->status->value,
             'statusLabel' => $fulfillment->status->label(),
             'canChat' => $fulfillment->status->allowsOrderChat(),
-            'nextAction' => $fulfillment->status->driverNextAction(),
+            'nextAction' => $this->driverNextAction($fulfillment),
             'customerName' => $snapshot['name'] ?? ($order->customer?->name ?? 'Customer'),
             'company' => $snapshot['company'] ?? null,
             'source' => $order->source->value,
@@ -373,10 +452,19 @@ class OrderController extends Controller
         $snapshot = $order->shipping_address_snapshot ?? [];
         $card = $this->card($fulfillment);
 
+        $hasUnresolvedLateItems = $fulfillment->hasUnresolvedLateItems();
+        $canPickUp = $fulfillment->status === FulfillmentStatus::Assigned
+            && ! $hasUnresolvedLateItems;
+
         return [
             ...$card,
             'demoOtpHint' => '',
-            'canPickUp' => $fulfillment->status === FulfillmentStatus::Assigned,
+            'canPickUp' => $canPickUp,
+            'hasUnresolvedLateItems' => $hasUnresolvedLateItems,
+            'lateItemsBlockMessage' => $fulfillment->status === FulfillmentStatus::Assigned
+                && $hasUnresolvedLateItems
+                ? DriverDeliveryService::LATE_ITEMS_BLOCK_PICKUP_MESSAGE
+                : null,
             'canStart' => $fulfillment->status === FulfillmentStatus::PickedUp,
             'canArrive' => $fulfillment->status === FulfillmentStatus::OutForDelivery,
             'canDeliver' => $fulfillment->status === FulfillmentStatus::Arrived,
@@ -400,11 +488,39 @@ class OrderController extends Controller
                 'postalCode' => $snapshot['postal_code'] ?? '',
                 'country' => 'Australia',
             ],
-            'products' => $order->items->map(fn ($item): array => [
-                'name' => $item->product_name_snapshot,
-                'quantityLabel' => (string) $item->quantity,
-                'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
-            ])->all(),
+            'products' => $order->items->map(function ($item) use ($fulfillment): array {
+                $removed = $item->removed_at !== null;
+
+                return [
+                    'id' => $item->id,
+                    'name' => $item->product_name_snapshot,
+                    'packageLabel' => OrderItemPackageDisplay::subtitle($item),
+                    'quantityLabel' => (string) $item->quantity,
+                    'priceLabel' => '$'.number_format((float) $item->subtotal, 2),
+                    'isLateDelivery' => (bool) $item->is_late_delivery,
+                    'isRemoved' => $removed,
+                    'canRemoveLate' => ! $removed
+                        && (bool) $item->is_late_delivery
+                        && in_array($fulfillment->status, [
+                            FulfillmentStatus::Pending,
+                            FulfillmentStatus::Hold,
+                            FulfillmentStatus::Placed,
+                            FulfillmentStatus::Processing,
+                            FulfillmentStatus::Ready,
+                            FulfillmentStatus::Assigned,
+                        ], true),
+                    'canCollectLate' => ! $removed
+                        && (bool) $item->is_late_delivery
+                        && in_array($fulfillment->status, [
+                            FulfillmentStatus::Pending,
+                            FulfillmentStatus::Hold,
+                            FulfillmentStatus::Placed,
+                            FulfillmentStatus::Processing,
+                            FulfillmentStatus::Ready,
+                            FulfillmentStatus::Assigned,
+                        ], true),
+                ];
+            })->all(),
             'subtotalLabel' => '$'.number_format((float) $order->subtotal, 2),
             'discountLabel' => (float) $order->discount > 0
                 ? '$'.number_format((float) $order->discount, 2)
@@ -412,6 +528,27 @@ class OrderController extends Controller
             'couponCode' => $order->coupon_code,
             'deliveryFeeLabel' => '$'.number_format((float) $order->delivery_fee, 2),
         ];
+    }
+
+    /**
+     * @return array{key: string, label: string, disabled?: bool}|null
+     */
+    private function driverNextAction(OrderFulfillment $fulfillment): ?array
+    {
+        $action = $fulfillment->status->driverNextAction();
+
+        if ($action === null) {
+            return null;
+        }
+
+        if (
+            $action['key'] === 'pick_up'
+            && $fulfillment->hasUnresolvedLateItems()
+        ) {
+            $action['disabled'] = true;
+        }
+
+        return $action;
     }
 
     private function thread(Order $order): Conversation

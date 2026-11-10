@@ -6,6 +6,7 @@ use App\Enums\RoleEnum;
 use App\Enums\UserType;
 use App\Exceptions\BranchAlreadyHasSuperAdminException;
 use App\Models\Branch;
+use App\Models\BranchArea;
 use App\Models\User;
 use App\Services\Media\MediaUploadService;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -15,7 +16,10 @@ use Spatie\Permission\PermissionRegistrar;
 
 class BranchService
 {
-    public function __construct(private MediaUploadService $media) {}
+    public function __construct(
+        private MediaUploadService $media,
+        private BranchAreaService $areas,
+    ) {}
 
     public function create(array $data, ?UploadedFile $logo = null): Branch
     {
@@ -170,5 +174,44 @@ class BranchService
     public function logoUrl(Branch $branch): ?string
     {
         return $branch->logoUrl();
+    }
+
+    /**
+     * Attach selected areas to this branch without removing other memberships.
+     * Deselected areas currently on the branch are left attached.
+     *
+     * @param  list<int|string>  $areaIds
+     */
+    public function syncAreasFromForm(Branch $branch, array $areaIds, User $actor): void
+    {
+        $ids = array_values(array_unique(array_map(
+            static fn (int|string $id): int => (int) $id,
+            $areaIds,
+        )));
+
+        if ($ids === []) {
+            return;
+        }
+
+        $branch->areas()->syncWithoutDetaching($ids);
+    }
+
+    /**
+     * @return list<array{id: int, name: string, branch_names: list<string>}>
+     */
+    public function areaOptionsForForm(): array
+    {
+        return BranchArea::query()
+            ->with(['branches' => fn ($query) => $query->orderBy('name')->select('branches.id', 'branches.name')])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get(['id', 'name'])
+            ->map(fn (BranchArea $area): array => [
+                'id' => $area->id,
+                'name' => $area->name,
+                'branch_names' => $area->branches->pluck('name')->values()->all(),
+            ])
+            ->values()
+            ->all();
     }
 }

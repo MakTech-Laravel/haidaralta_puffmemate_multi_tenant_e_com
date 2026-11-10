@@ -72,6 +72,23 @@ export function DriverOrderNextAction({
     }
 
     const form = stepForm(action.key);
+    const isDisabled = Boolean(action.disabled);
+
+    if (isDisabled) {
+        return (
+            <Button
+                type="button"
+                size="lg"
+                variant={variant}
+                className={buttonClassName}
+                disabled
+                data-test="driver-order-next-action"
+            >
+                <Icon data-icon="inline-start" />
+                {action.label}
+            </Button>
+        );
+    }
 
     return (
         <Form

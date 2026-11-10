@@ -20,7 +20,8 @@ class RolesAndPermissionsSeeder extends Seeder
     public const BRANCH_GUARD = 'branch';
 
     /**
-     * Seed platform permissions/roles, then branch teams get roles via BranchSeeder.
+     * Seed platform permissions/roles, then re-sync default roles for every existing branch.
+     * New branches still get roles via BranchSeeder / NationwideBranchSeeder.
      */
     public function run(): void
     {
@@ -28,8 +29,12 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $platformCases = PermissionEnum::forGuard(self::PLATFORM_GUARD);
         $branchCases = PermissionEnum::forGuard(self::BRANCH_GUARD);
+        $branches = Branch::query()->orderBy('id')->get();
 
-        $this->startSeedProgress('Permissions', count($platformCases) + count($branchCases) + count(RoleEnum::cases()));
+        $this->startSeedProgress(
+            'Permissions',
+            count($platformCases) + count($branchCases) + count(RoleEnum::cases()) + ($branches->count() * count(RoleEnum::cases())),
+        );
 
         $platformPermissions = $this->createPermissions($platformCases);
         $this->createPermissions($branchCases);
@@ -50,17 +55,22 @@ class RolesAndPermissionsSeeder extends Seeder
 
         $this->resetTeamContext();
 
+        foreach ($branches as $branch) {
+            $this->seedBranchRolesForBranch($branch, reportProgress: true);
+        }
+
         $this->finishSeedProgress(sprintf(
-            '%d permissions and %d platform roles ready (branch roles are seeded per branch).',
+            '%d permissions, %d platform roles, and default roles for %d branches ready.',
             count($platformCases) + count($branchCases),
             count(RoleEnum::cases()),
+            $branches->count(),
         ));
     }
 
     /**
      * Seed branch-scoped roles for a single branch team.
      */
-    public function seedBranchRolesForBranch(Branch $branch): void
+    public function seedBranchRolesForBranch(Branch $branch, bool $reportProgress = false): void
     {
         app(PermissionRegistrar::class)->setPermissionsTeamId($branch->id);
 
@@ -75,6 +85,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 PermissionEnum::MANAGE_BRANCH_STAFF->value,
                 PermissionEnum::MANAGE_BRANCH_ROLES->value,
             ],
+            reportProgress: $reportProgress,
         );
 
         $this->resetTeamContext();
@@ -108,6 +119,7 @@ class RolesAndPermissionsSeeder extends Seeder
         string $guardName,
         array $permissions,
         array $managementPermissions,
+        bool $reportProgress = true,
     ): void {
         $teamForeignKey = config('permission.column_names.team_foreign_key');
 
@@ -144,7 +156,10 @@ class RolesAndPermissionsSeeder extends Seeder
             };
 
             $role->syncPermissions($rolePermissions);
-            $this->advanceSeedProgress();
+
+            if ($reportProgress) {
+                $this->advanceSeedProgress();
+            }
         }
     }
 

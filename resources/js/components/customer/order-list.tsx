@@ -22,6 +22,7 @@ export type CustomerOrder = {
     statusLabel: string;
     isActive: boolean;
     canChat?: boolean;
+    chatUnreadCount?: number;
     paymentStatus: CustomerPaymentStatus;
     source?: string;
     sourceLabel?: string;
@@ -145,6 +146,7 @@ export function OrderList({
                                         <Button
                                             variant="outline"
                                             size="icon"
+                                            className="relative"
                                             asChild
                                         >
                                             <Link
@@ -152,9 +154,23 @@ export function OrderList({
                                                     order.orderNumber,
                                                 )}
                                                 prefetch
-                                                aria-label={`Chat with driver about order ${order.orderNumber}`}
+                                                aria-label={
+                                                    (order.chatUnreadCount ??
+                                                    0) > 0
+                                                        ? `Chat with driver about order ${order.orderNumber}, ${order.chatUnreadCount} unread`
+                                                        : `Chat with driver about order ${order.orderNumber}`
+                                                }
                                             >
                                                 <MessageCircle />
+                                                {(order.chatUnreadCount ?? 0) >
+                                                0 ? (
+                                                    <span className="bg-primary text-primary-foreground absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-semibold tabular-nums">
+                                                        {(order.chatUnreadCount ??
+                                                            0) > 99
+                                                            ? '99+'
+                                                            : order.chatUnreadCount}
+                                                    </span>
+                                                ) : null}
                                             </Link>
                                         </Button>
                                     ) : null}

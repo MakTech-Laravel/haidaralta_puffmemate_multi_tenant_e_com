@@ -1,7 +1,10 @@
 import { Link } from '@inertiajs/react';
 import { ChevronLeft, MapPin, Package, Phone } from 'lucide-react';
 import { OrderChatBody } from '@/components/conversation/order-chat-body';
-import type { ConversationMessage } from '@/components/conversation/types';
+import type {
+    ConversationMessage,
+    ParticipantReceipt,
+} from '@/components/conversation/types';
 import {
     driverOrderStatusLabel,
     type DriverOrderDetail,
@@ -19,6 +22,10 @@ type DriverOrderChatPanelProps = {
     viewerName: string;
     canSend: boolean;
     messageUrl: string;
+    receipts?: ParticipantReceipt[];
+    viewerLastReadMessageId?: number;
+    deliveredUrl?: string | null;
+    readUrl?: string | null;
 };
 
 /**
@@ -32,6 +39,10 @@ export function DriverOrderChatPanel({
     viewerName,
     canSend,
     messageUrl,
+    receipts = [],
+    viewerLastReadMessageId = 0,
+    deliveredUrl = null,
+    readUrl = null,
 }: DriverOrderChatPanelProps) {
     const isDelivered = order.status === 'delivered';
 
@@ -111,6 +122,10 @@ export function DriverOrderChatPanel({
                 canSend={canSend}
                 messageUrl={messageUrl}
                 intro="Messages for this stop · customer and branch"
+                receipts={receipts}
+                viewerLastReadMessageId={viewerLastReadMessageId}
+                deliveredUrl={deliveredUrl}
+                readUrl={readUrl}
             />
         </div>
     );

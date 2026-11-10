@@ -74,6 +74,8 @@ class UpdateBranchRequest extends FormRequest
             'opening_time' => ['nullable', 'date_format:H:i'],
             'closing_time' => ['nullable', 'date_format:H:i'],
             'status' => ['sometimes', 'boolean'],
+            'area_ids' => ['sometimes', 'array'],
+            'area_ids.*' => ['integer', 'distinct', 'exists:branch_areas,id'],
         ];
     }
 }

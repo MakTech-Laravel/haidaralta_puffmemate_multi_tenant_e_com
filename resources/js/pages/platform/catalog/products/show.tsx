@@ -32,6 +32,10 @@ import {
     type DataTablePayload,
 } from '@/components/data-table';
 import { PRODUCT_TAG_OPTIONS } from '@/components/platform/product-form';
+import {
+    ProductPackagesCard,
+    type CatalogProductPackage,
+} from '@/components/platform/product-packages-card';
 import { VariantForm } from '@/components/platform/variant-form';
 import { ProductGallery } from '@/components/product-gallery';
 import { Badge } from '@/components/ui/badge';
@@ -112,7 +116,9 @@ type Product = {
         sort_order: number;
     }[];
     status: boolean;
+    packages_enabled?: boolean;
     variants: ProductVariant[];
+    packages: CatalogProductPackage[];
     created_at: string | null;
     updated_at: string | null;
     created_by_name: string | null;
@@ -921,6 +927,13 @@ export default function PlatformProductsShow({
                         </CardContent>
                     </Card>
                 ) : null}
+
+                <ProductPackagesCard
+                    productSlug={product.slug}
+                    productName={product.name}
+                    packagesEnabled={product.packages_enabled ?? true}
+                    packages={product.packages ?? []}
+                />
             </div>
 
             {catalog.show_product_variants ? (

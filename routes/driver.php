@@ -2,7 +2,9 @@
 
 use App\Http\Controllers\Driver\ActivityLogController as DriverActivityLogController;
 use App\Http\Controllers\Driver\DashboardController as DriverDashboardController;
+use App\Http\Controllers\Driver\DriverChatController;
 use App\Http\Controllers\Driver\EarningsController as DriverEarningsController;
+use App\Http\Controllers\Driver\LocationController as DriverLocationController;
 use App\Http\Controllers\Driver\NotificationController as DriverNotificationController;
 use App\Http\Controllers\Driver\OrderController as DriverOrderController;
 use App\Http\Controllers\Driver\PlaceOrderController as DriverPlaceOrderController;
@@ -11,10 +13,38 @@ use App\Http\Controllers\Driver\RouteController as DriverRouteController;
 use App\Http\Controllers\Driver\SecurityController as DriverSecurityController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () {
+Route::middleware(['ensure.guard:driver', 'ensure.driver.location'])->prefix('driver')->group(function () {
+    Route::post('location', [DriverLocationController::class, 'store'])
+        ->middleware('throttle:30,1')
+        ->name('driver.location.store');
+    Route::get('location-required', [DriverLocationController::class, 'required'])
+        ->name('driver.location.required');
     Route::get('dashboard', [DriverDashboardController::class, 'index'])->name('driver.dashboard');
     Route::get('route', [DriverRouteController::class, 'index'])->name('driver.route.index');
+    Route::get('route/{order:order_number}/directions', [DriverRouteController::class, 'directions'])
+        ->middleware('throttle:12,1')
+        ->name('driver.route.directions');
     Route::get('orders', [DriverOrderController::class, 'index'])->name('driver.orders.index');
+    Route::get('chats', [DriverChatController::class, 'index'])->name('driver.chats.index');
+    Route::get('chats/branch-options', [DriverChatController::class, 'branchOptions'])
+        ->name('driver.chats.branch-options');
+    Route::post('chats', [DriverChatController::class, 'store'])->name('driver.chats.store');
+    Route::get('chats/{conversation}', [DriverChatController::class, 'show'])
+        ->whereNumber('conversation')
+        ->name('driver.chats.show');
+    Route::get('chats/{conversation}/messages', [DriverChatController::class, 'messages'])
+        ->whereNumber('conversation')
+        ->name('driver.chats.messages');
+    Route::post('chats/{conversation}/messages', [DriverChatController::class, 'storeMessage'])
+        ->whereNumber('conversation')
+        ->middleware('throttle:conversation-messages')
+        ->name('driver.chats.messages.store');
+    Route::post('chats/{conversation}/delivered', [DriverChatController::class, 'delivered'])
+        ->whereNumber('conversation')
+        ->name('driver.chats.delivered');
+    Route::post('chats/{conversation}/read', [DriverChatController::class, 'read'])
+        ->whereNumber('conversation')
+        ->name('driver.chats.read');
     Route::get('history', [DriverOrderController::class, 'history'])->name('driver.history.index');
     Route::get('earnings', [DriverEarningsController::class, 'index'])->name('driver.earnings.index');
     Route::get('place-order', [DriverPlaceOrderController::class, 'index'])->name('driver.place-order.index');
@@ -22,6 +52,12 @@ Route::middleware(['ensure.guard:driver'])->prefix('driver')->group(function () 
     Route::post('place-order', [DriverPlaceOrderController::class, 'store'])->name('driver.place-order.store');
     Route::get('orders/{order:order_number}/chat', [DriverOrderController::class, 'chat'])->name('driver.orders.chat');
     Route::post('orders/{order:order_number}/messages', [DriverOrderController::class, 'storeMessage'])->name('driver.orders.messages.store');
+    Route::post('orders/{order:order_number}/chat/delivered', [DriverOrderController::class, 'delivered'])
+        ->name('driver.orders.chat.delivered');
+    Route::post('orders/{order:order_number}/chat/read', [DriverOrderController::class, 'read'])
+        ->name('driver.orders.chat.read');
+    Route::post('orders/{order:order_number}/items/{item}/remove-late', [DriverOrderController::class, 'removeLateItem'])->name('driver.orders.items.remove-late');
+    Route::post('orders/{order:order_number}/items/{item}/collect-late', [DriverOrderController::class, 'collectLateItem'])->name('driver.orders.items.collect-late');
     Route::post('orders/{order:order_number}/pick-up', [DriverOrderController::class, 'pickUp'])->name('driver.orders.pick-up');
     Route::post('orders/{order:order_number}/start', [DriverOrderController::class, 'start'])->name('driver.orders.start');
     Route::post('orders/{order:order_number}/arrive', [DriverOrderController::class, 'arrive'])->name('driver.orders.arrive');

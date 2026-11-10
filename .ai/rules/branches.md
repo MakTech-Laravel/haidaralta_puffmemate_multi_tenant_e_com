@@ -16,7 +16,7 @@ People row actions Staff and Drivers go to the global lists with Spatie filter[b
 
 ## Platform branch show is compact plus staff DataTable
 
-Platform branch show is a compact profile (identity, fact grid, StatCards) plus BranchStaffDataTable::forBranch. Do not restore the dashed map placeholder or an unpaginated super_admins list. Staff search/role/status/pagination uses Spatie filter[]/sort/per_page/page on the show URL. needs_super_admin still comes from hasSuperAdmin(). No inline live map — coords are facts; Mapbox/Google stays in the Edit dialog.
+Platform branch show is a compact profile (identity, fact grid, StatCards including Areas count) plus a Service areas card (this branch’s areas only — name, place, status, link to branch-areas show) plus BranchStaffDataTable::forBranch. Full area CRUD stays on the filtered global areas list (`filteredBranchAreasUrl`). Do not add a second areas DataTable on show. Do not restore the dashed map placeholder or an unpaginated super_admins list. Staff search/role/status/pagination uses Spatie filter[]/sort/per_page/page on the show URL. needs_super_admin still comes from hasSuperAdmin(). No inline live map — coords are facts; Mapbox/Google stays in the Edit dialog.
 
 ## Branch show View on map opens a dialog
 

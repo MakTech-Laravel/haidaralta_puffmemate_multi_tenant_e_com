@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Checkout is customer-only. Staff portals (platform / branch / driver) are
- * redirected to their own dashboard instead of the storefront place-order flow.
+ * Checkout is open to guests and customers. Staff portals (platform / branch /
+ * driver) are redirected to their own dashboard instead of the storefront place-order flow.
  */
 class EnsureStorefrontCustomer
 {
@@ -33,7 +33,7 @@ class EnsureStorefrontCustomer
         }
 
         if (! Auth::guard('customer')->check()) {
-            return redirect()->guest(route('login'));
+            return $next($request);
         }
 
         Auth::shouldUse('customer');

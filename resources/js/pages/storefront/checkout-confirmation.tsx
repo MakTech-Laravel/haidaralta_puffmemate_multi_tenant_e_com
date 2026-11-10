@@ -7,8 +7,10 @@ import { shop } from '@/routes';
 type ConfirmationItem = {
     name: string;
     image: string;
+    packageLabel?: string | null;
     quantity: number;
     formattedLineTotal: string;
+    isLateDelivery?: boolean;
 };
 
 type ConfirmationOrder = {
@@ -25,11 +27,12 @@ type ConfirmationOrder = {
     postalCode: string | null;
     couponCode: string | null;
     items: ConfirmationItem[];
+    hasLateDeliveryItems?: boolean;
     subtotal: string;
     discount: string | null;
     deliveryFee: string;
     total: string;
-    viewOrderUrl: string;
+    viewOrderUrl: string | null;
 };
 
 type ConfirmationProps = {
@@ -83,6 +86,12 @@ export default function StorefrontCheckoutConfirmation({
                             We received order {order.orderNumber}. Pay{' '}
                             {order.total} on delivery.
                         </p>
+                        {order.hasLateDeliveryItems ? (
+                            <p className="text-muted-foreground mt-3 text-sm">
+                                Some items may arrive later while we collect
+                                stock for your order.
+                            </p>
+                        ) : null}
                     </div>
 
                     <div className="mt-8 grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8">
@@ -178,7 +187,15 @@ export default function StorefrontCheckoutConfirmation({
                                                 {item.name}
                                             </p>
                                             <p className="text-muted-foreground text-xs">
-                                                Quantity x {item.quantity}
+                                                {[
+                                                    item.packageLabel,
+                                                    `Quantity x ${item.quantity}`,
+                                                    item.isLateDelivery
+                                                        ? 'May arrive later'
+                                                        : null,
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(' · ')}
                                             </p>
                                         </div>
                                         <p className="text-foreground shrink-0 text-sm font-bold">
@@ -233,16 +250,18 @@ export default function StorefrontCheckoutConfirmation({
                             >
                                 <Link href={shop.url()}>Continue shopping</Link>
                             </Button>
-                            <Button
-                                asChild
-                                variant="outline"
-                                size="lg"
-                                className="mt-2 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
-                            >
-                                <Link href={order.viewOrderUrl}>
-                                    View order
-                                </Link>
-                            </Button>
+                            {order.viewOrderUrl ? (
+                                <Button
+                                    asChild
+                                    variant="outline"
+                                    size="lg"
+                                    className="mt-2 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
+                                >
+                                    <Link href={order.viewOrderUrl}>
+                                        View order
+                                    </Link>
+                                </Button>
+                            ) : null}
                         </aside>
                     </div>
                 </div>

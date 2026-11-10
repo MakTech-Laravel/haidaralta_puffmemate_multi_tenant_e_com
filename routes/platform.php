@@ -5,6 +5,7 @@ use App\Http\Controllers\Platform\AdminController as PlatformAdminController;
 use App\Http\Controllers\Platform\AnnouncementController as PlatformAnnouncementController;
 use App\Http\Controllers\Platform\BranchAreaController as PlatformBranchAreaController;
 use App\Http\Controllers\Platform\BranchAreasController as PlatformBranchAreasController;
+use App\Http\Controllers\Platform\BranchChatController as PlatformBranchChatController;
 use App\Http\Controllers\Platform\BranchController as PlatformBranchController;
 use App\Http\Controllers\Platform\BranchDriverController as PlatformBranchDriverController;
 use App\Http\Controllers\Platform\BranchInventoryController as PlatformBranchInventoryController;
@@ -23,11 +24,14 @@ use App\Http\Controllers\Platform\CustomerController as PlatformCustomerControll
 use App\Http\Controllers\Platform\DashboardController as PlatformDashboardController;
 use App\Http\Controllers\Platform\DatabaseBackupController as PlatformDatabaseBackupController;
 use App\Http\Controllers\Platform\DeliverySettingsController as PlatformDeliverySettingsController;
+use App\Http\Controllers\Platform\DeliveryShiftController as PlatformDeliveryShiftController;
 use App\Http\Controllers\Platform\DriverController as PlatformDriverController;
 use App\Http\Controllers\Platform\DriverProductAssignController as PlatformDriverProductAssignController;
+use App\Http\Controllers\Platform\DriverTrackingController as PlatformDriverTrackingController;
 use App\Http\Controllers\Platform\FcmController as PlatformFcmController;
 use App\Http\Controllers\Platform\GeneralSettingsController as PlatformGeneralSettingsController;
 use App\Http\Controllers\Platform\HomeBannerController as PlatformHomeBannerController;
+use App\Http\Controllers\Platform\MapProviderSettingsController as PlatformMapProviderSettingsController;
 use App\Http\Controllers\Platform\NotificationController as PlatformNotificationController;
 use App\Http\Controllers\Platform\ObservabilityController as PlatformObservabilityController;
 use App\Http\Controllers\Platform\OrderAssignController as PlatformOrderAssignController;
@@ -37,6 +41,7 @@ use App\Http\Controllers\Platform\PaymentGatewaySettingsController as PlatformPa
 use App\Http\Controllers\Platform\PermissionController as PlatformPermissionController;
 use App\Http\Controllers\Platform\PriceRangeController as PlatformPriceRangeController;
 use App\Http\Controllers\Platform\ProductController as PlatformProductController;
+use App\Http\Controllers\Platform\ProductPackageController as PlatformProductPackageController;
 use App\Http\Controllers\Platform\ProductReviewController as PlatformProductReviewController;
 use App\Http\Controllers\Platform\ProductVariantController as PlatformProductVariantController;
 use App\Http\Controllers\Platform\RealtimeController as PlatformRealtimeController;
@@ -59,24 +64,26 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function () {
-    Route::get('dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
-    Route::get('notifications', [PlatformNotificationController::class, 'index'])->name('platform.notifications.index');
-    Route::get('notifications/{userNotification}', [PlatformNotificationController::class, 'show'])->name('platform.notifications.show');
-    Route::post('notifications/{userNotification}/read', [PlatformNotificationController::class, 'read'])->name('platform.notifications.read');
-    Route::delete('notifications/{userNotification}', [PlatformNotificationController::class, 'destroy'])->name('platform.notifications.destroy');
+    Route::middleware(['permission:view-dashboard'])->group(function () {
+        Route::get('dashboard', [PlatformDashboardController::class, 'index'])->name('platform.dashboard');
+        Route::get('notifications', [PlatformNotificationController::class, 'index'])->name('platform.notifications.index');
+        Route::get('notifications/{userNotification}', [PlatformNotificationController::class, 'show'])->name('platform.notifications.show');
+        Route::post('notifications/{userNotification}/read', [PlatformNotificationController::class, 'read'])->name('platform.notifications.read');
+        Route::delete('notifications/{userNotification}', [PlatformNotificationController::class, 'destroy'])->name('platform.notifications.destroy');
+
+        Route::get('realtime', [PlatformRealtimeController::class, 'index'])->name('platform.realtime.index');
+        Route::get('realtime/ping', [PlatformRealtimeController::class, 'ping'])->name('platform.realtime.ping');
+        Route::get('realtime/health', [PlatformRealtimeController::class, 'health'])->name('platform.realtime.health');
+        Route::post('realtime/test-notification', [PlatformRealtimeController::class, 'testNotification'])->name('platform.realtime.test-notification');
+
+        Route::get('fcm', [PlatformFcmController::class, 'index'])->name('platform.fcm.index');
+        Route::post('fcm/test', [PlatformFcmController::class, 'test'])->middleware('throttle:10,1')->name('platform.fcm.test');
+    });
 
     Route::middleware(['permission:view-horizon|view-pulse'])->group(function () {
         Route::get('observability', [PlatformObservabilityController::class, 'index'])
             ->name('platform.observability.index');
     });
-
-    Route::get('realtime', [PlatformRealtimeController::class, 'index'])->name('platform.realtime.index');
-    Route::get('realtime/ping', [PlatformRealtimeController::class, 'ping'])->name('platform.realtime.ping');
-    Route::get('realtime/health', [PlatformRealtimeController::class, 'health'])->name('platform.realtime.health');
-    Route::post('realtime/test-notification', [PlatformRealtimeController::class, 'testNotification'])->name('platform.realtime.test-notification');
-
-    Route::get('fcm', [PlatformFcmController::class, 'index'])->name('platform.fcm.index');
-    Route::post('fcm/test', [PlatformFcmController::class, 'test'])->middleware('throttle:10,1')->name('platform.fcm.test');
 
     Route::middleware(['permission:manage-roles'])->group(function () {
         Route::get('roles/export', [PlatformRoleController::class, 'export'])->name('platform.roles.export');
@@ -180,6 +187,12 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
     });
 
     Route::middleware(['permission:manage-drivers'])->group(function () {
+        Route::get('driver-map', [PlatformDriverTrackingController::class, 'index'])
+            ->name('platform.drivers.live');
+        Route::post('driver-map/watch', [PlatformDriverTrackingController::class, 'watch'])
+            ->middleware('throttle:6,1')
+            ->name('platform.drivers.live.watch');
+
         Route::resource('drivers', PlatformDriverController::class)
             ->parameters(['drivers' => 'user'])
             ->names('platform.drivers')
@@ -274,7 +287,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::get('branch-shift-assignments/{user_shift_assignment}/edit', [PlatformBranchShiftAssignmentController::class, 'edit'])->name('platform.branch-shift-assignments.edit');
     });
 
-    Route::middleware(['permission:create-branches'])->group(function () {
+    Route::middleware(['permission:create-branches|manage-branches'])->group(function () {
         Route::get('branches/create', [PlatformBranchController::class, 'create'])->name('platform.branches.create');
         Route::post('branches', [PlatformBranchController::class, 'store'])
             ->middleware('precognitive')
@@ -286,7 +299,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.branches.super-admin.store');
     });
 
-    Route::middleware(['permission:view-branches'])->group(function () {
+    Route::middleware(['permission:view-branches|manage-branches'])->group(function () {
         Route::get('branches', [PlatformBranchController::class, 'index'])->name('platform.branches.index');
         Route::get('branches/{branch}', [PlatformBranchController::class, 'show'])->name('platform.branches.show');
         Route::get('branch-areas', [PlatformBranchAreasController::class, 'index'])
@@ -297,7 +310,7 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.branches.areas.index');
     });
 
-    Route::middleware(['permission:edit-branches'])->group(function () {
+    Route::middleware(['permission:edit-branches|manage-branches'])->group(function () {
         Route::get('branches/{branch}/edit', [PlatformBranchController::class, 'edit'])->name('platform.branches.edit');
         Route::put('branches/{branch}', [PlatformBranchController::class, 'update'])
             ->middleware('precognitive')
@@ -331,14 +344,14 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.branches.areas.destroy');
     });
 
-    Route::middleware(['permission:view-branches'])->group(function () {
+    Route::middleware(['permission:view-branches|manage-branches'])->group(function () {
         Route::get('branch-areas/{area}', [PlatformBranchAreasController::class, 'show'])
             ->name('platform.branch-areas.show');
         Route::get('branches/{branch}/areas/{area}', [PlatformBranchAreaController::class, 'show'])
             ->name('platform.branches.areas.show');
     });
 
-    Route::middleware(['permission:delete-branches'])->group(function () {
+    Route::middleware(['permission:delete-branches|manage-branches'])->group(function () {
         Route::delete('branches/{branch}', [PlatformBranchController::class, 'destroy'])->name('platform.branches.destroy');
     });
 
@@ -366,20 +379,6 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('stock/import', [PlatformStockController::class, 'storeImport'])->name('platform.stock.import.store');
         Route::get('stock/price', fn (Request $request) => ProductManageRedirect::platform($request))
             ->name('platform.stock.price');
-        Route::get('reports/order-reports', [PlatformOrderReportController::class, 'index'])
-            ->name('platform.reports.order-reports');
-        Route::get('reports/order-reports/export', [PlatformOrderReportController::class, 'export'])
-            ->name('platform.reports.order-reports.export');
-        Route::redirect('reports/order-operations', '/platform/reports/order-reports', 301);
-        Route::redirect('reports/order-operations/export', '/platform/reports/order-reports/export', 301);
-        Route::get('reports/order-assign-history', [PlatformOrderAssignHistoryController::class, 'index'])
-            ->name('platform.reports.order-assign-history');
-        Route::get('reports/order-assign-history/export', [PlatformOrderAssignHistoryController::class, 'export'])
-            ->name('platform.reports.order-assign-history.export');
-        Route::get('reports/order-assign-history/driver-options', [PlatformOrderAssignHistoryController::class, 'driverOptions'])
-            ->name('platform.reports.order-assign-history.driver-options');
-        Route::get('reports/order-assign-history/branch-options', [PlatformOrderAssignHistoryController::class, 'branchOptions'])
-            ->name('platform.reports.order-assign-history.branch-options');
         Route::get('reports/stock-transactions', [PlatformStockTransactionController::class, 'index'])
             ->name('platform.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [PlatformStockTransactionController::class, 'export'])
@@ -504,6 +503,17 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.products.variants.update');
         Route::delete('products/{product}/variants/{variant}', [PlatformProductVariantController::class, 'destroy'])
             ->name('platform.products.variants.destroy');
+
+        Route::put('products/{product}/packages-enabled', [PlatformProductPackageController::class, 'updateEnabled'])
+            ->name('platform.products.packages-enabled');
+        Route::post('products/{product}/packages', [PlatformProductPackageController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.products.packages.store');
+        Route::put('products/{product}/packages/{package}', [PlatformProductPackageController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.products.packages.update');
+        Route::delete('products/{product}/packages/{package}', [PlatformProductPackageController::class, 'destroy'])
+            ->name('platform.products.packages.destroy');
     });
 
     Route::middleware(['permission:manage-orders'])->group(function () {
@@ -519,6 +529,11 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.orders.placement-code');
         Route::post('orders/{order}/cancel', [PlatformOrderController::class, 'cancel'])
             ->name('platform.orders.cancel');
+        Route::post('orders/{order}/items/{item}/remove-late', [PlatformOrderController::class, 'removeLateItem'])
+            ->name('platform.orders.items.remove-late');
+        Route::post('orders/{order}/items/{item}/collect-late', [PlatformOrderController::class, 'collectLateItem'])
+            ->name('platform.orders.items.collect-late');
+
         Route::post('orders/{order}/retry-delivery', [PlatformOrderController::class, 'retryDelivery'])
             ->name('platform.orders.retry-delivery');
         Route::post('orders/{order}/reschedule-delivery', [PlatformOrderController::class, 'rescheduleDelivery'])
@@ -583,6 +598,34 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.conversations.close');
     });
 
+    Route::middleware(['permission:manage-platform-branch-chat'])->group(function () {
+        Route::get('branch-chats', [PlatformBranchChatController::class, 'index'])
+            ->name('platform.branch-chats.index');
+        Route::get('branch-chats/branch-options', [PlatformBranchChatController::class, 'branchOptions'])
+            ->name('platform.branch-chats.branch-options');
+        Route::post('branch-chats', [PlatformBranchChatController::class, 'store'])
+            ->name('platform.branch-chats.store');
+        Route::get('branch-chats/{conversation}', [PlatformBranchChatController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.show');
+        Route::get('branch-chats/{conversation}/messages', [PlatformBranchChatController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.messages');
+        Route::post('branch-chats/{conversation}/messages', [PlatformBranchChatController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('platform.branch-chats.messages.store');
+        Route::post('branch-chats/{conversation}/delivered', [PlatformBranchChatController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.delivered');
+        Route::post('branch-chats/{conversation}/read', [PlatformBranchChatController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.read');
+        Route::post('branch-chats/{conversation}/close', [PlatformBranchChatController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('platform.branch-chats.close');
+    });
+
     Route::middleware(['permission:view-activity-logs'])->group(function () {
         Route::get('activity-logs', [PlatformActivityLogController::class, 'index'])->name('platform.activity-logs.index');
         Route::get('activity-logs/{activity}', [PlatformActivityLogController::class, 'show'])->name('platform.activity-logs.show');
@@ -595,6 +638,21 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.announcements.recipients');
         Route::post('announcements', [PlatformAnnouncementController::class, 'store'])
             ->name('platform.announcements.store');
+
+        Route::get('reports/order-reports', [PlatformOrderReportController::class, 'index'])
+            ->name('platform.reports.order-reports');
+        Route::get('reports/order-reports/export', [PlatformOrderReportController::class, 'export'])
+            ->name('platform.reports.order-reports.export');
+        Route::redirect('reports/order-operations', '/platform/reports/order-reports', 301);
+        Route::redirect('reports/order-operations/export', '/platform/reports/order-reports/export', 301);
+        Route::get('reports/order-assign-history', [PlatformOrderAssignHistoryController::class, 'index'])
+            ->name('platform.reports.order-assign-history');
+        Route::get('reports/order-assign-history/export', [PlatformOrderAssignHistoryController::class, 'export'])
+            ->name('platform.reports.order-assign-history.export');
+        Route::get('reports/order-assign-history/driver-options', [PlatformOrderAssignHistoryController::class, 'driverOptions'])
+            ->name('platform.reports.order-assign-history.driver-options');
+        Route::get('reports/order-assign-history/branch-options', [PlatformOrderAssignHistoryController::class, 'branchOptions'])
+            ->name('platform.reports.order-assign-history.branch-options');
     });
 
     Route::middleware(['permission:manage-pages'])->group(function () {
@@ -623,6 +681,25 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
             ->name('platform.home-banners.toggle');
     });
 
+    Route::middleware(['permission:manage-application-settings'])->group(function () {
+        Route::get('delivery-shifts', [PlatformDeliveryShiftController::class, 'index'])
+            ->name('platform.delivery-shifts.index');
+        Route::get('delivery-shifts/create', [PlatformDeliveryShiftController::class, 'create'])
+            ->name('platform.delivery-shifts.create');
+        Route::post('delivery-shifts', [PlatformDeliveryShiftController::class, 'store'])
+            ->middleware('precognitive')
+            ->name('platform.delivery-shifts.store');
+        Route::get('delivery-shifts/{delivery_shift}', [PlatformDeliveryShiftController::class, 'show'])
+            ->name('platform.delivery-shifts.show');
+        Route::get('delivery-shifts/{delivery_shift}/edit', [PlatformDeliveryShiftController::class, 'edit'])
+            ->name('platform.delivery-shifts.edit');
+        Route::put('delivery-shifts/{delivery_shift}', [PlatformDeliveryShiftController::class, 'update'])
+            ->middleware('precognitive')
+            ->name('platform.delivery-shifts.update');
+        Route::delete('delivery-shifts/{delivery_shift}', [PlatformDeliveryShiftController::class, 'destroy'])
+            ->name('platform.delivery-shifts.destroy');
+    });
+
     Route::middleware(['permission:manage-application-settings'])->prefix('settings')->group(function () {
         Route::get('general', [PlatformGeneralSettingsController::class, 'edit'])
             ->name('platform.settings.general.edit');
@@ -641,6 +718,19 @@ Route::middleware(['ensure.guard:platform'])->prefix('platform')->group(function
         Route::post('smtp/test', [PlatformSmtpSettingsController::class, 'test'])
             ->middleware('throttle:6,1')
             ->name('platform.settings.smtp.test');
+
+        Route::get('map-provider', [PlatformMapProviderSettingsController::class, 'edit'])
+            ->name('platform.settings.map-provider.edit');
+        Route::post('map-provider/activate', [PlatformMapProviderSettingsController::class, 'activate'])
+            ->middleware('throttle:10,1')
+            ->name('platform.settings.map-provider.activate');
+        Route::put('map-provider/selection', [PlatformMapProviderSettingsController::class, 'updateSelection'])
+            ->name('platform.settings.map-provider.selection');
+        Route::put('map-provider/providers/{provider}', [PlatformMapProviderSettingsController::class, 'updateProvider'])
+            ->name('platform.settings.map-provider.update');
+        Route::post('map-provider/providers/{provider}/test', [PlatformMapProviderSettingsController::class, 'test'])
+            ->middleware('throttle:6,1')
+            ->name('platform.settings.map-provider.test');
 
         Route::get('payment-gateway', [PlatformPaymentGatewaySettingsController::class, 'edit'])
             ->name('platform.settings.payment-gateway.edit');

@@ -19,8 +19,9 @@ return [
     | Homepage product rails
     |--------------------------------------------------------------------------
     |
-    | Maximum products per tagged homepage carousel (New Arrivals, Best
-    | Selling, etc.). Each rail filters active products by that tag only.
+    | Maximum products per homepage carousel, applied to each rail on its own.
+    | New Arrivals: active products tagged new_arrival, newest first. Best
+    | Selling: active products ranked by units sold on delivered, paid orders.
     |
     */
 
@@ -117,6 +118,18 @@ return [
     */
 
     'show_product_variants' => env('SHOW_PRODUCT_VARIANTS', false),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product packages (quantity tiers)
+    |--------------------------------------------------------------------------
+    |
+    | When false, package UI and package mutations abort 404. Tables and
+    | routes stay in the codebase. Flip to true to restore packages.
+    |
+    */
+
+    'show_product_packages' => env('SHOW_PRODUCT_PACKAGES', true),
 
     /*
     |--------------------------------------------------------------------------
@@ -223,5 +236,11 @@ return [
     'same_day_max_transfer_hours' => env('SAME_DAY_MAX_TRANSFER_HOURS', 4),
 
     'australia_wide_max_transfer_hours' => env('AUSTRALIA_WIDE_MAX_TRANSFER_HOURS', 72),
+
+    /*
+    | Late delivery (express) selectable calendar days starting from tomorrow.
+    | Max date = today + this value (14 days from tomorrow inclusive).
+    */
+    'late_delivery_max_days' => (int) env('LATE_DELIVERY_MAX_DAYS', 14),
 
 ];

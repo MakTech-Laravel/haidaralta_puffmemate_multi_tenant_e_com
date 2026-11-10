@@ -1,8 +1,20 @@
 import { Check, Clock, Minus, Plus, ShoppingCart, Star } from 'lucide-react';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { addToCart } from '@/components/storefront/cart/sync-cart-item';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+
+export type ProductPackageOption = {
+    id: number;
+    label: string;
+    quantity: number;
+    price: number;
+    formattedPrice: string;
+    unitTotal?: number | null;
+    formattedUnitTotal?: string;
+    savings?: number | null;
+    formattedSavings?: string;
+};
 
 type ProductSummaryProps = {
     slug: string;
@@ -11,10 +23,10 @@ type ProductSummaryProps = {
     badges: string[];
     price: string;
     compareAtPrice: string;
-    stock: number;
     rating: number;
     reviewCount: number;
     about: string;
+    packages?: ProductPackageOption[];
     className?: string;
 };
 
@@ -25,13 +37,30 @@ export function ProductSummary({
     badges,
     price,
     compareAtPrice,
-    stock,
     rating,
     reviewCount,
     about,
+    packages = [],
     className,
 }: ProductSummaryProps) {
+    const hasPackages = packages.length > 0;
     const [quantity, setQuantity] = useState(1);
+    const [selectedPackageId, setSelectedPackageId] = useState<number | null>(
+        () => (hasPackages ? packages[0].id : null),
+    );
+
+    const selectedPackage = useMemo(
+        () =>
+            packages.find((pkg) => pkg.id === selectedPackageId) ??
+            packages[0] ??
+            null,
+        [packages, selectedPackageId],
+    );
+
+    const displayPrice = selectedPackage?.formattedPrice ?? price;
+    const displayCompareAt = selectedPackage
+        ? (selectedPackage.formattedUnitTotal ?? '')
+        : compareAtPrice;
 
     return (
         <div
@@ -83,20 +112,68 @@ export function ProductSummary({
             </div>
 
             <div className="flex min-w-0 flex-wrap items-center gap-3">
-                <span className="text-primary text-3xl font-bold">{price}</span>
-                {compareAtPrice ? (
+                <span className="text-primary text-3xl font-bold">
+                    {displayPrice}
+                </span>
+                {displayCompareAt ? (
                     <span className="text-muted-foreground font-inter text-base font-normal line-through">
-                        {compareAtPrice}
+                        {displayCompareAt}
                     </span>
                 ) : null}
-                <span className="text-tertiary font-inter inline-flex items-center gap-1.5 text-sm font-medium">
-                    <span
-                        className="bg-tertiary size-1.5 shrink-0 rounded-full"
-                        aria-hidden
-                    />
-                    {stock} available
-                </span>
             </div>
+
+            {hasPackages ? (
+                <div className="min-w-0 space-y-3">
+                    <h2 className="text-foreground font-inter text-base font-bold">
+                        Choose a package
+                    </h2>
+                    <ul className="flex flex-col gap-2">
+                        {packages.map((pkg) => {
+                            const selected = selectedPackage?.id === pkg.id;
+
+                            return (
+                                <li key={pkg.id}>
+                                    <button
+                                        type="button"
+                                        onClick={() =>
+                                            setSelectedPackageId(pkg.id)
+                                        }
+                                        className={cn(
+                                            'border-border flex w-full min-w-0 items-center justify-between gap-3 border px-4 py-3 text-left transition',
+                                            selected
+                                                ? 'border-primary bg-primary/5 ring-primary ring-1'
+                                                : 'hover:border-primary/40',
+                                        )}
+                                        aria-pressed={selected}
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="text-foreground font-inter text-sm font-semibold">
+                                                {pkg.label}
+                                            </p>
+                                            <p className="text-muted-foreground font-inter text-xs">
+                                                {pkg.quantity}{' '}
+                                                {pkg.quantity === 1
+                                                    ? 'Item'
+                                                    : 'Items'}
+                                            </p>
+                                        </div>
+                                        <div className="flex shrink-0 items-center gap-2">
+                                            <span className="text-primary text-sm font-bold">
+                                                {pkg.formattedPrice}
+                                            </span>
+                                            {pkg.formattedUnitTotal ? (
+                                                <span className="text-muted-foreground text-xs line-through">
+                                                    {pkg.formattedUnitTotal}
+                                                </span>
+                                            ) : null}
+                                        </div>
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            ) : null}
 
             <div className="min-w-0">
                 <h2 className="text-foreground font-inter mt-10 text-base font-bold">
@@ -135,7 +212,11 @@ export function ProductSummary({
                     type="button"
                     size="lg"
                     className="h-12 w-full max-w-full min-w-0 shrink rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
-                    onClick={() => addToCart(slug, quantity)}
+                    onClick={() =>
+                        addToCart(slug, quantity, undefined, {
+                            productPackageId: selectedPackage?.id,
+                        })
+                    }
                 >
                     <ShoppingCart className="size-4" />
                     Add to cart

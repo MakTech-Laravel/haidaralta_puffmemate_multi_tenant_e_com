@@ -6,6 +6,7 @@ use App\Enums\UserType;
 use App\Models\Branch;
 use App\Models\BranchArea;
 use App\Models\User;
+use App\Support\Geo\Polygon;
 use App\Support\PlatformTeamResolver;
 use Database\Seeders\BranchSeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
@@ -31,6 +32,7 @@ function platformAreaPayload(array $overrides = []): array
         'address' => '100 Crown St, Surry Hills NSW 2010',
         'latitude' => -33.8845,
         'longitude' => 151.2140,
+        'polygon' => Polygon::squareAround(-33.8845, 151.2140),
         'city' => 'Sydney',
         'state' => 'NSW',
         'postal_code' => '2010',
@@ -41,8 +43,7 @@ function platformAreaPayload(array $overrides = []): array
 }
 
 test('platform admin can open the global areas list', function () {
-    BranchArea::factory()->create([
-        'branch_id' => $this->branch->id,
+    BranchArea::factory()->forBranch($this->branch)->create([
         'name' => 'Surry Hills',
     ]);
 
@@ -71,8 +72,8 @@ test('platform admin can open global create and store an area with branch_id', f
         ->assertRedirect();
 
     $area = BranchArea::query()
-        ->where('branch_id', $this->branch->id)
         ->where('name', 'Global Create Zone')
+        ->whereHas('branches', fn ($query) => $query->where('branches.id', $this->branch->id))
         ->firstOrFail();
 
     $this->actingAs($this->admin, 'platform')
@@ -95,12 +96,10 @@ test('nested platform areas index redirects to the global list with branch filte
 test('global areas list can filter by branch', function () {
     $otherBranch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
 
-    BranchArea::factory()->create([
-        'branch_id' => $this->branch->id,
+    BranchArea::factory()->forBranch($this->branch)->create([
         'name' => 'Sydney Zone',
     ]);
-    BranchArea::factory()->create([
-        'branch_id' => $otherBranch->id,
+    BranchArea::factory()->forBranch($otherBranch)->create([
         'name' => 'Melbourne Zone',
     ]);
 
@@ -123,12 +122,17 @@ test('platform admin can create update show and delete branch areas on global ro
         ]))
         ->assertRedirect();
 
-    $area = BranchArea::query()->where('branch_id', $this->branch->id)->firstOrFail();
+    $area = BranchArea::query()
+        ->where('name', 'Surry Hills')
+        ->whereHas('branches', fn ($query) => $query->where('branches.id', $this->branch->id))
+        ->firstOrFail();
 
     expect($area->name)->toBe('Surry Hills')
         ->and($area->city)->toBe('Sydney')
         ->and($area->state)->toBe('NSW')
-        ->and($area->is_active)->toBeTrue();
+        ->and($area->is_active)->toBeTrue()
+        ->and($area->polygon)->toBeArray()
+        ->and(Polygon::uniqueVertexCount($area->polygon))->toBeGreaterThanOrEqual(3);
 
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.branch-areas.show', $area))
@@ -137,6 +141,7 @@ test('platform admin can create update show and delete branch areas on global ro
             ->component('platform/branch-areas/show')
             ->where('area.name', 'Surry Hills')
             ->where('branch.slug', $this->branch->slug)
+            ->has('area.polygon')
             ->has('area.map.google')
             ->has('area.map.open_street_map')
             ->has('area.map.embed'));
@@ -174,7 +179,7 @@ test('platform admin can create update show and delete branch areas on global ro
 });
 
 test('nested platform area show and edit redirect to global routes', function () {
-    $area = BranchArea::factory()->create(['branch_id' => $this->branch->id]);
+    $area = BranchArea::factory()->forBranch($this->branch)->create();
 
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.branches.areas.show', [$this->branch, $area]))
@@ -190,7 +195,54 @@ test('platform area store validates required fields', function () {
         ->from(route('platform.branches.areas.create', $this->branch))
         ->post(route('platform.branches.areas.store', $this->branch), [])
         ->assertRedirect(route('platform.branches.areas.create', $this->branch))
-        ->assertSessionHasErrors(['name', 'address', 'latitude', 'longitude', 'city', 'state']);
+        ->assertSessionHasErrors(['name', 'address', 'latitude', 'longitude', 'polygon', 'city', 'state']);
+});
+
+test('platform area store rejects missing or invalid polygon', function () {
+    $this->actingAs($this->admin, 'platform')
+        ->from(route('platform.branch-areas.create'))
+        ->post(route('platform.branch-areas.store'), platformAreaPayload([
+            'branch_id' => $this->branch->id,
+            'name' => 'No Polygon Zone',
+            'polygon' => null,
+        ]))
+        ->assertRedirect(route('platform.branch-areas.create'))
+        ->assertSessionHasErrors(['polygon']);
+
+    $this->actingAs($this->admin, 'platform')
+        ->from(route('platform.branch-areas.create'))
+        ->post(route('platform.branch-areas.store'), platformAreaPayload([
+            'branch_id' => $this->branch->id,
+            'name' => 'Two Point Zone',
+            'polygon' => [
+                ['lat' => -33.88, 'lng' => 151.21],
+                ['lat' => -33.87, 'lng' => 151.22],
+            ],
+        ]))
+        ->assertRedirect(route('platform.branch-areas.create'))
+        ->assertSessionHasErrors(['polygon']);
+});
+
+test('platform area store accepts an open ring and persists a closed polygon', function () {
+    $openRing = [
+        ['lat' => -33.89, 'lng' => 151.20],
+        ['lat' => -33.89, 'lng' => 151.22],
+        ['lat' => -33.87, 'lng' => 151.22],
+        ['lat' => -33.87, 'lng' => 151.20],
+    ];
+
+    $this->actingAs($this->admin, 'platform')
+        ->post(route('platform.branch-areas.store'), platformAreaPayload([
+            'branch_id' => $this->branch->id,
+            'name' => 'Open Ring Zone',
+            'polygon' => $openRing,
+        ]))
+        ->assertRedirect();
+
+    $area = BranchArea::query()->where('name', 'Open Ring Zone')->firstOrFail();
+
+    expect(Polygon::uniqueVertexCount($area->polygon))->toBe(4)
+        ->and($area->polygon[0])->toBe($area->polygon[array_key_last($area->polygon)]);
 });
 
 test('platform user without edit-branches cannot create areas', function () {
@@ -214,9 +266,9 @@ test('platform user without edit-branches cannot create areas', function () {
         ->assertForbidden();
 });
 
-test('platform cannot mutate an area that belongs to another branch', function () {
+test('platform cannot mutate an area that belongs to another branch via nested routes', function () {
     $otherBranch = Branch::query()->where('slug', BranchSeeder::MELBOURNE_COLLINS)->firstOrFail();
-    $area = BranchArea::factory()->create(['branch_id' => $otherBranch->id]);
+    $area = BranchArea::factory()->forBranch($otherBranch)->create();
 
     $this->actingAs($this->admin, 'platform')
         ->get(route('platform.branches.areas.show', [$this->branch, $area]))
@@ -231,9 +283,8 @@ test('platform cannot mutate an area that belongs to another branch', function (
         ->assertNotFound();
 });
 
-test('platform rejects duplicate area names within the same branch but allows them across branches', function () {
-    BranchArea::factory()->create([
-        'branch_id' => $this->branch->id,
+test('platform rejects duplicate area names globally', function () {
+    BranchArea::factory()->forBranch($this->branch)->create([
         'name' => 'Surry Hills',
     ]);
 
@@ -249,26 +300,21 @@ test('platform rejects duplicate area names within the same branch but allows th
         ->assertSessionHasErrors(['name']);
 
     $this->actingAs($this->admin, 'platform')
+        ->from(route('platform.branch-areas.create'))
         ->post(route('platform.branch-areas.store'), platformAreaPayload([
             'branch_id' => $otherBranch->id,
             'name' => 'Surry Hills',
         ]))
-        ->assertRedirect();
-
-    expect(BranchArea::query()
-        ->where('branch_id', $otherBranch->id)
-        ->where('name', 'Surry Hills')
-        ->exists())->toBeTrue();
+        ->assertRedirect(route('platform.branch-areas.create'))
+        ->assertSessionHasErrors(['name']);
 });
 
-test('platform area update rejects renaming onto a sibling area name', function () {
-    BranchArea::factory()->create([
-        'branch_id' => $this->branch->id,
+test('platform area update rejects renaming onto another area name', function () {
+    BranchArea::factory()->forBranch($this->branch)->create([
         'name' => 'Paddington',
     ]);
 
-    $area = BranchArea::factory()->create([
-        'branch_id' => $this->branch->id,
+    $area = BranchArea::factory()->forBranch($this->branch)->create([
         'name' => 'Potts Point',
     ]);
 

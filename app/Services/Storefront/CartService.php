@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\User;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
+use App\Support\ProductPackagePricing;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -65,17 +66,19 @@ class CartService
         );
     }
 
-    public function add(Request $request, Product $product, int $quantity = 1, ?int $variantId = null): Cart
-    {
+    public function add(
+        Request $request,
+        Product $product,
+        int $quantity = 1,
+        ?int $variantId = null,
+        ?int $productPackageId = null,
+    ): Cart {
         if (! $product->status) {
             throw new InvalidArgumentException('This product is not available.');
         }
 
-        $price = BranchProductPriceDisplay::catalogEffectiveAmount($product);
-
-        if ($price <= 0) {
-            throw new InvalidArgumentException('This product cannot be added to the cart.');
-        }
+        $package = ProductPackagePricing::requirePackageSelection($product, $productPackageId);
+        $price = ProductPackagePricing::unitAmount($product, $package);
 
         $cart = $this->activeCart($request);
         $quantity = max(1, $quantity);
@@ -84,6 +87,7 @@ class CartService
             'cart_id' => $cart->id,
             'product_id' => $product->id,
             'variant_id' => $variantId,
+            'product_package_id' => $package?->id,
         ]);
 
         $item->quantity = $this->clampLineQuantity(($item->exists ? $item->quantity : 0) + $quantity);
@@ -148,6 +152,7 @@ class CartService
                     'cart_id' => $userCart->id,
                     'product_id' => $guestItem->product_id,
                     'variant_id' => $guestItem->variant_id,
+                    'product_package_id' => $guestItem->product_package_id,
                 ]);
 
                 $existing->quantity = $this->clampLineQuantity(
@@ -190,7 +195,12 @@ class CartService
     private function buildPayload(Request $request): array
     {
         $cart = $this->activeCart($request);
-        $cart->load(['items.product.categories:id,name,slug', 'items.product.media']);
+        $cart->load([
+            'items.product.categories:id,name,slug',
+            'items.product.media',
+            'items.product.packages',
+            'items.package',
+        ]);
 
         $items = [];
         $subtotal = 0.0;
@@ -202,9 +212,20 @@ class CartService
                 continue;
             }
 
-            $unit = BranchProductPriceDisplay::catalogEffectiveAmount($product);
-            $compareAt = BranchProductPriceDisplay::forCatalogProduct($product)['compare_at'];
-            $compareAt = $compareAt !== null && $compareAt > $unit ? $compareAt : null;
+            $unit = ProductPackagePricing::unitAmountForCartItem($item);
+
+            if ($unit <= 0) {
+                continue;
+            }
+
+            $package = $item->package;
+            $compareAt = null;
+
+            if ($package === null) {
+                $compareAt = BranchProductPriceDisplay::forCatalogProduct($product)['compare_at'];
+                $compareAt = $compareAt !== null && $compareAt > $unit ? $compareAt : null;
+            }
+
             $line = $unit * $item->quantity;
             $subtotal += $line;
             $category = $product->categories->first();
@@ -225,6 +246,9 @@ class CartService
                 'maxQuantity' => self::MAX_LINE_QUANTITY,
                 'lineTotal' => $line,
                 'formattedLineTotal' => '$'.number_format($line, 2),
+                'productPackageId' => $package?->id,
+                'packageLabel' => $package?->label,
+                'packageQuantity' => $package?->quantity,
             ];
         }
 

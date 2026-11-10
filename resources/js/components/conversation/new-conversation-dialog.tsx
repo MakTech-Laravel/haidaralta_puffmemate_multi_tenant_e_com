@@ -32,9 +32,15 @@ import type { OrderOption } from './types';
 export function NewConversationDialog({
     optionsUrl,
     storeUrl,
+    optionField = 'order_id',
+    dialogTitle = 'Open an order conversation',
+    dialogDescription = 'Pick an order that does not have a conversation yet. The customer and assigned driver join automatically.',
 }: {
     optionsUrl: string;
     storeUrl: string;
+    optionField?: 'order_id' | 'driver_id' | 'branch_id';
+    dialogTitle?: string;
+    dialogDescription?: string;
 }) {
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState('');
@@ -73,7 +79,7 @@ export function NewConversationDialog({
 
         router.post(
             storeUrl,
-            { order_id: selected.value },
+            { [optionField]: selected.value },
             {
                 onError: () => toast.error('Could not open the conversation.'),
                 onFinish: () => {
@@ -85,6 +91,11 @@ export function NewConversationDialog({
             },
         );
     };
+
+    const searchPlaceholder =
+        optionField === 'order_id'
+            ? 'Search by order number…'
+            : 'Search by name…';
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -99,29 +110,24 @@ export function NewConversationDialog({
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Open an order conversation</DialogTitle>
-                    <DialogDescription>
-                        Pick an order that does not have a conversation yet. The
-                        customer and assigned driver join automatically.
-                    </DialogDescription>
+                    <DialogTitle>{dialogTitle}</DialogTitle>
+                    <DialogDescription>{dialogDescription}</DialogDescription>
                 </DialogHeader>
 
                 <Command shouldFilter={false}>
                     <CommandInput
                         value={search}
                         onValueChange={setSearch}
-                        placeholder="Search by order number…"
+                        placeholder={searchPlaceholder}
                     />
                     <CommandList>
                         {loading ? (
                             <div className="text-muted-foreground flex items-center justify-center gap-2 py-6 text-sm">
                                 <Spinner />
-                                Loading orders…
+                                Loading…
                             </div>
                         ) : (
-                            <CommandEmpty>
-                                No orders are waiting for a conversation.
-                            </CommandEmpty>
+                            <CommandEmpty>No matches found.</CommandEmpty>
                         )}
                         {options.map((option) => (
                             <CommandItem

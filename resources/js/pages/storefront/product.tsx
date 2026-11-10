@@ -11,7 +11,10 @@ import {
 } from '@/components/storefront/product/product-section-tabs';
 import { ProductShipping } from '@/components/storefront/product/product-shipping';
 import { ProductSpecifications } from '@/components/storefront/product/product-specifications';
-import { ProductSummary } from '@/components/storefront/product/product-summary';
+import {
+    ProductSummary,
+    type ProductPackageOption,
+} from '@/components/storefront/product/product-summary';
 import type { StorefrontProduct } from '@/types/storefront';
 
 type ProductDetail = {
@@ -31,6 +34,7 @@ type ProductDetail = {
     stock: number;
     cardPrice: string;
     image: string;
+    packages?: ProductPackageOption[];
     specifications: Array<{ label: string; value: string }>;
     shippingPoints: string[];
     responsiblePoints: string[];
@@ -105,10 +109,10 @@ export default function StorefrontProduct({
                         badges={product.badges}
                         price={product.price}
                         compareAtPrice={product.compareAtPrice}
-                        stock={product.stock}
                         rating={product.rating}
                         reviewCount={product.reviewCount}
                         about={product.about}
+                        packages={product.packages ?? []}
                     />
                 </div>
 

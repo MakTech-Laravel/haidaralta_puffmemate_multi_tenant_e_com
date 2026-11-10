@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import {
     ChevronLeft,
     KeyRound,
@@ -6,8 +6,11 @@ import {
     MessageCircle,
     Navigation,
     Package,
+    PackagePlus,
     Phone,
+    Trash2,
 } from 'lucide-react';
+import { useState } from 'react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
 import { DriverOrderNextAction } from '@/components/driver/driver-order-next-action';
@@ -17,6 +20,7 @@ import {
     type DriverOrderDetail,
 } from '@/components/driver/driver-order-types';
 import { DriverOrderUnavailableSheet } from '@/components/driver/driver-order-unavailable-sheet';
+import { ConfirmActionDialog } from '@/components/orders/confirm-action-dialog';
 import { OrderReturnRequest } from '@/components/orders/order-return-request';
 import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +45,12 @@ type DriverOrderShowProps = {
 };
 
 export default function DriverOrderShow({ order }: DriverOrderShowProps) {
+    const [pendingAction, setPendingAction] = useState<string | null>(null);
+    const [lateConfirm, setLateConfirm] = useState<{
+        type: 'collect' | 'remove';
+        itemId: number;
+        itemName: string;
+    } | null>(null);
     const isDelivered = order.status === 'delivered';
     const paymentLabel = usePaymentGatewayLabel(
         order.paymentMethod,
@@ -59,6 +69,40 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
     ]
         .filter(Boolean)
         .join(' ');
+
+    const confirmLateAction = () => {
+        if (!lateConfirm) {
+            return;
+        }
+
+        if (lateConfirm.type === 'remove') {
+            setPendingAction(`remove-late-${lateConfirm.itemId}`);
+            router.post(
+                OrderController.removeLateItem.url({
+                    order: order.orderNumber,
+                    item: lateConfirm.itemId,
+                }),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => setPendingAction(null),
+                },
+            );
+        } else {
+            setPendingAction(`collect-late-${lateConfirm.itemId}`);
+            router.post(
+                OrderController.collectLateItem.url({
+                    order: order.orderNumber,
+                    item: lateConfirm.itemId,
+                }),
+                {},
+                {
+                    preserveScroll: true,
+                    onFinish: () => setPendingAction(null),
+                },
+            );
+        }
+    };
 
     return (
         <>
@@ -227,20 +271,98 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
 
                     <ul className="flex flex-col">
                         {order.products.map((product, index) => (
-                            <li key={`${product.name}-${index}`}>
+                            <li key={product.id}>
                                 {index > 0 ? (
                                     <Separator className="my-2.5" />
                                 ) : null}
-                                <div className="flex items-start justify-between gap-3">
-                                    <p className="text-foreground min-w-0 text-sm font-medium">
-                                        <span className="text-muted-foreground tabular-nums">
-                                            {product.quantityLabel}×{' '}
-                                        </span>
-                                        {product.name}
-                                    </p>
-                                    <p className="text-foreground shrink-0 text-sm font-medium tabular-nums">
-                                        {product.priceLabel}
-                                    </p>
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0 flex-1">
+                                            <p
+                                                className={
+                                                    product.isRemoved
+                                                        ? 'text-muted-foreground text-sm font-medium line-through'
+                                                        : 'text-foreground text-sm font-medium'
+                                                }
+                                            >
+                                                <span className="text-muted-foreground tabular-nums">
+                                                    {product.quantityLabel}×{' '}
+                                                </span>
+                                                {product.name}
+                                            </p>
+                                            {product.packageLabel ||
+                                            product.isLateDelivery ||
+                                            product.isRemoved ? (
+                                                <p className="text-muted-foreground mt-0.5 text-xs">
+                                                    {[
+                                                        product.packageLabel,
+                                                        product.isLateDelivery
+                                                            ? 'Late delivery'
+                                                            : null,
+                                                        product.isRemoved
+                                                            ? 'Removed'
+                                                            : null,
+                                                    ]
+                                                        .filter(Boolean)
+                                                        .join(' · ')}
+                                                </p>
+                                            ) : null}
+                                        </div>
+                                        <p
+                                            className={
+                                                product.isRemoved
+                                                    ? 'text-muted-foreground shrink-0 text-sm font-medium tabular-nums line-through'
+                                                    : 'text-foreground shrink-0 text-sm font-medium tabular-nums'
+                                            }
+                                        >
+                                            {product.priceLabel}
+                                        </p>
+                                    </div>
+                                    {product.canCollectLate ||
+                                    product.canRemoveLate ? (
+                                        <div className="flex items-center justify-end gap-2">
+                                            {product.canCollectLate ? (
+                                                <Button
+                                                    type="button"
+                                                    size="sm"
+                                                    disabled={
+                                                        pendingAction !== null
+                                                    }
+                                                    onClick={() =>
+                                                        setLateConfirm({
+                                                            type: 'collect',
+                                                            itemId: product.id,
+                                                            itemName:
+                                                                product.name,
+                                                        })
+                                                    }
+                                                >
+                                                    Collect
+                                                </Button>
+                                            ) : null}
+                                            {product.canRemoveLate ? (
+                                                <Button
+                                                    type="button"
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    disabled={
+                                                        pendingAction !== null
+                                                    }
+                                                    onClick={() =>
+                                                        setLateConfirm({
+                                                            type: 'remove',
+                                                            itemId: product.id,
+                                                            itemName:
+                                                                product.name,
+                                                        })
+                                                    }
+                                                >
+                                                    <Trash2 data-icon="inline-start" />
+                                                    Remove
+                                                </Button>
+                                            ) : null}
+                                        </div>
+                                    ) : null}
                                 </div>
                             </li>
                         ))}
@@ -301,54 +423,103 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
 
                 {hasActionBar ? (
                     <>
-                        <div aria-hidden className="h-20 xl:hidden" />
+                        <div
+                            aria-hidden
+                            className={
+                                order.lateItemsBlockMessage
+                                    ? 'h-32 xl:hidden'
+                                    : 'h-20 xl:hidden'
+                            }
+                        />
                         <div
                             className="border-border bg-background/95 fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-30 border-t px-4 py-3 backdrop-blur-sm xl:sticky xl:bottom-6 xl:rounded-xl xl:border xl:shadow-lg"
                             data-test="driver-order-action-bar"
                         >
-                            <div className="mx-auto flex w-full max-w-5xl gap-2">
-                                {stepAction ? (
-                                    <div className="min-w-0 flex-1">
-                                        <DriverOrderNextAction
-                                            orderId={order.id}
-                                            action={stepAction}
-                                            className="h-12"
-                                        />
-                                    </div>
+                            <div className="mx-auto flex w-full max-w-5xl flex-col gap-2">
+                                {order.lateItemsBlockMessage ? (
+                                    <p
+                                        className="bg-destructive/10 text-destructive rounded-lg px-3 py-2 text-sm"
+                                        data-test="driver-late-items-block"
+                                    >
+                                        {order.lateItemsBlockMessage}
+                                    </p>
                                 ) : null}
-                                {order.canDeliver ? (
-                                    <>
-                                        {order.canFail ? (
-                                            <div className="w-2/5 shrink-0">
-                                                <DriverOrderUnavailableSheet
+                                <div className="flex gap-2">
+                                    {stepAction ? (
+                                        <div className="min-w-0 flex-1">
+                                            <DriverOrderNextAction
+                                                orderId={order.id}
+                                                action={stepAction}
+                                                className="h-12"
+                                            />
+                                        </div>
+                                    ) : null}
+                                    {order.canDeliver ? (
+                                        <>
+                                            {order.canFail ? (
+                                                <div className="w-2/5 shrink-0">
+                                                    <DriverOrderUnavailableSheet
+                                                        orderId={order.id}
+                                                        reasons={
+                                                            order.failureReasons ??
+                                                            []
+                                                        }
+                                                    />
+                                                </div>
+                                            ) : null}
+                                            <div className="min-w-0 flex-1">
+                                                <DriverDeliverOtpForm
                                                     orderId={order.id}
-                                                    reasons={
-                                                        order.failureReasons ??
-                                                        []
+                                                    label={
+                                                        collectsPayment
+                                                            ? `Collect ${order.totalLabel}`
+                                                            : 'Complete delivery'
+                                                    }
+                                                    icon={
+                                                        <KeyRound data-icon="inline-start" />
                                                     }
                                                 />
                                             </div>
-                                        ) : null}
-                                        <div className="min-w-0 flex-1">
-                                            <DriverDeliverOtpForm
-                                                orderId={order.id}
-                                                label={
-                                                    collectsPayment
-                                                        ? `Collect ${order.totalLabel}`
-                                                        : 'Complete delivery'
-                                                }
-                                                icon={
-                                                    <KeyRound data-icon="inline-start" />
-                                                }
-                                            />
-                                        </div>
-                                    </>
-                                ) : null}
+                                        </>
+                                    ) : null}
+                                </div>
                             </div>
                         </div>
                     </>
                 ) : null}
             </div>
+
+            <ConfirmActionDialog
+                open={lateConfirm !== null}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setLateConfirm(null);
+                    }
+                }}
+                icon={
+                    lateConfirm?.type === 'remove' ? Trash2 : PackagePlus
+                }
+                variant={
+                    lateConfirm?.type === 'remove' ? 'destructive' : 'default'
+                }
+                title={
+                    lateConfirm?.type === 'remove'
+                        ? 'Remove late item'
+                        : 'Collect late stock'
+                }
+                description={
+                    lateConfirm === null
+                        ? ''
+                        : lateConfirm.type === 'remove'
+                          ? `Remove “${lateConfirm.itemName}” from this order? The customer will be notified.`
+                          : `Collect stock for “${lateConfirm.itemName}” and reserve it for this order? Remove will no longer be available for this line.`
+                }
+                confirmLabel={
+                    lateConfirm?.type === 'remove' ? 'Remove' : 'Collect'
+                }
+                processing={pendingAction !== null}
+                onConfirm={confirmLateAction}
+            />
         </>
     );
 }

@@ -9,6 +9,7 @@ use App\Http\Requests\Platform\StoreProductRequest;
 use App\Http\Requests\Platform\UpdateProductRequest;
 use App\Models\Category;
 use App\Models\Product;
+use App\Models\ProductPackage;
 use App\Models\ProductVariant;
 use App\Services\Catalog\ProductService;
 use App\Services\Catalog\ProductSuggestionService;
@@ -62,6 +63,13 @@ class ProductController extends Controller
         $data = $request->safe()->except(['image', 'gallery']);
         $data['status'] = $request->boolean('status', true);
 
+        if ((bool) config('catalog.show_product_packages')) {
+            $data['packages_enabled'] = $request->boolean('packages_enabled', true);
+            $data['packages'] = $request->input('packages', []);
+        } else {
+            unset($data['packages'], $data['packages_enabled']);
+        }
+
         $product = $this->products->createFromPlatform(
             $data,
             $request->file('image'),
@@ -81,7 +89,13 @@ class ProductController extends Controller
 
     public function show(Request $request, Product $product): Response
     {
-        $product->load(['categories:id,name,slug', 'variants', 'media', 'creator:id,name']);
+        $product->load([
+            'categories:id,name,slug',
+            'variants',
+            'packages' => fn ($query) => $query->ordered(),
+            'media',
+            'creator:id,name',
+        ]);
 
         return Inertia::render('platform/catalog/products/show', [
             'product' => $this->mapProduct($product, detailed: true),
@@ -91,7 +105,11 @@ class ProductController extends Controller
 
     public function edit(Product $product): Response
     {
-        $product->load(['categories:id,name,slug', 'media']);
+        $product->load([
+            'categories:id,name,slug',
+            'media',
+            'packages' => fn ($query) => $query->ordered(),
+        ]);
 
         return Inertia::render('platform/catalog/products/edit', [
             'product' => $this->mapProduct($product, detailed: true),
@@ -209,6 +227,7 @@ class ProductController extends Controller
             'wholesale_price' => $product->wholesale_price,
             'min_wholesale_qty' => $product->min_wholesale_qty,
             'status' => (bool) $product->status,
+            'packages_enabled' => (bool) $product->packages_enabled,
             'created_at' => $product->created_at?->toIso8601String(),
             'updated_at' => $product->updated_at?->toIso8601String(),
             'gallery' => CatalogMediaPayload::gallery($product),
@@ -225,6 +244,19 @@ class ProductController extends Controller
                         'sku' => $variant->sku,
                         'attributes' => $variant->attributes,
                         'status' => (bool) $variant->status,
+                    ])
+                    ->values()
+                    ->all()
+                : [];
+            $payload['packages'] = $product->relationLoaded('packages')
+                ? $product->packages
+                    ->map(fn (ProductPackage $package): array => [
+                        'id' => $package->id,
+                        'label' => $package->label,
+                        'quantity' => $package->quantity,
+                        'price' => $package->price,
+                        'status' => (bool) $package->status,
+                        'sort_order' => $package->sort_order,
                     ])
                     ->values()
                     ->all()

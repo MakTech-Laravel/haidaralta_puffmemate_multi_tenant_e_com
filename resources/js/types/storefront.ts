@@ -28,6 +28,11 @@ export type StorefrontProduct = {
     views: string;
 };
 
+export type StorefrontPackagedProduct = StorefrontProduct & {
+    packageCount: number;
+    fromLabel: string;
+};
+
 export type StorefrontPack = {
     id: string;
     slug: string;
@@ -79,6 +84,9 @@ export type StorefrontCartItem = {
     maxQuantity: number;
     lineTotal: number;
     formattedLineTotal: string;
+    productPackageId?: number | null;
+    packageLabel?: string | null;
+    packageQuantity?: number | null;
 };
 
 export type StorefrontCart = {
@@ -101,6 +109,9 @@ export type StorefrontSavedAddress = {
 export type StorefrontTimeSlot = {
     id: string;
     label: string;
+    name?: string;
+    start_time?: string;
+    end_time?: string;
 };
 
 export type StorefrontDeliveryMethod = {
@@ -108,6 +119,9 @@ export type StorefrontDeliveryMethod = {
     label: string;
     description: string;
     requiresSlot: boolean;
+    requiresDate?: boolean;
+    minDate?: string | null;
+    maxDate?: string | null;
     timeSlots: StorefrontTimeSlot[];
 };
 

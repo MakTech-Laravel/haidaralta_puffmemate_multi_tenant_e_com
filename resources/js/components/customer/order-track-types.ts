@@ -1,8 +1,11 @@
 export type OrderTrackProduct = {
     name: string;
     image: string;
+    packageLabel?: string | null;
     quantityLabel: string;
     priceLabel: string;
+    isLateDelivery?: boolean;
+    isRemoved?: boolean;
 };
 
 export type OrderTrackShippingAddress = {
@@ -64,6 +67,7 @@ export type CustomerOrderDetail = {
     canResendCode?: boolean;
     canCancel?: boolean;
     canChat?: boolean;
+    chatUnreadCount?: number;
     canRequestReturn?: boolean;
     returnRequest?: {
         id: number;

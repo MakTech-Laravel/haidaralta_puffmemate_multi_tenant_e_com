@@ -7,14 +7,17 @@ use App\Http\Controllers\Branch\CategoryController as BranchCategoryController;
 use App\Http\Controllers\Branch\ConversationController as BranchConversationController;
 use App\Http\Controllers\Branch\CustomerController as BranchCustomerController;
 use App\Http\Controllers\Branch\DashboardController as BranchDashboardController;
+use App\Http\Controllers\Branch\DriverChatController as BranchDriverChatController;
 use App\Http\Controllers\Branch\DriverController as BranchDriverController;
 use App\Http\Controllers\Branch\DriverProductAssignController as BranchDriverProductAssignController;
+use App\Http\Controllers\Branch\DriverTrackingController as BranchDriverTrackingController;
 use App\Http\Controllers\Branch\GeneralSettingsController as BranchGeneralSettingsController;
 use App\Http\Controllers\Branch\NotificationController as BranchNotificationController;
 use App\Http\Controllers\Branch\OrderAssignController as BranchOrderAssignController;
 use App\Http\Controllers\Branch\OrderController as BranchOrderController;
 use App\Http\Controllers\Branch\PacksSavesController as BranchPacksSavesController;
 use App\Http\Controllers\Branch\PermissionController as BranchPermissionController;
+use App\Http\Controllers\Branch\PlatformChatController as BranchPlatformChatController;
 use App\Http\Controllers\Branch\ProductController as BranchProductController;
 use App\Http\Controllers\Branch\ProductReviewController as BranchProductReviewController;
 use App\Http\Controllers\Branch\Reports\OrderAssignHistoryController as BranchOrderAssignHistoryController;
@@ -35,11 +38,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{branch}')->group(function () {
-    Route::get('dashboard', [BranchDashboardController::class, 'index'])->name('branch.dashboard');
-    Route::get('notifications', [BranchNotificationController::class, 'index'])->name('branch.notifications.index');
-    Route::get('notifications/{userNotification}', [BranchNotificationController::class, 'show'])->name('branch.notifications.show');
-    Route::post('notifications/{userNotification}/read', [BranchNotificationController::class, 'read'])->name('branch.notifications.read');
-    Route::delete('notifications/{userNotification}', [BranchNotificationController::class, 'destroy'])->name('branch.notifications.destroy');
+    Route::middleware(['permission:view-branch-dashboard'])->group(function () {
+        Route::get('dashboard', [BranchDashboardController::class, 'index'])->name('branch.dashboard');
+        Route::get('notifications', [BranchNotificationController::class, 'index'])->name('branch.notifications.index');
+        Route::get('notifications/{userNotification}', [BranchNotificationController::class, 'show'])->name('branch.notifications.show');
+        Route::post('notifications/{userNotification}/read', [BranchNotificationController::class, 'read'])->name('branch.notifications.read');
+        Route::delete('notifications/{userNotification}', [BranchNotificationController::class, 'destroy'])->name('branch.notifications.destroy');
+    });
 
     Route::middleware(['permission:manage-branch-products'])->group(function () {
         Route::get('categories/options', [BranchCategoryController::class, 'options'])
@@ -107,11 +112,6 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
         Route::post('stock/import', [BranchStockController::class, 'storeImport'])->name('branch.stock.import.store');
         Route::get('stock/price', fn (Request $request, Branch $branch) => ProductManageRedirect::branch($request, $branch))
             ->name('branch.stock.price');
-        Route::get('reports/order-reports', [BranchOrderReportController::class, 'index'])
-            ->name('branch.reports.order-reports');
-        Route::get('reports/order-operations', function (string $branch) {
-            return redirect()->route('branch.reports.order-reports', ['branch' => $branch], 301);
-        });
         Route::get('reports/stock-transactions', [BranchStockTransactionController::class, 'index'])
             ->name('branch.reports.stock-transactions');
         Route::get('reports/stock-transactions/export', [BranchStockTransactionController::class, 'export'])
@@ -125,6 +125,12 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     });
 
     Route::middleware(['permission:manage-branch-orders'])->group(function () {
+        Route::get('reports/order-reports', [BranchOrderReportController::class, 'index'])
+            ->name('branch.reports.order-reports');
+        Route::get('reports/order-operations', function (string $branch) {
+            return redirect()->route('branch.reports.order-reports', ['branch' => $branch], 301);
+        });
+
         Route::get('customers', [BranchCustomerController::class, 'index'])->name('branch.customers.index');
         Route::get('customers/{user}', [BranchCustomerController::class, 'show'])
             ->whereNumber('user')
@@ -171,6 +177,11 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.orders.placement-code');
         Route::post('orders/{fulfillment}/cancel', [BranchOrderController::class, 'cancel'])
             ->name('branch.orders.cancel');
+        Route::post('orders/{fulfillment}/items/{item}/remove-late', [BranchOrderController::class, 'removeLateItem'])
+            ->name('branch.orders.items.remove-late');
+        Route::post('orders/{fulfillment}/items/{item}/collect-late', [BranchOrderController::class, 'collectLateItem'])
+            ->name('branch.orders.items.collect-late');
+
         Route::post('orders/{fulfillment}/retry-delivery', [BranchOrderController::class, 'retryDelivery'])
             ->name('branch.orders.retry-delivery');
         Route::post('orders/{fulfillment}/reschedule-delivery', [BranchOrderController::class, 'rescheduleDelivery'])
@@ -231,6 +242,62 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
             ->name('branch.conversations.close');
     });
 
+    Route::middleware(['permission:manage-branch-driver-chat'])->group(function () {
+        Route::get('driver-chats', [BranchDriverChatController::class, 'index'])
+            ->name('branch.driver-chats.index');
+        Route::get('driver-chats/driver-options', [BranchDriverChatController::class, 'driverOptions'])
+            ->name('branch.driver-chats.driver-options');
+        Route::post('driver-chats', [BranchDriverChatController::class, 'store'])
+            ->name('branch.driver-chats.store');
+        Route::get('driver-chats/{conversation}', [BranchDriverChatController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.show');
+        Route::get('driver-chats/{conversation}/messages', [BranchDriverChatController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.messages');
+        Route::post('driver-chats/{conversation}/messages', [BranchDriverChatController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('branch.driver-chats.messages.store');
+        Route::post('driver-chats/{conversation}/delivered', [BranchDriverChatController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.delivered');
+        Route::post('driver-chats/{conversation}/read', [BranchDriverChatController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.read');
+        Route::post('driver-chats/{conversation}/close', [BranchDriverChatController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('branch.driver-chats.close');
+    });
+
+    Route::middleware(['permission:manage-branch-platform-chat'])->group(function () {
+        Route::get('platform-chats', [BranchPlatformChatController::class, 'index'])
+            ->name('branch.platform-chats.index');
+        Route::get('platform-chats/platform-options', [BranchPlatformChatController::class, 'platformOptions'])
+            ->name('branch.platform-chats.platform-options');
+        Route::post('platform-chats', [BranchPlatformChatController::class, 'store'])
+            ->name('branch.platform-chats.store');
+        Route::get('platform-chats/{conversation}', [BranchPlatformChatController::class, 'show'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.show');
+        Route::get('platform-chats/{conversation}/messages', [BranchPlatformChatController::class, 'messages'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.messages');
+        Route::post('platform-chats/{conversation}/messages', [BranchPlatformChatController::class, 'storeMessage'])
+            ->whereNumber('conversation')
+            ->middleware('throttle:conversation-messages')
+            ->name('branch.platform-chats.messages.store');
+        Route::post('platform-chats/{conversation}/delivered', [BranchPlatformChatController::class, 'delivered'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.delivered');
+        Route::post('platform-chats/{conversation}/read', [BranchPlatformChatController::class, 'read'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.read');
+        Route::post('platform-chats/{conversation}/close', [BranchPlatformChatController::class, 'close'])
+            ->whereNumber('conversation')
+            ->name('branch.platform-chats.close');
+    });
+
     Route::middleware(['permission:view-branch-activity-logs'])->group(function () {
         Route::get('activity-logs', [BranchActivityLogController::class, 'index'])->name('branch.activity-logs.index');
         Route::get('activity-logs/{activity}', [BranchActivityLogController::class, 'show'])
@@ -277,6 +344,10 @@ Route::middleware(['ensure.guard:branch', 'resolve.branch'])->prefix('branch/{br
     Route::middleware(['permission:manage-branch-drivers'])->group(function () {
         Route::get('drivers', [BranchDriverController::class, 'index'])->name('branch.drivers.index');
         Route::get('drivers/create', [BranchDriverController::class, 'create'])->name('branch.drivers.create');
+        Route::get('driver-map', [BranchDriverTrackingController::class, 'index'])->name('branch.drivers.live');
+        Route::post('driver-map/watch', [BranchDriverTrackingController::class, 'watch'])
+            ->middleware('throttle:6,1')
+            ->name('branch.drivers.live.watch');
         Route::post('drivers', [BranchDriverController::class, 'store'])
             ->middleware('precognitive')
             ->name('branch.drivers.store');

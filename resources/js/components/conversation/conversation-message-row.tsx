@@ -104,6 +104,7 @@ export function ConversationMessageRow({
     receipt,
     onRetry,
     onDiscard,
+    showSenderRole = false,
 }: {
     message: ConversationMessage;
     isOwn: boolean;
@@ -111,6 +112,8 @@ export function ConversationMessageRow({
     receipt: ReceiptState | null;
     onRetry?: () => void;
     onDiscard?: () => void;
+    /** Branch ops chat: show "Name · Role"; driver portal hides role. */
+    showSenderRole?: boolean;
 }) {
     if (message.type === 'system' || message.sender === null) {
         return (
@@ -142,7 +145,11 @@ export function ConversationMessageRow({
             </MessageAvatar>
             <MessageContent>
                 {showHeader && !isOwn ? (
-                    <MessageHeader>{sender.name}</MessageHeader>
+                    <MessageHeader>
+                        {showSenderRole && sender.role_label
+                            ? `${sender.name} · ${sender.role_label}`
+                            : sender.name}
+                    </MessageHeader>
                 ) : null}
                 <Bubble
                     variant={isOwn ? 'default' : 'muted'}

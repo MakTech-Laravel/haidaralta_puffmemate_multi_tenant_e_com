@@ -2,7 +2,10 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronLeft, Package } from 'lucide-react';
 import OrderController from '@/actions/App/Http/Controllers/Customer/OrderController';
 import { OrderChatBody } from '@/components/conversation/order-chat-body';
-import type { ConversationMessage } from '@/components/conversation/types';
+import type {
+    ConversationMessage,
+    ParticipantReceipt,
+} from '@/components/conversation/types';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -24,6 +27,10 @@ type CustomerOrderChatProps = {
     viewerId: number;
     canSend: boolean;
     channel: string;
+    receipts: ParticipantReceipt[];
+    viewerLastReadMessageId: number;
+    deliveredUrl: string;
+    readUrl: string;
 };
 
 export default function CustomerOrderChat({
@@ -32,6 +39,10 @@ export default function CustomerOrderChat({
     viewerId,
     canSend,
     channel,
+    receipts,
+    viewerLastReadMessageId,
+    deliveredUrl,
+    readUrl,
 }: CustomerOrderChatProps) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const viewerName = auth.user?.name ?? 'You';
@@ -92,6 +103,10 @@ export default function CustomerOrderChat({
                         order.orderNumber,
                     )}
                     intro="Messages about this delivery · driver and store"
+                    receipts={receipts}
+                    viewerLastReadMessageId={viewerLastReadMessageId}
+                    deliveredUrl={deliveredUrl}
+                    readUrl={readUrl}
                 />
             </div>
         </>

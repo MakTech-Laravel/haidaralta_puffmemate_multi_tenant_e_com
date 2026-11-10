@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsureAnyPortalGuard;
+use App\Http\Middleware\EnsureDriverLocationShared;
 use App\Http\Middleware\EnsurePhoneIsVerified;
 use App\Http\Middleware\EnsurePortalGuard;
 use App\Http\Middleware\EnsureStorefrontCustomer;
@@ -50,6 +51,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'ensure.guard' => EnsurePortalGuard::class,
             'ensure.any.portal' => EnsureAnyPortalGuard::class,
+            'ensure.driver.location' => EnsureDriverLocationShared::class,
             'ensure.storefront.customer' => EnsureStorefrontCustomer::class,
             'resolve.branch' => ResolveBranchContext::class,
             'permission' => PermissionMiddleware::class,

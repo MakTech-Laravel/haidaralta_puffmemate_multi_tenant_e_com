@@ -19,15 +19,12 @@ export type DriverOrderListTab = 'active' | 'delivered';
 export type DriverOrderPaymentMethod = 'cod' | 'paid';
 
 export type DriverOrderNextActionKey =
-    | 'pick_up'
-    | 'start'
-    | 'arrive'
-    | 'complete'
-    | 'return';
+    'pick_up' | 'start' | 'arrive' | 'complete' | 'return';
 
 export type DriverOrderNextAction = {
     key: DriverOrderNextActionKey;
     label: string;
+    disabled?: boolean;
 };
 
 export type DriverAssignedOrder = {
@@ -48,6 +45,9 @@ export type DriverAssignedOrder = {
     productCount: number;
     totalLabel: string;
     phone: string;
+    /** Delivery pin, when the order has one. */
+    latitude?: number | null;
+    longitude?: number | null;
     notes: string | null;
     unitLabel: string | null;
     productPreview: string[];
@@ -63,6 +63,8 @@ export type DriverOrderDetail = DriverAssignedOrder & {
     demoOtpHint: string;
     canChat?: boolean;
     canPickUp?: boolean;
+    hasUnresolvedLateItems?: boolean;
+    lateItemsBlockMessage?: string | null;
     canStart?: boolean;
     canArrive?: boolean;
     canDeliver?: boolean;
@@ -88,9 +90,15 @@ export type DriverOrderDetail = DriverAssignedOrder & {
         country: string;
     };
     products: Array<{
+        id: number;
         name: string;
+        packageLabel?: string | null;
         quantityLabel: string;
         priceLabel: string;
+        isLateDelivery?: boolean;
+        isRemoved?: boolean;
+        canRemoveLate?: boolean;
+        canCollectLate?: boolean;
     }>;
     subtotalLabel: string;
     discountLabel: string | null;

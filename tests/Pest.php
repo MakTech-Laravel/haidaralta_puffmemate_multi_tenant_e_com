@@ -4,6 +4,7 @@ use App\Enums\FulfillmentStatus;
 use App\Enums\PaymentStatus;
 use App\Enums\ShiftAssignmentStatus;
 use App\Models\Branch;
+use App\Models\DeliveryShift;
 use App\Models\Order;
 use App\Models\OrderFulfillment;
 use App\Models\OrderItem;
@@ -25,6 +26,9 @@ use Tests\TestCase;
 | need to change it using the "pest()" function to bind different classes or traits.
 |
 */
+
+require_once __DIR__.'/Support/platformPermissionProbe.php';
+require_once __DIR__.'/Support/branchPermissionProbe.php';
 
 pest()->extend(TestCase::class)
     ->use(RefreshDatabase::class)
@@ -127,7 +131,45 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something()
+/**
+ * Ensure active DeliveryShift rows exist for storefront checkout place tests.
+ */
+function seedCheckoutDeliveryShifts(): DeliveryShift
 {
-    // ..
+    DeliveryShift::query()->delete();
+
+    DeliveryShift::factory()->create([
+        'name' => 'Morning Delivery',
+        'start_time' => '09:00',
+        'end_time' => '13:00',
+        'is_active' => true,
+    ]);
+
+    DeliveryShift::factory()->create([
+        'name' => 'Afternoon Delivery',
+        'start_time' => '13:00',
+        'end_time' => '17:00',
+        'is_active' => true,
+    ]);
+
+    return DeliveryShift::factory()->create([
+        'name' => 'Evening Delivery',
+        'start_time' => '17:00',
+        'end_time' => '21:00',
+        'is_active' => true,
+    ]);
+}
+
+function checkoutDeliveryShiftId(): int
+{
+    $shift = DeliveryShift::query()
+        ->where('is_active', true)
+        ->orderByDesc('start_time')
+        ->first();
+
+    if ($shift === null) {
+        $shift = seedCheckoutDeliveryShifts();
+    }
+
+    return $shift->id;
 }

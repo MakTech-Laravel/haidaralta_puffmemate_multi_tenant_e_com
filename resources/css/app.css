@@ -2,6 +2,7 @@
 
 @import 'tailwindcss';
 @import 'leaflet/dist/leaflet.css';
+@import 'leaflet-draw/dist/leaflet.draw.css';
 
 @import 'tw-animate-css';
 
@@ -293,4 +294,16 @@
     .animate-navigation-speed {
         animation: none;
     }
+}
+
+/* Keep Leaflet below address suggest popovers and page chrome. */
+.branch-area-polygon-map .leaflet-container,
+.branch-area-polygon-map .leaflet-pane,
+.branch-area-polygon-map .leaflet-top,
+.branch-area-polygon-map .leaflet-bottom {
+    z-index: 0;
+}
+
+.branch-area-polygon-map .leaflet-control {
+    z-index: 1;
 }

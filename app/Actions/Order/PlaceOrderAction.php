@@ -24,13 +24,13 @@ use App\Models\User;
 use App\Services\Customer\CustomerAccountService;
 use App\Services\Inventory\InventoryReservationService;
 use App\Services\Notifications\NotificationService;
+use App\Services\Order\Allocation\AreaCheckoutAllocator;
 use App\Services\Order\AllocationDecisionRecorder;
-use App\Services\Order\OrderAllocationEngine;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\StockTransferService;
-use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
 use App\Support\Order\OrderNumber;
+use App\Support\ProductPackagePricing;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -38,7 +38,7 @@ use Illuminate\Validation\ValidationException;
 class PlaceOrderAction
 {
     public function __construct(
-        private OrderAllocationEngine $allocator,
+        private AreaCheckoutAllocator $allocator,
         private InventoryReservationService $reservations,
         private StockTransferService $transfers,
         private NotificationService $notifications,
@@ -60,15 +60,17 @@ class PlaceOrderAction
      *     delivery_method: string,
      *     delivery_date?: string|null,
      *     time_slot?: string|null,
+     *     delivery_shift_id?: int|null,
      *     payment_method: string,
      *     coupon?: Coupon|null,
      *     discount?: float,
-     *     notes?: string|null
+     *     notes?: string|null,
+     *     accept_late_delivery?: bool
      * }  $data
      */
     public function handle(User $user, Cart $cart, array $data): Order
     {
-        $cart->load(['items.product.media']);
+        $cart->load(['items.product.media', 'items.product.packages', 'items.package']);
 
         if ($cart->items->isEmpty()) {
             throw ValidationException::withMessages([
@@ -76,12 +78,36 @@ class PlaceOrderAction
             ]);
         }
 
+        foreach ($cart->items as $cartItem) {
+            $product = $cartItem->product;
+
+            if ($product === null || ! $product->status) {
+                throw ValidationException::withMessages([
+                    'cart' => 'One or more items are no longer available.',
+                ]);
+            }
+
+            try {
+                ProductPackagePricing::requirePackageSelection($product, $cartItem->product_package_id);
+            } catch (\InvalidArgumentException $exception) {
+                throw ValidationException::withMessages([
+                    'cart' => $exception->getMessage(),
+                ]);
+            }
+
+            if (ProductPackagePricing::unitAmountForCartItem($cartItem) <= 0) {
+                throw ValidationException::withMessages([
+                    'cart' => 'One or more items cannot be purchased at this time.',
+                ]);
+            }
+        }
+
         $latitude = (float) $data['latitude'];
         $longitude = (float) $data['longitude'];
         $coupon = $data['coupon'] ?? null;
         $discount = (float) ($data['discount'] ?? 0);
         $subtotal = $cart->items->sum(
-            fn ($item): float => BranchProductPriceDisplay::catalogEffectiveAmount($item->product) * $item->quantity,
+            fn ($item): float => ProductPackagePricing::unitAmountForCartItem($item) * $item->quantity,
         );
 
         $order = DB::transaction(function () use (
@@ -94,11 +120,13 @@ class PlaceOrderAction
             $discount,
             $subtotal,
         ): Order {
+            $acceptLate = (bool) ($data['accept_late_delivery'] ?? false);
             $plan = $this->allocator->allocate(
                 $latitude,
                 $longitude,
                 $cart->items,
-                $data['delivery_method'],
+                $acceptLate,
+                true,
             );
 
             $inventoryMap = $this->loadInventoryMap($plan);
@@ -137,7 +165,9 @@ class PlaceOrderAction
                 'delivery_method' => $data['delivery_method'],
                 'delivery_date' => $data['delivery_date'] ?? null,
                 'time_slot' => $data['time_slot'] ?? null,
+                'delivery_shift_id' => $data['delivery_shift_id'] ?? null,
                 'notes' => $data['notes'] ?? null,
+                'accepts_late_delivery' => $acceptLate && $plan['requires_late_delivery'],
             ]);
 
             $this->decisions->record($order, $plan['branch']->id, $plan['decision_trace']);
@@ -154,7 +184,8 @@ class PlaceOrderAction
             foreach ($plan['lines'] as $line) {
                 $item = $cart->items->first(
                     fn ($cartItem): bool => $cartItem->product_id === $line['product_id']
-                        && $cartItem->variant_id === $line['variant_id'],
+                        && $cartItem->variant_id === $line['variant_id']
+                        && $cartItem->product_package_id === ($line['product_package_id'] ?? null),
                 );
                 $product = $item?->product;
 
@@ -162,22 +193,31 @@ class PlaceOrderAction
                     continue;
                 }
 
-                $unit = BranchProductPriceDisplay::catalogEffectiveAmount($product);
+                $package = $item->package;
+                $unit = ProductPackagePricing::unitAmountForCartItem($item);
+                $orderQuantity = (int) ($line['order_quantity'] ?? $item->quantity);
 
                 OrderItem::query()->create([
                     'order_id' => $order->id,
                     'fulfillment_id' => $fulfillment->id,
                     'product_id' => $product->id,
                     'variant_id' => $line['variant_id'],
+                    'product_package_id' => $package?->id,
                     'product_name_snapshot' => $product->name,
                     'sku_snapshot' => $product->sku,
-                    'product_snapshot' => $this->productSnapshot($product),
-                    'quantity' => $line['quantity'],
+                    'product_snapshot' => $this->productSnapshot($product, $package?->label, $package?->quantity),
+                    'package_label_snapshot' => $package?->label,
+                    'package_quantity_snapshot' => $package?->quantity,
+                    'quantity' => $orderQuantity,
                     'unit_price' => $unit,
-                    'subtotal' => $unit * $line['quantity'],
+                    'subtotal' => $unit * $orderQuantity,
+                    'is_late_delivery' => (bool) ($line['is_late_delivery'] ?? false),
+                    'local_reserved_quantity' => (int) ($line['local_quantity'] ?? 0),
                 ]);
             }
 
+            // Area checkout never plans automated transfers for shortfalls —
+            // late lines rely on staff collecting stock later.
             foreach ($plan['transfers'] as $leg) {
                 $this->transfers->createForFulfillment($fulfillment, $leg);
             }
@@ -368,7 +408,7 @@ class PlaceOrderAction
     /**
      * @return array<string, mixed>
      */
-    private function productSnapshot(Product $product): array
+    private function productSnapshot(Product $product, ?string $packageLabel = null, ?int $packageQuantity = null): array
     {
         return [
             'name' => $product->name,
@@ -378,6 +418,8 @@ class PlaceOrderAction
             'description' => $product->packSummary(),
             'brand' => $product->brand,
             'pack_label' => $product->pack_label,
+            'package_label' => $packageLabel,
+            'package_quantity' => $packageQuantity,
         ];
     }
 

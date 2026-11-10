@@ -1,6 +1,9 @@
+import { usePage } from '@inertiajs/react';
+import { useMemo } from 'react';
 import AlertError from '@/components/alert-error';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -11,12 +14,16 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { CheckoutMapDialog } from '@/components/storefront/checkout/checkout-map-dialog';
+import { AddressSuggestInput } from '@/components/storefront/wholesale/address-suggest-input';
+import { filterUpcomingDeliverySlots } from '@/lib/delivery-shift-availability';
 import { cn } from '@/lib/utils';
 import type {
     StorefrontDeliveryMethod,
     StorefrontPaymentMethod,
     StorefrontTimeSlot,
 } from '@/types/storefront';
+
+const AU_COUNTRY = 'au';
 
 export type CheckoutDetails = {
     name: string;
@@ -28,6 +35,7 @@ export type CheckoutDetails = {
     longitude: string;
     saveAsDefault: boolean;
     deliveryMethodId: string;
+    deliveryDate: string;
     timeSlotId: string;
     paymentMethodId: string;
 };
@@ -75,6 +83,10 @@ function SectionHint({ children }: { children: string }) {
     );
 }
 
+function FieldHint({ children }: { children: string }) {
+    return <p className="text-muted-foreground text-xs">{children}</p>;
+}
+
 function slotHours(slots: StorefrontTimeSlot[]): string | null {
     if (slots.length === 0) {
         return null;
@@ -109,11 +121,22 @@ export function CheckoutForm({
     onPinSelect,
     className,
 }: CheckoutFormProps) {
+    const { auth } = usePage<{ auth: { user: unknown | null } }>().props;
+    const isGuest = !auth.user;
     const selectedMethod = deliveryMethods.find(
         (method) => method.id === details.deliveryMethodId,
     );
-    const timeSlots = selectedMethod?.timeSlots ?? [];
     const showTimeSlots = selectedMethod?.requiresSlot ?? false;
+    const showDeliveryDate = selectedMethod?.requiresDate ?? false;
+    const timeSlots = useMemo(() => {
+        const slots = selectedMethod?.timeSlots ?? [];
+
+        if (showDeliveryDate) {
+            return slots;
+        }
+
+        return filterUpcomingDeliverySlots(slots);
+    }, [selectedMethod?.timeSlots, showDeliveryDate]);
     const paymentHint = paymentMethods.some(
         (method) => method.id === 'payment_link',
     )
@@ -154,11 +177,16 @@ export function CheckoutForm({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
-                    <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="grid gap-4">
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-full-name">
-                                Full name <RequiredMark />
+                                What name should we use for your order?{' '}
+                                <RequiredMark />
                             </Label>
+                            <FieldHint>
+                                You may use any name or alias to maintain your
+                                privacy.
+                            </FieldHint>
                             <Input
                                 id="checkout-full-name"
                                 value={details.name}
@@ -172,7 +200,9 @@ export function CheckoutForm({
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="checkout-mobile">
-                                Mobile number <RequiredMark />
+                                Phone Number ( EXPECT CALL FROM PRIVATE
+                                NUMBER!!! must be reachable during delivery
+                                time) <RequiredMark />
                             </Label>
                             <Input
                                 id="checkout-mobile"
@@ -200,23 +230,73 @@ export function CheckoutForm({
                     <div className="flex items-end gap-2">
                         <div className="min-w-0 flex-1 space-y-1.5">
                             <Label htmlFor="checkout-address">
-                                Address <RequiredMark />
+                                Where would you like your order delivered?{' '}
+                                <RequiredMark />
                             </Label>
-                            <Input
+                            <FieldHint>
+                                For Privacy you may enter only the street and
+                                suburb , or provide a nearby meeting location
+                                for the driver.
+                            </FieldHint>
+                            <AddressSuggestInput
                                 id="checkout-address"
+                                name="address"
                                 value={details.address}
-                                onChange={(event) =>
-                                    onChange('address', event.target.value)
-                                }
-                                placeholder="Street address"
-                                autoComplete="street-address"
+                                countrycodes={AU_COUNTRY}
+                                placeholder="Start typing an Australian address"
                                 className={fieldClass}
+                                onSelect={({
+                                    address,
+                                    latitude,
+                                    longitude,
+                                    city,
+                                    postalCode,
+                                }) => {
+                                    onChange('address', address);
+                                    if (city) {
+                                        onChange('city', city);
+                                    }
+                                    if (postalCode) {
+                                        onChange('postalCode', postalCode);
+                                    }
+
+                                    if (onPinSelect) {
+                                        onPinSelect(
+                                            latitude,
+                                            longitude,
+                                            address,
+                                        );
+                                        return;
+                                    }
+
+                                    onChange('latitude', latitude);
+                                    onChange('longitude', longitude);
+                                }}
+                                onClear={() => {
+                                    onChange('address', '');
+                                    onChange('latitude', '');
+                                    onChange('longitude', '');
+                                }}
                             />
                         </div>
                         <CheckoutMapDialog
                             latitude={details.latitude}
                             longitude={details.longitude}
-                            onSelect={({ latitude, longitude, address }) => {
+                            countrycodes={AU_COUNTRY}
+                            onSelect={({
+                                latitude,
+                                longitude,
+                                address,
+                                city,
+                                postalCode,
+                            }) => {
+                                if (city) {
+                                    onChange('city', city);
+                                }
+                                if (postalCode) {
+                                    onChange('postalCode', postalCode);
+                                }
+
                                 if (onPinSelect) {
                                     onPinSelect(latitude, longitude, address);
                                     return;
@@ -271,18 +351,23 @@ export function CheckoutForm({
                             />
                         </div>
                     </div>
-                    <label className="flex items-center gap-2 text-sm">
-                        <input
-                            type="checkbox"
-                            checked={details.saveAsDefault}
-                            onChange={(event) =>
-                                onChange('saveAsDefault', event.target.checked)
-                            }
-                        />
-                        {hasSavedAddress
-                            ? 'Update my default address with these details'
-                            : 'Save as default address'}
-                    </label>
+                    {isGuest ? null : (
+                        <label className="flex items-center gap-2 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={details.saveAsDefault}
+                                onChange={(event) =>
+                                    onChange(
+                                        'saveAsDefault',
+                                        event.target.checked,
+                                    )
+                                }
+                            />
+                            {hasSavedAddress
+                                ? 'Update my default address with these details'
+                                : 'Save as default address'}
+                        </label>
+                    )}
                 </CardContent>
             </Card>
 
@@ -294,6 +379,13 @@ export function CheckoutForm({
                     <SectionHint>Choose one</SectionHint>
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
+                    <p className="text-muted-foreground text-sm font-semibold">
+                        SAME DAY DELIVERY SERVICE ONLY AVAILABLE WITHIN 15km
+                        RADIUS OF COORPAROO, QLD &amp; WEST IPSWICH, QLD.....
+                        DONT WORRY WE SHIP AUSTRALIA WIDE! FOR ANY ORDERS
+                        OUTSIDE THIS RADIUS, YOU CAN EXPECT YOUR ORDER WITHIN 3
+                        BUSINESS DAYS AFTER FULFILLING PAYMENT LINK.
+                    </p>
                     <div className="grid gap-3 sm:grid-cols-2">
                         {deliveryMethods.map((method) => {
                             const selected =
@@ -341,51 +433,100 @@ export function CheckoutForm({
                             );
                         })}
                     </div>
-                    {showTimeSlots ? (
+                    {showTimeSlots || showDeliveryDate ? (
                         <div className="space-y-4">
                             <p className="text-muted-foreground text-sm">
-                                Express is the faster option. Choose a
-                                preferred time window. We only accept Express
-                                when stock, including a short transfer, can be
-                                ready quickly. If that is not possible, choose
-                                Regular delivery.
+                                {showDeliveryDate
+                                    ? 'Choose a future delivery date and one shift.'
+                                    : 'Choose one remaining delivery shift for today.'}
                             </p>
-                            <div className="space-y-2">
-                                <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
-                                    Available time slots
-                                </p>
-                                <p className="text-muted-foreground text-sm">
-                                    {deliveryWindowLabel(timeSlots)}
-                                </p>
-                            </div>
-                            <div className="max-w-sm space-y-1.5">
-                                <div className="space-y-1.5">
-                                    <Label>
-                                        Time slot <RequiredMark />
-                                    </Label>
-                                    <Select
-                                        value={details.timeSlotId}
-                                        onValueChange={(value) =>
-                                            onChange('timeSlotId', value)
-                                        }
-                                    >
-                                        <SelectTrigger className={fieldClass}>
-                                            <SelectValue placeholder="Select a time slot" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {timeSlots.map((slot) => (
-                                                <SelectItem
-                                                    key={slot.id}
-                                                    value={slot.id}
-                                                >
-                                                    {slot.label}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <FieldError message={errors.time_slot_id} />
+                            {showDeliveryDate ? (
+                                <div className="border-border/80 bg-background space-y-3 rounded-none border p-4">
+                                    <div className="space-y-1">
+                                        <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+                                            Delivery date
+                                        </p>
+                                        <p className="text-muted-foreground text-sm">
+                                            Pick a day from tomorrow through the
+                                            next two weeks.
+                                        </p>
+                                    </div>
+                                    <div className="max-w-sm space-y-1.5">
+                                        <Label htmlFor="delivery_date">
+                                            Date <RequiredMark />
+                                        </Label>
+                                        <DatePicker
+                                            id="delivery_date"
+                                            value={
+                                                details.deliveryDate || null
+                                            }
+                                            onChange={(value) =>
+                                                onChange(
+                                                    'deliveryDate',
+                                                    value ?? '',
+                                                )
+                                            }
+                                            placeholder="Select delivery date"
+                                            clearable={false}
+                                            className="w-full"
+                                            min={
+                                                selectedMethod?.minDate ??
+                                                undefined
+                                            }
+                                            max={
+                                                selectedMethod?.maxDate ??
+                                                undefined
+                                            }
+                                            aria-invalid={Boolean(
+                                                errors.delivery_date,
+                                            )}
+                                        />
+                                        <FieldError
+                                            message={errors.delivery_date}
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                            ) : null}
+                            {showTimeSlots ? (
+                                <div className="space-y-2">
+                                    <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+                                        Available delivery shifts
+                                    </p>
+                                    <p className="text-muted-foreground text-sm">
+                                        {deliveryWindowLabel(timeSlots)}
+                                    </p>
+                                    <div className="max-w-sm space-y-1.5">
+                                        <Label>
+                                            Delivery shift <RequiredMark />
+                                        </Label>
+                                        <Select
+                                            value={details.timeSlotId}
+                                            onValueChange={(value) =>
+                                                onChange('timeSlotId', value)
+                                            }
+                                        >
+                                            <SelectTrigger
+                                                className={fieldClass}
+                                            >
+                                                <SelectValue placeholder="Select a delivery shift" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {timeSlots.map((slot) => (
+                                                    <SelectItem
+                                                        key={slot.id}
+                                                        value={slot.id}
+                                                    >
+                                                        {slot.label}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FieldError
+                                            message={errors.time_slot_id}
+                                        />
+                                    </div>
+                                </div>
+                            ) : null}
                         </div>
                     ) : null}
                 </CardContent>

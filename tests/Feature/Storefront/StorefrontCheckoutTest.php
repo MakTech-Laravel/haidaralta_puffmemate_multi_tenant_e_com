@@ -2,6 +2,7 @@
 
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
+use App\Enums\CustomerRegistrationStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
@@ -10,11 +11,12 @@ use App\Enums\UserType;
 use App\Models\Address;
 use App\Models\AllocationDecisionLog;
 use App\Models\Branch;
+use App\Models\BranchArea;
 use App\Models\Cart;
 use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
-use App\Models\DeliveryMethod;
+use App\Models\DeliveryShift;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Payment;
@@ -24,6 +26,8 @@ use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
+use App\Support\Geo\Polygon;
+use App\Support\Phone;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -32,6 +36,12 @@ beforeEach(function () {
     $this->seed(ApplicationSettingsSeeder::class);
     app(PaymentGatewaySettingsService::class)->ensureDefaults();
     app(DeliverySettingsService::class)->ensureDefaults();
+    seedCheckoutDeliveryShifts();
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 10:00:00', config('app.timezone')));
+});
+
+afterEach(function () {
+    Carbon\Carbon::setTestNow();
 });
 
 function storefrontCheckoutProduct(array $overrides = []): Product
@@ -50,6 +60,13 @@ function storefrontCheckoutBranchWithStock(Product $product, int $quantity = 10)
         'longitude' => 151.2093,
         'delivery_radius_km' => 50,
         'status' => true,
+    ]);
+
+    BranchArea::factory()->forBranch($branch)->create([
+        'latitude' => -33.8688,
+        'longitude' => 151.2093,
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
     ]);
 
     Inventory::factory()->create([
@@ -74,6 +91,7 @@ function checkoutPayload(array $overrides = []): array
         'latitude' => -33.8688,
         'longitude' => 151.2093,
         'delivery_method' => 'regular',
+        'time_slot_id' => checkoutDeliveryShiftId(),
         'payment_method' => PaymentGatewaySetting::KEY_COD,
         'terms' => true,
     ], $overrides);
@@ -107,12 +125,17 @@ test('checkout props omit branch keys', function () {
             ->where('paymentMethods.1.id', PaymentGatewaySetting::KEY_POS)
             ->has('deliveryMethods', 2)
             ->where('deliveryMethods.0.id', 'regular')
-            ->where('deliveryMethods.0.label', 'Regular delivery')
-            ->where('deliveryMethods.0.requiresSlot', false)
+            ->where('deliveryMethods.0.label', 'Same day delivery')
+            ->where('deliveryMethods.0.requiresSlot', true)
+            ->where('deliveryMethods.0.requiresDate', false)
             ->where('deliveryMethods.1.id', 'express')
-            ->where('deliveryMethods.1.label', 'Express delivery')
+            ->where('deliveryMethods.1.label', 'Late delivery')
             ->where('deliveryMethods.1.requiresSlot', true)
-            ->has('deliveryMethods.1.timeSlots', 4)
+            ->where('deliveryMethods.1.requiresDate', true)
+            ->where('deliveryMethods.1.minDate', '2026-11-10')
+            ->where('deliveryMethods.1.maxDate', '2026-11-23')
+            ->has('deliveryMethods.0.timeSlots', 2)
+            ->has('deliveryMethods.1.timeSlots', 3)
             ->missing('timeSlots')
             ->missing('deliveryMethods.0.formattedFee')
             ->missing('deliveryMethods.1.formattedFee')
@@ -201,7 +224,7 @@ test('platform branch and driver staff cannot place a storefront order', functio
     'driver' => ['driver', UserType::DRIVER],
 ]);
 
-test('express checkout without a time slot is rejected', function () {
+test('checkout without a delivery shift is rejected', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'express-needs-slot']);
     storefrontCheckoutBranchWithStock($product);
@@ -216,6 +239,7 @@ test('express checkout without a time slot is rejected', function () {
         ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
+            'delivery_date' => '2026-11-10',
             'time_slot_id' => '',
         ]))
         ->assertRedirect(route('checkout'))
@@ -224,10 +248,11 @@ test('express checkout without a time slot is rejected', function () {
     expect(Order::query()->count())->toBe(0);
 });
 
-test('regular checkout does not require a delivery date or time slot', function () {
+test('same-day checkout stores today and the chosen delivery shift', function () {
     $user = User::factory()->create();
-    $product = storefrontCheckoutProduct(['slug' => 'regular-no-slot']);
+    $product = storefrontCheckoutProduct(['slug' => 'regular-with-shift']);
     storefrontCheckoutBranchWithStock($product);
+    $shiftId = checkoutDeliveryShiftId();
 
     $this->actingAs($user, 'customer')
         ->post(route('cart.store'), [
@@ -239,28 +264,25 @@ test('regular checkout does not require a delivery date or time slot', function 
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'regular',
             'delivery_date' => null,
-            'time_slot_id' => null,
+            'time_slot_id' => $shiftId,
         ]))
         ->assertRedirect();
 
     $order = Order::query()->firstOrFail();
 
     expect($order->delivery_method)->toBe('regular')
-        ->and($order->delivery_date)->toBeNull()
-        ->and($order->time_slot)->toBeNull();
+        ->and($order->delivery_date?->toDateString())->toBe('2026-11-09')
+        ->and($order->delivery_shift_id)->toBe($shiftId)
+        ->and($order->time_slot)->not->toBeNull();
 });
 
-test('express checkout stores today and the chosen slot without a customer date', function () {
-    $user = User::factory()->create();
-    $product = storefrontCheckoutProduct(['slug' => 'express-with-slot']);
-    storefrontCheckoutBranchWithStock($product);
+test('same-day checkout rejects a shift that has already started', function () {
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 14:11:00', config('app.timezone')));
 
-    $slot = DeliveryMethod::query()
-        ->where('key', 'express')
-        ->firstOrFail()
-        ->timeSlots()
-        ->orderBy('sort')
-        ->firstOrFail();
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'regular-past-shift']);
+    storefrontCheckoutBranchWithStock($product);
+    $morning = DeliveryShift::query()->where('name', 'Morning Delivery')->firstOrFail();
 
     $this->actingAs($user, 'customer')
         ->post(route('cart.store'), [
@@ -269,18 +291,94 @@ test('express checkout stores today and the chosen slot without a customer date'
         ]);
 
     $this->actingAs($user, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->has('deliveryMethods.0.timeSlots', 1)
+            ->where('deliveryMethods.0.id', 'regular')
+            ->where('deliveryMethods.0.timeSlots.0.name', 'Evening Delivery')
+            ->where('deliveryMethods.1.requiresDate', true)
+            ->where('deliveryMethods.1.minDate', '2026-11-10')
+            ->where('deliveryMethods.1.maxDate', '2026-11-23'));
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'regular',
+            'time_slot_id' => $morning->id,
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors('time_slot_id');
+});
+
+test('late delivery requires a future date within fourteen days', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'express-with-shift']);
+    storefrontCheckoutBranchWithStock($product);
+    $shiftId = checkoutDeliveryShiftId();
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
-            'delivery_date' => now()->addWeek()->toDateString(),
-            'time_slot_id' => (string) $slot->id,
+            'delivery_date' => '2026-11-09',
+            'time_slot_id' => $shiftId,
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors('delivery_date');
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'express',
+            'delivery_date' => '2026-11-24',
+            'time_slot_id' => $shiftId,
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors('delivery_date');
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'express',
+            'delivery_date' => '2026-11-23',
+            'time_slot_id' => $shiftId,
         ]))
         ->assertRedirect();
 
     $order = Order::query()->firstOrFail();
 
     expect($order->delivery_method)->toBe('express')
-        ->and($order->delivery_date?->toDateString())->toBe(now()->toDateString())
-        ->and($order->time_slot)->toBe($slot->label);
+        ->and($order->delivery_date?->toDateString())->toBe('2026-11-23')
+        ->and($order->delivery_shift_id)->toBe($shiftId);
+});
+
+test('same-day method is omitted when no eligible shifts remain', function () {
+    Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 22:00:00', config('app.timezone')));
+
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'no-same-day-left']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, 'customer')
+        ->get(route('checkout'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->has('deliveryMethods', 1)
+            ->where('deliveryMethods.0.id', 'express'));
 });
 
 test('pinning a location quotes the distance-based shipping fee', function () {
@@ -589,9 +687,79 @@ test('an applied coupon can be removed from checkout', function () {
         ->assertSessionMissing('storefront.checkout_coupon');
 });
 
-test('guests cannot remove a checkout coupon', function () {
-    $this->delete(route('checkout.coupon.destroy'))
-        ->assertRedirect(route('login'));
+test('guests can remove a checkout coupon', function () {
+    $this->withSession(['storefront.checkout_coupon' => ['code' => 'X']])
+        ->delete(route('checkout.coupon.destroy'))
+        ->assertRedirect()
+        ->assertSessionMissing('storefront.checkout_coupon');
+});
+
+test('a guest can place an order through a provisional customer', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-order-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $response = $this->post(route('checkout.store'), checkoutPayload([
+        'save_as_default' => true,
+    ]));
+
+    $order = Order::query()->firstOrFail();
+    $customer = User::query()->findOrFail($order->customer_id);
+
+    $response->assertRedirect(route('checkout.confirmation', $order));
+    expect($customer->registration_status)->toBe(CustomerRegistrationStatus::Provisional)
+        ->and($customer->user_type)->toBe(UserType::CUSTOMER)
+        ->and(Address::query()->count())->toBe(0);
+
+    $this->get(route('checkout.confirmation', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout-confirmation')
+            ->where('order.viewOrderUrl', null));
+});
+
+test('a guest repeat order with the same phone reuses the provisional customer', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-repeat-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    foreach (range(1, 2) as $ignored) {
+        $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+        $this->post(route('checkout.store'), checkoutPayload());
+    }
+
+    expect(Order::query()->count())->toBe(2)
+        ->and(Order::query()->distinct()->pluck('customer_id'))->toHaveCount(1);
+});
+
+test('a guest confirmation page is hidden from other sessions', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-private-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload());
+    $order = Order::query()->firstOrFail();
+
+    $this->flushSession();
+
+    $this->get(route('checkout.confirmation', $order))->assertNotFound();
+});
+
+test('a guest cannot order with the phone of a registered account', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-registered-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    User::factory()->create([
+        'phone' => Phone::toE164('0410123456'),
+        'registration_status' => CustomerRegistrationStatus::Registered,
+    ]);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload())
+        ->assertSessionHasErrors('mobile');
+
+    expect(Order::query()->count())->toBe(0);
 });
 
 test('a disabled payment method is rejected', function () {
@@ -622,7 +790,7 @@ test('a disabled payment method is rejected', function () {
         ->and(CartItem::query()->count())->toBe(1);
 });
 
-test('a cart that needs another branch stays on one fulfillment without leaking branches to the customer', function () {
+test('a cart with local shortfall accepts late delivery on one fulfillment without leaking branches to the customer', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'split-branch-item']);
 
@@ -632,11 +800,9 @@ test('a cart that needs another branch stays on one fulfillment without leaking 
         'delivery_radius_km' => 3000,
         'status' => true,
     ]);
-    $far = Branch::factory()->create([
-        'latitude' => -37.8136,
-        'longitude' => 144.9631,
-        'delivery_radius_km' => 3000,
-        'status' => true,
+    BranchArea::factory()->forBranch($near)->create([
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
     ]);
 
     Inventory::factory()->create([
@@ -644,13 +810,6 @@ test('a cart that needs another branch stays on one fulfillment without leaking 
         'product_id' => $product->id,
         'variant_id' => null,
         'quantity' => 2,
-        'status' => true,
-    ]);
-    Inventory::factory()->create([
-        'branch_id' => $far->id,
-        'product_id' => $product->id,
-        'variant_id' => null,
-        'quantity' => 10,
         'status' => true,
     ]);
 
@@ -661,19 +820,24 @@ test('a cart that needs another branch stays on one fulfillment without leaking 
         ]);
 
     $this->actingAs($user, 'customer')
-        ->post(route('checkout.store'), checkoutPayload())
+        ->post(route('checkout.store'), checkoutPayload([
+            'accept_late_delivery' => true,
+        ]))
         ->assertRedirect();
 
     $order = Order::query()->firstOrFail();
 
     expect($order->fulfillments)->toHaveCount(1)
-        ->and((int) $order->items->sum('quantity'))->toBe(5);
+        ->and($order->fulfillment->branch_id)->toBe($near->id)
+        ->and((int) $order->items->sum('quantity'))->toBe(5)
+        ->and($order->items->first()->is_late_delivery)->toBeTrue();
 
     $this->actingAs($user, 'customer')
         ->get(route('checkout.confirmation', $order))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/checkout-confirmation')
+            ->where('order.hasLateDeliveryItems', true)
             ->missing('order.id')
             ->missing('order.branch')
             ->missing('order.fulfillments')
@@ -681,11 +845,11 @@ test('a cart that needs another branch stays on one fulfillment without leaking 
             ->missing('order.transfers'));
 });
 
-test('placing a multi-line order with a transfer issues a flat number of inventory queries, not one per line item', function () {
+test('placing a multi-line area order with a late line issues a flat number of inventory queries', function () {
     $user = User::factory()->create();
     $local1 = storefrontCheckoutProduct(['slug' => 'inv-flat-local-1']);
     $local2 = storefrontCheckoutProduct(['slug' => 'inv-flat-local-2']);
-    $transferred = storefrontCheckoutProduct(['slug' => 'inv-flat-transfer']);
+    $late = storefrontCheckoutProduct(['slug' => 'inv-flat-late']);
 
     $destination = Branch::factory()->create([
         'latitude' => -33.8688,
@@ -693,18 +857,15 @@ test('placing a multi-line order with a transfer issues a flat number of invento
         'delivery_radius_km' => 3000,
         'status' => true,
     ]);
-    $source = Branch::factory()->create([
-        'latitude' => -33.9,
-        'longitude' => 151.2,
-        'delivery_radius_km' => 3000,
-        'status' => true,
+    BranchArea::factory()->forBranch($destination)->create([
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
     ]);
 
     Inventory::factory()->create(['branch_id' => $destination->id, 'product_id' => $local1->id, 'quantity' => 5, 'status' => true]);
     Inventory::factory()->create(['branch_id' => $destination->id, 'product_id' => $local2->id, 'quantity' => 5, 'status' => true]);
-    Inventory::factory()->create(['branch_id' => $source->id, 'product_id' => $transferred->id, 'quantity' => 5, 'status' => true]);
 
-    foreach ([$local1, $local2, $transferred] as $product) {
+    foreach ([$local1, $local2, $late] as $product) {
         $this->actingAs($user, 'customer')
             ->post(route('cart.store'), [
                 'product' => $product->slug,
@@ -720,34 +881,24 @@ test('placing a multi-line order with a transfer issues a flat number of invento
     });
 
     $this->actingAs($user, 'customer')
-        ->post(route('checkout.store'), checkoutPayload())
+        ->post(route('checkout.store'), checkoutPayload([
+            'accept_late_delivery' => true,
+        ]))
         ->assertRedirect();
 
-    // 3 base queries (allocator's sellableByBranch SELECT, the batched inventory map
-    // SELECT, the lockOrdered SELECT ... FOR UPDATE) + 2 queries per distinct inventory
-    // row actually reserved (the UPDATE plus AuditsChanges' post-save re-fetch) = 3 + 3*2 = 9.
-    // Before the N+1 fix, lockPlan()/reservePlan() each ran one extra findInventory() SELECT
-    // per line/leg item on top of this — i.e. 2 more queries per row (14 total here).
-    // This count must stay flat as line/leg items grow for the same number of distinct rows.
-    expect($queries)->toHaveCount(9, implode("\n", $queries));
+    // sellableByBranch + inventory map + lockOrdered + 2 queries per reserved local row.
+    expect($queries)->toHaveCount(7, implode("\n", $queries));
 
     $order = Order::query()->firstOrFail();
     expect($order->items)->toHaveCount(3)
-        ->and($order->fulfillments)->toHaveCount(1);
+        ->and($order->fulfillments)->toHaveCount(1)
+        ->and($order->items->firstWhere('product_id', $late->id)?->is_late_delivery)->toBeTrue();
 });
 
-test('placing an order writes an allocation decision log explaining the winner and any rejected branches', function () {
+test('placing an order writes an area allocation decision log for the matched branch', function () {
     $user = User::factory()->create();
     $product = storefrontCheckoutProduct(['slug' => 'decision-log-item']);
     $winner = storefrontCheckoutBranchWithStock($product);
-
-    // Out of radius, so it should show up as a rejected candidate on the log.
-    Branch::factory()->create([
-        'latitude' => -37.8136,
-        'longitude' => 144.9631,
-        'delivery_radius_km' => 1,
-        'status' => true,
-    ]);
 
     $this->actingAs($user, 'customer')
         ->post(route('cart.store'), [
@@ -766,8 +917,8 @@ test('placing an order writes an allocation decision log explaining the winner a
     expect($log->winning_branch_id)->toBe($winner->id)
         ->and($log->considered_branches)->not->toBeEmpty()
         ->and($log->considered_branches[0]['branch_id'])->toBe($winner->id)
-        ->and($log->rejected_branches)->toHaveCount(1)
-        ->and($log->rejected_branches[0]['reason'])->toBe('out_of_radius');
+        ->and($log->considered_branches[0]['allocation'] ?? null)->toBe('area_nearest')
+        ->and($log->rejected_branches)->toBe([]);
 });
 
 test('order line items snapshot product details so a later catalog change does not affect the order', function () {

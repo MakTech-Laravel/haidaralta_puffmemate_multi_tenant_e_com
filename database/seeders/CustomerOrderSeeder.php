@@ -56,14 +56,14 @@ class CustomerOrderSeeder extends Seeder
      * @var list<array<string, int>>
      */
     private const BASKETS = [
-        ['winfield-blue-soft-pack-20s' => 2, 'clipper-classic-lighter' => 1],
-        ['puffmemate-mini-bar-1200' => 2, 'usb-c-charge-cable-1m' => 1],
-        ['nordic-mint-pouches' => 1, 'raw-classic-rolling-papers-ks' => 2],
-        ['horizon-red-soft-pack-25s' => 1, 'bic-maxi-lighter' => 2],
-        ['terea-tobacco-sticks-20' => 2],
-        ['velo-cool-mint-pouches' => 1, 'puffmemate-cloud-bar-6000' => 1],
-        ['rothmans-blue-soft-pack-20s' => 1, 'clipper-classic-lighter' => 1],
-        ['winfield-red-soft-pack-20s' => 1, 'peter-jackson-menthol-20s' => 1],
+        ['marlboro-gold-soft-pack-20s' => 2, 'tobacco-100g' => 1],
+        ['kuz-nova-16000' => 1, 'zyn-or-velo' => 2],
+        ['manchester-light' => 1, 'violin-premium-ryo-40g' => 1],
+        ['marlboro-red' => 1, 'iget-one-12000' => 1],
+        ['mac' => 2],
+        ['zyn-nic-chewable-flavored' => 1, 'alibarbar-ingot-9000-puffs' => 1],
+        ['dunhill-blue' => 1, 'royal-bourbon-premium-ryo-40g' => 1],
+        ['kent-switch' => 1, 'iget-bar-pro-10k' => 1],
     ];
 
     /** @var array<string, Product> */
@@ -121,12 +121,20 @@ class CustomerOrderSeeder extends Seeder
     public function run(): void
     {
         $previousBroadcaster = config('broadcasting.default');
-        config(['broadcasting.default' => 'null']);
+        $previousMailer = config('mail.default');
+        config([
+            'broadcasting.default' => 'null',
+            // Placement codes call Mail::send(); Mailtrap Testing 550s burst SMTP.
+            'mail.default' => 'array',
+        ]);
 
         try {
             $this->seedOrders();
         } finally {
-            config(['broadcasting.default' => $previousBroadcaster]);
+            config([
+                'broadcasting.default' => $previousBroadcaster,
+                'mail.default' => $previousMailer,
+            ]);
         }
     }
 

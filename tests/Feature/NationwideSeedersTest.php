@@ -16,6 +16,7 @@ use Database\Seeders\NationwideInventorySeeder;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Database\Seeders\UserSeeder;
 use Illuminate\Support\Facades\Http;
+use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
     Http::fake([
@@ -62,6 +63,88 @@ test('extended catalog seeds 500+ priced products under hidden sub-categories', 
         ->and($rollingTobacco->featured)->toBeFalse()
         ->and($rollingTobacco->show_in_nav)->toBeFalse()
         ->and($rollingTobacco->products()->count())->toBeGreaterThan(0);
+});
+
+test('cigarettes category holds only the owner-approved range', function () {
+    $cigarettes = Category::query()->where('slug', 'cigarettes')->firstOrFail();
+
+    expect($cigarettes->products()->pluck('slug')->sort()->values()->all())->toBe(collect([
+        'double-happiness-soft-pack',
+        'manchester-special-edition',
+        'manchester-light',
+        'manchester-royal-red',
+        'manchester-double-drive',
+        'manchester-sapphire-blue',
+        'manchester-red',
+        'marlboro-gold-soft-pack-20s',
+        'marlboro-red',
+        'marlboro-ice-blast',
+        'benson-hedges-special-filter',
+        'dunhill-blue',
+        'mac',
+        'kent-switch',
+        'eights-8mg',
+    ])->sort()->values()->all());
+});
+
+test('cigarettes storefront page lists only the owner-approved range, not child category products', function () {
+    $cigarettes = Category::query()->where('slug', 'cigarettes')->firstOrFail();
+
+    expect(Category::query()->where('parent_id', $cigarettes->id)->exists())->toBeFalse();
+
+    $this->get(route('shop.category', ['category' => 'cigarettes']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/category')
+            ->has('products', 15));
+});
+
+test('tobacco category holds only the owner-approved range', function () {
+    $tobacco = Category::query()->where('slug', 'tobacco')->firstOrFail();
+
+    expect($tobacco->products()->pluck('slug')->sort()->values()->all())->toBe([
+        'royal-bourbon-premium-ryo-40g',
+        'tobacco-100g',
+        'violin-premium-ryo-40g',
+    ])
+        ->and(Product::query()->doesntHave('categories')->exists())->toBeFalse()
+        ->and(Product::query()->whereIn('slug', ['iqos-iluma-starter-kit', 'terea-tobacco-sticks-20', 'terea-menthol-sticks-20', 'drum-original-hand-rolling-tobacco-50g'])->exists())->toBeFalse()
+        ->and((float) Product::query()->where('slug', 'tobacco-100g')->value('selling_price'))->toBe(50.0);
+});
+
+test('nicotine pouches category holds only the owner-approved range', function () {
+    $pouches = Category::query()->where('slug', 'nicotine-pouches')->firstOrFail();
+
+    expect($pouches->products()->pluck('slug')->sort()->values()->all())->toBe([
+        'zyn-nic-chewable-flavored',
+        'zyn-or-velo',
+    ])
+        ->and(Product::query()->doesntHave('categories')->exists())->toBeFalse()
+        ->and(Product::query()->whereIn('slug', ['nordic-mint-pouches', 'citrus-chill-pouches', 'velo-cool-mint-pouches', 'puffmemate-spearmint-pouches', 'nordic-coffee-pouches'])->exists())->toBeFalse()
+        ->and((float) Product::query()->where('slug', 'zyn-or-velo')->value('selling_price'))->toBe(20.0)
+        ->and((float) Product::query()->where('slug', 'zyn-nic-chewable-flavored')->value('selling_price'))->toBe(25.0)
+        ->and(Category::query()->where('slug', 'vapes')->firstOrFail()->products()->where('slug', 'zyn-nic-chewable-flavored')->exists())->toBeTrue();
+});
+
+test('vapes category holds only the owner-approved range and shows nothing from other vape categories', function () {
+    $vapes = Category::query()->where('slug', 'vapes')->firstOrFail();
+
+    expect(Category::query()->where('parent_id', $vapes->id)->exists())->toBeFalse()
+        ->and($vapes->products()->pluck('slug')->sort()->values()->all())->toBe(collect([
+            'alibarbar-ingot-9000-puffs',
+            'kuz-nova-16000',
+            'kuz-pearl-30000-puffs',
+            'iget-one-12000',
+            'iget-bar-pro-10k',
+            'zyn-nic-chewable-flavored',
+        ])->sort()->values()->all())
+        ->and(Product::query()->doesntHave('categories')->exists())->toBeFalse();
+
+    $this->get(route('shop.category', ['category' => 'vapes']))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/category')
+            ->has('products', 6));
 });
 
 test('nationwide inventory stocks every branch with a stock-in ledger and keeps hand-tuned stock', function () {

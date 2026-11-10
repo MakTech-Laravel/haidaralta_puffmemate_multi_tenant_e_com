@@ -1,6 +1,9 @@
 import { Head, usePage } from '@inertiajs/react';
 import OrderController from '@/actions/App/Http/Controllers/Driver/OrderController';
-import type { ConversationMessage } from '@/components/conversation/types';
+import type {
+    ConversationMessage,
+    ParticipantReceipt,
+} from '@/components/conversation/types';
 import { DriverOrderChatPanel } from '@/components/driver/driver-order-chat-panel';
 import type { DriverOrderDetail } from '@/components/driver/driver-order-types';
 import {
@@ -16,6 +19,10 @@ type DriverOrderChatProps = {
     viewerId: number;
     canSend: boolean;
     channel: string | null;
+    receipts: ParticipantReceipt[];
+    viewerLastReadMessageId: number;
+    deliveredUrl: string | null;
+    readUrl: string | null;
 };
 
 export default function DriverOrderChat({
@@ -24,6 +31,10 @@ export default function DriverOrderChat({
     viewerId,
     canSend,
     channel,
+    receipts,
+    viewerLastReadMessageId,
+    deliveredUrl,
+    readUrl,
 }: DriverOrderChatProps) {
     const { auth } = usePage<{ auth: Auth }>().props;
     const viewerName = auth.user?.name ?? 'You';
@@ -40,6 +51,10 @@ export default function DriverOrderChat({
                 viewerName={viewerName}
                 canSend={canSend}
                 messageUrl={OrderController.storeMessage.url(order.id)}
+                receipts={receipts}
+                viewerLastReadMessageId={viewerLastReadMessageId}
+                deliveredUrl={deliveredUrl}
+                readUrl={readUrl}
             />
         </>
     );

@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
 
 /**
  * Seed a courier starter bag onto every active driver via DriverStockAssignmentService.
- * Depends on UserSeeder + BranchInventorySeeder / NationwideInventorySeeder.
+ * Depends on UserSeeder + BranchInventorySeeder (and NationwideInventorySeeder if that was seeded).
  * Safe to re-run: skips branches where drivers already hold inventory or an assignment exists.
  */
 class DriverStockAssignmentSeeder extends Seeder
@@ -31,11 +31,10 @@ class DriverStockAssignmentSeeder extends Seeder
      */
     private const STARTER_BAG = [
         'marlboro-gold-soft-pack-20s' => 4,
-        'winfield-blue-soft-pack-20s' => 4,
-        'puffmemate-pulse-5000' => 3,
-        'puffmemate-mini-bar-1200' => 2,
-        'vuse-go-5000-disposable' => 3,
-        'nordic-mint-pouches' => 3,
+        'marlboro-red' => 3,
+        'kuz-nova-16000' => 2,
+        'iget-one-12000' => 2,
+        'zyn-or-velo' => 3,
     ];
 
     public function run(): void
