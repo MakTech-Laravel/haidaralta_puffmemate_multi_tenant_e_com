@@ -30,7 +30,7 @@ export function OrderTrackProducts({
                 </span>
             </CardHeader>
             <CardContent className="px-5">
-                <ul className="border-border mt-5 max-h-72 space-y-4 overflow-y-auto overscroll-contain border-y py-4 pr-1">
+                <ul className="border-border mt-5 max-h-72 space-y-4 overflow-y-auto border-y py-4 pr-1">
                     {products.map((product, index) => (
                         <li
                             key={`${product.name}-${index}`}
