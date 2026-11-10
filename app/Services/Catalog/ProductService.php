@@ -30,8 +30,9 @@ class ProductService
      *     packages?: list<array{
      *         label: string,
      *         quantity: int|string,
-     *         price: float|string,
+     *         price: float|string|null,
      *         status?: bool,
+     *         is_default?: bool,
      *         sort_order?: int|string
      *     }>,
      *     color_code?: array<string, mixed>|null
@@ -45,7 +46,7 @@ class ProductService
         ?User $actor = null,
     ): Product {
         return DB::transaction(function () use ($data, $primaryImage, $galleryImages, $actor): Product {
-            /** @var list<array{label: string, quantity: int|string, price: float|string, status?: bool, sort_order?: int|string}> $packages */
+            /** @var list<array{label: string, quantity: int|string, price: float|string|null, status?: bool, is_default?: bool, sort_order?: int|string}> $packages */
             $packages = [];
 
             if (array_key_exists('packages', $data) && is_array($data['packages'])) {
@@ -57,6 +58,27 @@ class ProductService
             $product = $this->createProduct($data, $primaryImage, $galleryImages, $actor);
 
             if ((bool) config('catalog.show_product_packages')) {
+                $defaultDraft = null;
+
+                foreach ($packages as $index => $package) {
+                    if ((bool) ($package['is_default'] ?? false)) {
+                        $defaultDraft = $package;
+                        unset($packages[$index]);
+
+                        break;
+                    }
+                }
+
+                $this->packages->createDefault(
+                    $product,
+                    $defaultDraft['price'] ?? null,
+                    $defaultDraft === null || ! array_key_exists('status', $defaultDraft)
+                        ? true
+                        : (bool) $defaultDraft['status'],
+                    (int) ($defaultDraft['sort_order'] ?? 0),
+                    isset($defaultDraft['label']) ? (string) $defaultDraft['label'] : null,
+                );
+
                 foreach ($packages as $package) {
                     $this->packages->create($product, [
                         'label' => $package['label'],

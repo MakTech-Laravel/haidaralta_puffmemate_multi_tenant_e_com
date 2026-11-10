@@ -1,34 +1,73 @@
-import { Plus, Trash2 } from 'lucide-react';
+import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import InputError from '@/components/input-error';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
+export const DEFAULT_PRODUCT_PACKAGE_LABEL = '1 Item';
+
 export type ProductPackageDraft = {
     label: string;
     quantity: string;
     price: string;
     status: boolean;
-    sort_order: string;
+    is_default: boolean;
 };
 
+/**
+ * Package price seed from the product selling price × quantity.
+ */
+export function calculatedPackagePrice(
+    sellingPrice: string,
+    quantity: string,
+): string {
+    const unit = Number(sellingPrice);
+    const qty = Number(quantity);
+
+    if (!Number.isFinite(unit) || unit < 0 || !Number.isFinite(qty) || qty < 1) {
+        return '';
+    }
+
+    return (unit * qty).toFixed(2);
+}
+
 export function emptyProductPackageDraft(
-    sortOrder = 0,
+    sellingPrice = '',
 ): ProductPackageDraft {
     return {
         label: '',
         quantity: '1',
-        price: '',
+        price: calculatedPackagePrice(sellingPrice, '1'),
         status: true,
-        sort_order: String(sortOrder),
+        is_default: false,
+    };
+}
+
+/**
+ * The protected single-unit package. Quantity stays locked at 1; label and
+ * price are editable. A blank price means "use the product selling price".
+ */
+export function defaultProductPackageDraft(
+    sellingPrice = '',
+): ProductPackageDraft {
+    return {
+        label: DEFAULT_PRODUCT_PACKAGE_LABEL,
+        quantity: '1',
+        price: calculatedPackagePrice(sellingPrice, '1'),
+        status: true,
+        is_default: true,
     };
 }
 
 type ProductPackagesDraftFieldsProps = {
     packagesEnabled: boolean;
     packages: ProductPackageDraft[];
+    /** Current selling price of the product form; seeds package prices. */
+    sellingPrice: string;
     errors: Record<string, string>;
     onPackagesEnabledChange: (value: boolean) => void;
     onPackagesChange: (packages: ProductPackageDraft[]) => void;
@@ -37,10 +76,44 @@ type ProductPackagesDraftFieldsProps = {
 export function ProductPackagesDraftFields({
     packagesEnabled,
     packages,
+    sellingPrice,
     errors,
     onPackagesEnabledChange,
     onPackagesChange,
 }: ProductPackagesDraftFieldsProps) {
+    const [priceTouched, setPriceTouched] = useState<Record<number, boolean>>(
+        {},
+    );
+
+    useEffect(() => {
+        const next = packages.map((row, index) => {
+            if (priceTouched[index]) {
+                return row;
+            }
+
+            const calculated = calculatedPackagePrice(
+                sellingPrice,
+                row.quantity,
+            );
+
+            if (calculated === '' || calculated === row.price) {
+                return row;
+            }
+
+            return { ...row, price: calculated };
+        });
+
+        const changed = next.some(
+            (row, index) => row.price !== packages[index]?.price,
+        );
+
+        if (changed) {
+            onPackagesChange(next);
+        }
+        // Only re-seed when the product selling price changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+    }, [sellingPrice]);
+
     const updatePackage = (
         index: number,
         key: keyof ProductPackageDraft,
@@ -53,21 +126,84 @@ export function ProductPackagesDraftFields({
         );
     };
 
+    const updateQuantity = (index: number, quantity: string) => {
+        const calculated = calculatedPackagePrice(sellingPrice, quantity);
+
+        setPriceTouched((current) => {
+            const next = { ...current };
+            delete next[index];
+
+            return next;
+        });
+
+        onPackagesChange(
+            packages.map((row, rowIndex) =>
+                rowIndex === index
+                    ? {
+                          ...row,
+                          quantity,
+                          ...(calculated !== '' ? { price: calculated } : {}),
+                      }
+                    : row,
+            ),
+        );
+    };
+
     const addPackage = () => {
-        onPackagesChange([
-            ...packages,
-            emptyProductPackageDraft(packages.length),
-        ]);
+        onPackagesChange([...packages, emptyProductPackageDraft(sellingPrice)]);
     };
 
     const removePackage = (index: number) => {
-        if (packages.length <= 1) {
-            onPackagesChange([emptyProductPackageDraft(0)]);
+        setPriceTouched((current) => {
+            const next: Record<number, boolean> = {};
 
+            Object.entries(current).forEach(([key, touched]) => {
+                const rowIndex = Number(key);
+
+                if (rowIndex < index) {
+                    next[rowIndex] = touched;
+                } else if (rowIndex > index) {
+                    next[rowIndex - 1] = touched;
+                }
+            });
+
+            return next;
+        });
+
+        onPackagesChange(packages.filter((_, rowIndex) => rowIndex !== index));
+    };
+
+    const movePackage = (index: number, offset: -1 | 1) => {
+        const target = index + offset;
+
+        if (target < 0 || target >= packages.length) {
             return;
         }
 
-        onPackagesChange(packages.filter((_, rowIndex) => rowIndex !== index));
+        const next = [...packages];
+        [next[index], next[target]] = [next[target], next[index]];
+
+        setPriceTouched((current) => {
+            const swapped = { ...current };
+            const a = current[index];
+            const b = current[target];
+
+            if (a) {
+                swapped[target] = a;
+            } else {
+                delete swapped[target];
+            }
+
+            if (b) {
+                swapped[index] = b;
+            } else {
+                delete swapped[index];
+            }
+
+            return swapped;
+        });
+
+        onPackagesChange(next);
     };
 
     return (
@@ -78,8 +214,10 @@ export function ProductPackagesDraftFields({
                         Packages
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Optional quantity tiers created with this product. You
-                        can still manage them later on edit or view.
+                        Quantity tiers created with this product. The default
+                        package cannot be deleted; its quantity stays at 1.
+                        Changing quantity recalculates price from the selling
+                        price.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -99,9 +237,15 @@ export function ProductPackagesDraftFields({
 
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-muted-foreground text-xs">
-                    Leave rows blank to skip. Empty drafts are not saved.
+                    Use the arrows to set the storefront order. Extra rows
+                    without a label are not saved.
                 </p>
-                <Button type="button" variant="outline" size="sm" onClick={addPackage}>
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={addPackage}
+                >
                     <Plus className="size-4" />
                     Add package
                 </Button>
@@ -111,11 +255,17 @@ export function ProductPackagesDraftFields({
                 {packages.map((row, index) => (
                     <div
                         key={`package-draft-${index}`}
-                        className="border-border/70 grid gap-3 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_minmax(0,0.7fr)_auto]"
+                        className="border-border/70 grid gap-3 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_auto]"
                     >
                         <div className="flex flex-col gap-2">
-                            <Label htmlFor={`package-draft-label-${index}`}>
+                            <Label
+                                htmlFor={`package-draft-label-${index}`}
+                                className="flex items-center gap-2"
+                            >
                                 Label
+                                {row.is_default ? (
+                                    <Badge variant="secondary">Default</Badge>
+                                ) : null}
                             </Label>
                             <Input
                                 id={`package-draft-label-${index}`}
@@ -142,14 +292,16 @@ export function ProductPackagesDraftFields({
                                 type="number"
                                 min={1}
                                 value={row.quantity}
+                                disabled={row.is_default}
                                 onChange={(event) =>
-                                    updatePackage(
-                                        index,
-                                        'quantity',
-                                        event.target.value,
-                                    )
+                                    updateQuantity(index, event.target.value)
                                 }
                             />
+                            {row.is_default ? (
+                                <p className="text-muted-foreground text-xs">
+                                    Default quantity is fixed at 1.
+                                </p>
+                            ) : null}
                             <InputError
                                 message={errors[`packages.${index}.quantity`]}
                             />
@@ -164,44 +316,29 @@ export function ProductPackagesDraftFields({
                                 min={0}
                                 step="0.01"
                                 value={row.price}
-                                onChange={(event) =>
+                                onChange={(event) => {
+                                    setPriceTouched((current) => ({
+                                        ...current,
+                                        [index]: true,
+                                    }));
                                     updatePackage(
                                         index,
                                         'price',
                                         event.target.value,
-                                    )
-                                }
+                                    );
+                                }}
                                 placeholder="0.00"
                             />
+                            <p className="text-muted-foreground text-xs">
+                                Auto-fills as selling price × quantity. You can
+                                still edit it.
+                            </p>
                             <InputError
                                 message={errors[`packages.${index}.price`]}
                             />
                         </div>
-                        <div className="flex flex-col gap-2">
-                            <Label htmlFor={`package-draft-sort-${index}`}>
-                                Sort
-                            </Label>
-                            <Input
-                                id={`package-draft-sort-${index}`}
-                                type="number"
-                                min={0}
-                                value={row.sort_order}
-                                onChange={(event) =>
-                                    updatePackage(
-                                        index,
-                                        'sort_order',
-                                        event.target.value,
-                                    )
-                                }
-                            />
-                            <InputError
-                                message={
-                                    errors[`packages.${index}.sort_order`]
-                                }
-                            />
-                        </div>
-                        <div className="flex items-end justify-between gap-3 sm:col-span-2 lg:col-span-1 lg:flex-col lg:items-stretch lg:justify-end">
-                            <label className="flex items-center gap-2 text-sm">
+                        <div className="flex flex-wrap items-center gap-2 sm:col-span-2 lg:col-span-1 lg:self-start lg:pt-7">
+                            <label className="mr-1 flex items-center gap-2 text-sm">
                                 <Checkbox
                                     checked={row.status}
                                     onCheckedChange={(checked) =>
@@ -219,11 +356,35 @@ export function ProductPackagesDraftFields({
                                 variant="outline"
                                 size="icon"
                                 className="size-9 shrink-0"
-                                onClick={() => removePackage(index)}
-                                aria-label="Remove package draft"
+                                disabled={index === 0}
+                                onClick={() => movePackage(index, -1)}
+                                aria-label="Move package up"
                             >
-                                <Trash2 className="size-4" />
+                                <ArrowUp className="size-4" />
                             </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="size-9 shrink-0"
+                                disabled={index === packages.length - 1}
+                                onClick={() => movePackage(index, 1)}
+                                aria-label="Move package down"
+                            >
+                                <ArrowDown className="size-4" />
+                            </Button>
+                            {row.is_default ? null : (
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    className="size-9 shrink-0"
+                                    onClick={() => removePackage(index)}
+                                    aria-label="Remove package draft"
+                                >
+                                    <Trash2 className="size-4" />
+                                </Button>
+                            )}
                         </div>
                     </div>
                 ))}

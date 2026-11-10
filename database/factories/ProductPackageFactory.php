@@ -28,6 +28,15 @@ class ProductPackageFactory extends Factory
         ];
     }
 
+    public function default(): static
+    {
+        return $this->state(fn (): array => [
+            'label' => ProductPackage::DEFAULT_LABEL,
+            'quantity' => 1,
+            'is_default' => true,
+        ]);
+    }
+
     public function disabled(): static
     {
         return $this->state(fn (): array => [
