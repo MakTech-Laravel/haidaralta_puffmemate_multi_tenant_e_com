@@ -7,7 +7,7 @@ import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
 import {
-    emptyProductPackageDraft,
+    defaultProductPackageDraft,
     ProductPackagesDraftFields,
     type ProductPackageDraft,
 } from '@/components/platform/product-packages-draft-fields';
@@ -298,7 +298,9 @@ export function ProductForm({
         ...(showPackageDrafts
             ? {
                   packages_enabled: true,
-                  packages: [emptyProductPackageDraft(0)] as ProductPackageDraft[],
+                  packages: [
+                      defaultProductPackageDraft(),
+                  ] as ProductPackageDraft[],
               }
             : {}),
         ...(isEdit ? { _method: 'put' } : {}),
@@ -468,16 +470,14 @@ export function ProductForm({
             );
 
             const filteredPackages = (packages ?? [])
-                .filter((row) => row.label.trim() !== '')
+                .filter((row) => row.is_default || row.label.trim() !== '')
                 .map((row, index) => ({
                     label: row.label.trim(),
                     quantity: row.quantity,
-                    price: row.price,
+                    price: row.price.trim() === '' ? null : row.price,
                     status: row.status,
-                    sort_order:
-                        row.sort_order.trim() === ''
-                            ? String(index)
-                            : row.sort_order,
+                    is_default: row.is_default,
+                    sort_order: index,
                 }));
 
             return {
@@ -1690,8 +1690,12 @@ export function ProductForm({
                             data as typeof data & {
                                 packages?: ProductPackageDraft[];
                             }
-                        ).packages ?? [emptyProductPackageDraft(0)]
+                        ).packages ?? [defaultProductPackageDraft()]
                     }
+                    sellingPrice={String(
+                        (data as typeof data & { selling_price?: string })
+                            .selling_price ?? '',
+                    )}
                     errors={errors}
                     onPackagesEnabledChange={(value) =>
                         setData('packages_enabled' as never, value as never)

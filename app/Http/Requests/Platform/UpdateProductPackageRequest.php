@@ -23,7 +23,6 @@ class UpdateProductPackageRequest extends FormRequest
             'quantity' => ['required', 'integer', 'min:1', 'max:99999'],
             'price' => ['required', 'numeric', 'min:0'],
             'status' => ['sometimes', 'boolean'],
-            'sort_order' => ['sometimes', 'integer', 'min:0', 'max:99999'],
         ];
     }
 }

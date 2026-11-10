@@ -115,6 +115,7 @@ export default function PlatformProductsEdit({
                     productName={product.name}
                     packagesEnabled={product.packages_enabled ?? true}
                     packages={product.packages ?? []}
+                    sellingPrice={product.selling_price}
                 />
             </div>
         </>
