@@ -1,5 +1,6 @@
 <?php
 
+use App\Contracts\SendsSms;
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
 use App\Enums\CustomerRegistrationStatus;
@@ -26,6 +27,8 @@ use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
+use App\Services\Order\OrderPlacementNotifier;
+use App\Services\Sms\FakeSmsSender;
 use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\Geo\Polygon;
 use App\Support\Phone;
@@ -717,7 +720,7 @@ test('a guest can place an order through a provisional customer', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/checkout-confirmation')
-            ->where('order.viewOrderUrl', null));
+            ->where('order.viewOrderUrl', fn ($url): bool => str_contains((string) $url, '/order-status/')));
 });
 
 test('a guest repeat order with the same phone reuses the provisional customer', function () {
@@ -746,13 +749,163 @@ test('a guest confirmation page is hidden from other sessions', function () {
     $this->get(route('checkout.confirmation', $order))->assertNotFound();
 });
 
-test('a guest cannot order with the phone of a registered account', function () {
+test('a guest can order with the phone of a registered account without logging in', function () {
     $product = storefrontCheckoutProduct(['slug' => 'guest-registered-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $registered = User::factory()->create([
+        'name' => 'Registered Owner',
+        'email' => 'owner@example.com',
+        'phone' => Phone::toE164('0410123456'),
+        'registration_status' => CustomerRegistrationStatus::Registered,
+    ]);
+    $usersBefore = User::query()->count();
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload([
+        'name' => 'Someone At The Door',
+        'save_as_default' => true,
+    ]))->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->customer_id)->toBe($registered->id)
+        ->and($order->shipping_address_snapshot['name'])->toBe('Someone At The Door')
+        ->and(User::query()->count())->toBe($usersBefore)
+        ->and($registered->fresh()->name)->toBe('Registered Owner')
+        ->and($registered->fresh()->email)->toBe('owner@example.com')
+        ->and(Address::query()->count())->toBe(0);
+
+    $this->get(route('checkout.confirmation', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout-confirmation')
+            ->where('order.viewOrderUrl', fn ($url): bool => str_contains((string) $url, '/order-status/')));
+
+    $this->flushSession();
+
+    $this->get(route('checkout.confirmation', $order))->assertNotFound();
+});
+
+test('a guest order on a registered number opens pending until the account has a delivered order', function (bool $hasDeliveredOrder, FulfillmentStatus $expected) {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-registered-status-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $registered = User::factory()->create([
+        'phone' => Phone::toE164('0410123456'),
+        'registration_status' => CustomerRegistrationStatus::Registered,
+    ]);
+
+    if ($hasDeliveredOrder) {
+        Order::factory()->delivered()->create(['customer_id' => $registered->id]);
+    }
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload())->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->where('customer_id', $registered->id)->latest('id')->firstOrFail();
+
+    expect($order->fulfillment->status)->toBe($expected);
+})->with([
+    'no delivered order' => [false, FulfillmentStatus::Pending],
+    'has a delivered order' => [true, FulfillmentStatus::Placed],
+]);
+
+test('placing a guest order texts the public view order link to the order phone', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'sms-link-guest-item']);
+    storefrontCheckoutBranchWithStock($product);
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload())->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->firstOrFail();
+    $messages = collect($sms->messages)->where('to', Phone::toE164('0410123456'));
+
+    // A brand-new customer opens Pending: only the link SMS goes out, no delivery code yet.
+    expect($messages)->toHaveCount(1)
+        ->and($messages->first()['message'])->toContain($order->order_number)
+        ->and($sms->lastCode())->toBeNull();
+
+    preg_match('~https?://\S+~', $messages->first()['message'], $match);
+
+    $this->flushSession();
+    $this->get($match[0])
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/order-tracking')
+            ->where('order.orderNumber', $order->order_number));
+});
+
+test('a logged-in customer also gets the view order link by sms, after the delivery code when trusted', function () {
+    $user = User::factory()->create(['phone' => Phone::toE164('0410123456')]);
+    Order::factory()->delivered()->create(['customer_id' => $user->id]);
+    $product = storefrontCheckoutProduct(['slug' => 'sms-link-trusted-item']);
+    storefrontCheckoutBranchWithStock($product);
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->where('customer_id', $user->id)->latest('id')->firstOrFail();
+    $messages = collect($sms->messages);
+
+    expect($messages)->toHaveCount(2)
+        ->and($messages->first()['message'])->toContain('verification code')
+        ->and($messages->last()['message'])->toContain($order->order_number)
+        ->and($messages->last()['message'])->toContain('/order-status/');
+});
+
+test('a failing sms sender does not stop an order from being placed', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'sms-link-failure-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    app()->instance(SendsSms::class, new class implements SendsSms
+    {
+        public function send(string $toE164, string $message): void
+        {
+            throw new RuntimeException('SMS gateway down');
+        }
+    });
+    app()->forgetInstance(OrderPlacementNotifier::class);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload())->assertSessionDoesntHaveErrors();
+
+    expect(Order::query()->count())->toBe(1);
+});
+
+test('a guest cannot order with the phone of a staff user', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-staff-phone-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    User::factory()->create([
+        'phone' => Phone::toE164('0410123456'),
+        'user_type' => UserType::PLATFORM,
+    ]);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload())
+        ->assertSessionHasErrors('mobile');
+
+    expect(Order::query()->count())->toBe(0);
+});
+
+test('a guest cannot order with the phone of an inactive account', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-inactive-phone-item']);
     storefrontCheckoutBranchWithStock($product);
 
     User::factory()->create([
         'phone' => Phone::toE164('0410123456'),
         'registration_status' => CustomerRegistrationStatus::Registered,
+        'is_active' => false,
     ]);
 
     $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);

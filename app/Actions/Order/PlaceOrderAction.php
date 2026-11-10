@@ -276,6 +276,9 @@ class PlaceOrderAction
             $this->placements->issue($order);
         }
 
+        // Non-critical: an SMS failure must never fail an order that is already placed.
+        rescue(fn () => $this->placements->sendViewLink($order));
+
         $this->notifications->send(
             [$user->id],
             NotificationType::Order,
