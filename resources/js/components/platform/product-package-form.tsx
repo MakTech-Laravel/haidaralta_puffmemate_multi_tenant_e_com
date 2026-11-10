@@ -2,7 +2,10 @@ import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useEffect } from 'react';
 import InputError from '@/components/input-error';
-import { calculatedPackagePrice } from '@/components/platform/product-packages-draft-fields';
+import {
+    calculatedPackagePrice,
+    packageUnitPrice,
+} from '@/components/platform/product-packages-draft-fields';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -19,7 +22,6 @@ interface ProductPackageFormDefaults {
     quantity?: number;
     price?: string | number | null;
     status?: boolean;
-    is_default?: boolean;
 }
 
 interface ProductPackageFormProps {
@@ -27,6 +29,8 @@ interface ProductPackageFormProps {
     defaults?: ProductPackageFormDefaults;
     /** Product selling price used to auto-fill price from quantity. */
     sellingPrice?: string | number | null;
+    /** Fallback when selling price is empty or 0. */
+    regularPrice?: string | number | null;
     isEdit?: boolean;
     onCancel: () => void;
     onSuccess?: () => void;
@@ -37,6 +41,7 @@ export function ProductPackageForm({
     action,
     defaults,
     sellingPrice = '',
+    regularPrice = '',
     isEdit = false,
     onCancel,
     onSuccess,
@@ -49,6 +54,7 @@ export function ProductPackageForm({
         | 'patch'
         | 'delete';
 
+    const unitPrice = packageUnitPrice(sellingPrice, regularPrice);
     const initialQuantity =
         defaults?.quantity !== undefined && defaults?.quantity !== null
             ? String(defaults.quantity)
@@ -56,7 +62,7 @@ export function ProductPackageForm({
     const initialPrice =
         defaults?.price !== undefined && defaults?.price !== null
             ? String(defaults.price)
-            : calculatedPackagePrice(String(sellingPrice ?? ''), initialQuantity);
+            : calculatedPackagePrice(unitPrice, initialQuantity);
 
     const {
         data,
@@ -65,6 +71,8 @@ export function ProductPackageForm({
         processing,
         errors,
         setValidationTimeout,
+        setError,
+        clearErrors,
     } = useForm(formMethod, action.action, {
         label: defaults?.label ?? '',
         quantity: initialQuantity,
@@ -73,14 +81,48 @@ export function ProductPackageForm({
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
-    const isDefaultPackage = isEdit && defaults?.is_default === true;
-
     useEffect(() => {
         setValidationTimeout(500);
     }, [setValidationTimeout]);
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
+
+        clearErrors('label', 'quantity', 'price');
+
+        const nextErrors: Partial<Record<'label' | 'quantity' | 'price', string>> =
+            {};
+
+        if (data.label.trim() === '') {
+            nextErrors.label = 'Enter a package label.';
+        }
+
+        const quantity = Number(data.quantity);
+
+        if (
+            String(data.quantity).trim() === '' ||
+            !Number.isFinite(quantity) ||
+            !Number.isInteger(quantity) ||
+            quantity < 1
+        ) {
+            nextErrors.quantity = 'Enter a quantity of at least 1.';
+        }
+
+        const price = Number(data.price);
+
+        if (
+            String(data.price).trim() === '' ||
+            !Number.isFinite(price) ||
+            price < 0
+        ) {
+            nextErrors.price = 'Enter a package price.';
+        }
+
+        if (Object.keys(nextErrors).length > 0) {
+            setError(nextErrors);
+
+            return;
+        }
 
         post(action.action, {
             preserveScroll: true,
@@ -99,12 +141,6 @@ export function ProductPackageForm({
                     required
                     placeholder="e.g. Pack of 5"
                 />
-                {isDefaultPackage ? (
-                    <p className="text-muted-foreground text-xs">
-                        The default package quantity stays at 1. Label, price,
-                        and enabled state can change.
-                    </p>
-                ) : null}
                 <InputError message={errors.label} />
             </div>
 
@@ -120,7 +156,7 @@ export function ProductPackageForm({
                         onChange={(event) => {
                             const quantity = event.target.value;
                             const calculated = calculatedPackagePrice(
-                                String(sellingPrice ?? ''),
+                                unitPrice,
                                 quantity,
                             );
 
@@ -131,13 +167,7 @@ export function ProductPackageForm({
                             }
                         }}
                         required
-                        disabled={isDefaultPackage}
                     />
-                    {isDefaultPackage ? (
-                        <p className="text-muted-foreground text-xs">
-                            Default quantity is fixed at 1.
-                        </p>
-                    ) : null}
                     <InputError message={errors.quantity} />
                 </div>
 
@@ -156,8 +186,8 @@ export function ProductPackageForm({
                         placeholder="0.00"
                     />
                     <p className="text-muted-foreground text-xs">
-                        Auto-fills as selling price × quantity. You can still
-                        edit it.
+                        Auto-fills as unit price × quantity (selling, or regular
+                        when selling is empty/0). You can still edit it.
                     </p>
                     <InputError message={errors.price} />
                 </div>

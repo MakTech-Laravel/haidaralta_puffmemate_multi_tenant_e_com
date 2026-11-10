@@ -25,4 +25,17 @@ class UpdateProductPackageRequest extends FormRequest
             'status' => ['sometimes', 'boolean'],
         ];
     }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'label.required' => 'Enter a package label.',
+            'quantity.required' => 'Enter a package quantity.',
+            'quantity.min' => 'Package quantity must be at least 1.',
+            'price.required' => 'Enter a package price.',
+        ];
+    }
 }
