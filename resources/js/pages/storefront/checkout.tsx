@@ -71,12 +71,20 @@ function filled(value: string): boolean {
     return value.trim() !== '';
 }
 
+/** Delivery method id (server key) for Same day; mirrors DeliveryShiftAvailability::METHOD_SAME_DAY. */
+const SAME_DAY_METHOD_ID = 'regular';
+
+/** Mirrors DeliveryShiftAvailability::SAME_DAY_LATE_ITEMS_MESSAGE. */
+const SAME_DAY_LATE_ITEMS_MESSAGE =
+    "Same day delivery isn't available while some items are on late delivery. Choose Late delivery or remove those items.";
+
 function checkoutCanPlaceOrder(
     details: CheckoutDetails,
     methods: StorefrontDeliveryMethod[],
     termsAccepted: boolean,
     requiresLateDelivery: boolean,
     acceptLateDelivery: boolean,
+    sameDayLateConflict: boolean,
 ): boolean {
     const method = methods.find((row) => row.id === details.deliveryMethodId);
     const pinReady =
@@ -99,6 +107,10 @@ function checkoutCanPlaceOrder(
     }
 
     if (requiresLateDelivery && !acceptLateDelivery) {
+        return false;
+    }
+
+    if (sameDayLateConflict) {
         return false;
     }
 
@@ -164,6 +176,17 @@ export default function StorefrontCheckout({
     });
 
     const [couponCode, setCouponCode] = useState(appliedCoupon?.code ?? '');
+    // Server errors the customer has already edited away; reset whenever a new response arrives.
+    const [dismissedErrors, setDismissedErrors] = useState<string[]>([]);
+    const dismissErrors = (...keys: string[]) =>
+        setDismissedErrors((current) => [
+            ...current,
+            ...keys.filter((key) => !current.includes(key)),
+        ]);
+
+    useEffect(() => {
+        setDismissedErrors([]);
+    }, [page.props.errors]);
     const [quote, setQuote] = useState<ShippingQuote>(
         shippingQuote
             ? {
@@ -302,6 +325,8 @@ export default function StorefrontCheckout({
         if (key === 'deliveryMethodId') {
             const method = deliveryMethods.find((row) => row.id === value);
 
+            dismissErrors('delivery_method', 'delivery_date', 'time_slot_id');
+
             form.setData((current) => {
                 if (!method) {
                     return {
@@ -351,6 +376,7 @@ export default function StorefrontCheckout({
             paymentMethodId: 'payment_method',
         };
 
+        dismissErrors(map[key]);
         form.setData(map[key], value as never);
     };
 
@@ -359,6 +385,7 @@ export default function StorefrontCheckout({
         longitude: string,
         address?: string,
     ) => {
+        dismissErrors('latitude', 'longitude', ...(address ? ['address'] : []));
         form.setData((current) => ({
             ...current,
             latitude,
@@ -367,11 +394,13 @@ export default function StorefrontCheckout({
         }));
     };
 
-    const errors = {
-        ...page.props.errors,
-        ...form.errors,
-        ...quoteErrors,
-    };
+    const errors = Object.fromEntries(
+        Object.entries({
+            ...page.props.errors,
+            ...form.errors,
+            ...quoteErrors,
+        }).filter(([key]) => !dismissedErrors.includes(key)),
+    ) as Record<string, string>;
 
     const requiresLateDelivery = Boolean(
         quotedMatchesPin && quote?.requiresLateDelivery,
@@ -379,6 +408,9 @@ export default function StorefrontCheckout({
     const shortfallLines = quotedMatchesPin
         ? (quote?.shortfallLines ?? [])
         : [];
+    const sameDayLateConflict =
+        requiresLateDelivery &&
+        details.deliveryMethodId === SAME_DAY_METHOD_ID;
 
     const canPlaceOrder = checkoutCanPlaceOrder(
         details,
@@ -386,6 +418,7 @@ export default function StorefrontCheckout({
         form.data.terms,
         requiresLateDelivery,
         form.data.accept_late_delivery,
+        sameDayLateConflict,
     );
 
     return (
@@ -435,6 +468,12 @@ export default function StorefrontCheckout({
                             deliveryMethods={deliveryMethods}
                             paymentMethods={paymentMethods}
                             errors={errors}
+                            deliveryMethodError={
+                                errors.delivery_method ??
+                                (sameDayLateConflict
+                                    ? SAME_DAY_LATE_ITEMS_MESSAGE
+                                    : undefined)
+                            }
                             onChange={onDetailChange}
                             onPinSelect={applyPin}
                         />
@@ -470,9 +509,11 @@ export default function StorefrontCheckout({
                             shortfallLines={shortfallLines}
                             acceptLateDelivery={form.data.accept_late_delivery}
                             acceptLateError={errors.accept_late_delivery}
-                            onAcceptLateDeliveryChange={(accepted) =>
-                                form.setData('accept_late_delivery', accepted)
-                            }
+                            sameDayLateConflict={sameDayLateConflict}
+                            onAcceptLateDeliveryChange={(accepted) => {
+                                dismissErrors('accept_late_delivery');
+                                form.setData('accept_late_delivery', accepted);
+                            }}
                             onCouponChange={setCouponCode}
                             onApplyCoupon={() =>
                                 router.post(
@@ -490,9 +531,10 @@ export default function StorefrontCheckout({
                                     },
                                 });
                             }}
-                            onTermsChange={(accepted) =>
-                                form.setData('terms', accepted)
-                            }
+                            onTermsChange={(accepted) => {
+                                dismissErrors('terms');
+                                form.setData('terms', accepted);
+                            }}
                         />
                     </form>
                 </div>

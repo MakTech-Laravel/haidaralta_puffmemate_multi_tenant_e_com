@@ -15,6 +15,12 @@ final class DeliveryShiftAvailability
 
     public const METHOD_LATE = 'express';
 
+    /**
+     * Shown under the delivery method when Same day is picked for an order that has items on late delivery.
+     * Mirrored in resources/js/pages/storefront/checkout.tsx.
+     */
+    public const SAME_DAY_LATE_ITEMS_MESSAGE = "Same day delivery isn't available while some items are on late delivery. Choose Late delivery or remove those items.";
+
     public function now(): CarbonInterface
     {
         return now(config('app.timezone'));

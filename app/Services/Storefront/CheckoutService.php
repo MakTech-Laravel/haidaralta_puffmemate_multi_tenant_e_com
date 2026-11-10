@@ -4,7 +4,6 @@ namespace App\Services\Storefront;
 
 use App\Actions\Order\PlaceOrderAction;
 use App\Actions\Order\PlacePackOrderAction;
-use App\Enums\CustomerRegistrationStatus;
 use App\Models\DeliveryMethod;
 use App\Models\DeliveryShift;
 use App\Models\Order;
@@ -18,6 +17,7 @@ use App\Services\Order\BranchDeliveryQuote;
 use App\Services\Order\ShippingCalculator;
 use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\MediaUrl;
+use App\Support\Order\OrderTrackingLink;
 use App\Support\OrderItemPackageDisplay;
 use App\Support\ProductPackagePricing;
 use App\Support\Storefront\PackCheckoutSession;
@@ -311,7 +311,7 @@ class CheckoutService
      *     discount: string|null,
      *     deliveryFee: string,
      *     total: string,
-     *     viewOrderUrl: string|null
+     *     viewOrderUrl: string
      * }
      */
     public function confirmation(Order $order, bool $canViewOrder = true): array
@@ -354,7 +354,10 @@ class CheckoutService
                 : null,
             'deliveryFee' => '$'.number_format((float) $order->delivery_fee, 2),
             'total' => '$'.number_format((float) $order->total_amount, 2),
-            'viewOrderUrl' => $canViewOrder ? route('customer.orders.show', $order) : null,
+            // Owners open their account order page; guests get the signed public link.
+            'viewOrderUrl' => $canViewOrder
+                ? route('customer.orders.show', $order)
+                : OrderTrackingLink::url($order),
         ];
     }
 
@@ -476,26 +479,39 @@ class CheckoutService
     }
 
     /**
-     * Reuse or create a provisional customer for a guest checkout. A phone that
-     * already belongs to a registered account must log in instead.
+     * Resolve the customer for a guest checkout from the mobile number, the same
+     * way a driver sale does: reuse the account that owns the number (provisional
+     * or registered, no login needed) or create a provisional one from the name
+     * and mobile. Guests never overwrite the account's own name or address.
      *
      * @param  array<string, mixed>  $data
      */
     private function resolveGuestCustomer(array $data): User
     {
-        $existing = $this->customers->findByPhone((string) $data['mobile']);
+        try {
+            $customer = DB::transaction(fn (): User => $this->customers->resolve(
+                null,
+                (string) $data['mobile'],
+                (string) $data['name'],
+            ));
+        } catch (ValidationException $exception) {
+            // The resolver reports phone problems under `phone`; the checkout field is `mobile`.
+            if (isset($exception->errors()['phone'])) {
+                throw ValidationException::withMessages([
+                    'mobile' => $exception->errors()['phone'][0],
+                ]);
+            }
 
-        if ($existing !== null && $existing->registration_status === CustomerRegistrationStatus::Registered) {
+            throw $exception;
+        }
+
+        if (! $customer->is_active) {
             throw ValidationException::withMessages([
-                'mobile' => 'This number already has an account. Please log in to place your order.',
+                'mobile' => "This number can't be used for checkout.",
             ]);
         }
 
-        return DB::transaction(fn (): User => $this->customers->resolve(
-            null,
-            (string) $data['mobile'],
-            (string) $data['name'],
-        ));
+        return $customer;
     }
 
     /**

@@ -28,6 +28,7 @@ use App\Services\Order\Allocation\AreaCheckoutAllocator;
 use App\Services\Order\AllocationDecisionRecorder;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\StockTransferService;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\MediaUrl;
 use App\Support\Order\OrderNumber;
 use App\Support\ProductPackagePricing;
@@ -128,6 +129,13 @@ class PlaceOrderAction
                 $acceptLate,
                 true,
             );
+
+            if ($plan['requires_late_delivery']
+                && ($data['delivery_method'] ?? null) === DeliveryShiftAvailability::METHOD_SAME_DAY) {
+                throw ValidationException::withMessages([
+                    'delivery_method' => DeliveryShiftAvailability::SAME_DAY_LATE_ITEMS_MESSAGE,
+                ]);
+            }
 
             $inventoryMap = $this->loadInventoryMap($plan);
             $locked = $this->lockPlan($plan, $inventoryMap);
@@ -267,6 +275,9 @@ class PlaceOrderAction
         if ($placed) {
             $this->placements->issue($order);
         }
+
+        // Non-critical: an SMS failure must never fail an order that is already placed.
+        rescue(fn () => $this->placements->sendViewLink($order));
 
         $this->notifications->send(
             [$user->id],
