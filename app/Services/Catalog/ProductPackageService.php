@@ -44,6 +44,7 @@ class ProductPackageService
     /**
      * Create the protected single-unit package of a product.
      *
+     * Quantity is always 1. Label defaults to {@see ProductPackage::DEFAULT_LABEL}.
      * The price falls back to the product selling price when none is given.
      */
     public function createDefault(
@@ -51,14 +52,19 @@ class ProductPackageService
         float|string|null $price = null,
         bool $status = true,
         int $sortOrder = 0,
+        ?string $label = null,
     ): ProductPackage {
         $resolvedPrice = $price === null || $price === ''
             ? (float) $product->selling_price
             : (float) $price;
 
+        $resolvedLabel = is_string($label) && trim($label) !== ''
+            ? trim($label)
+            : ProductPackage::DEFAULT_LABEL;
+
         return ProductPackage::query()->create([
             'product_id' => $product->id,
-            'label' => ProductPackage::DEFAULT_LABEL,
+            'label' => $resolvedLabel,
             'quantity' => 1,
             'price' => number_format($resolvedPrice, 2, '.', ''),
             'status' => $status,
@@ -68,7 +74,7 @@ class ProductPackageService
     }
 
     /**
-     * Update a package. The default package only accepts price and status.
+     * Update a package. The default package keeps quantity locked at 1.
      *
      * @param  array{
      *     label?: string,
@@ -83,7 +89,7 @@ class ProductPackageService
         unset($data['is_default']);
 
         if ($package->is_default) {
-            unset($data['label'], $data['quantity']);
+            unset($data['quantity']);
         }
 
         if (array_key_exists('price', $data)) {

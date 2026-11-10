@@ -46,6 +46,8 @@ type ProductPackagesCardProps = {
     productName: string;
     packagesEnabled: boolean;
     packages: CatalogProductPackage[];
+    /** Catalog selling price used to auto-fill package price from quantity. */
+    sellingPrice?: string | number | null;
 };
 
 export function ProductPackagesCard({
@@ -53,6 +55,7 @@ export function ProductPackagesCard({
     productName,
     packagesEnabled,
     packages,
+    sellingPrice = '',
 }: ProductPackagesCardProps) {
     const { catalog } = usePage().props;
     const { can } = usePermission();
@@ -327,6 +330,7 @@ export function ProductPackagesCard({
                                   )
                         }
                         isEdit={editingPackage !== null}
+                        sellingPrice={sellingPrice}
                         defaults={
                             editingPackage
                                 ? {

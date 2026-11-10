@@ -1,5 +1,5 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import InputError from '@/components/input-error';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,25 +18,46 @@ export type ProductPackageDraft = {
     is_default: boolean;
 };
 
-export function emptyProductPackageDraft(): ProductPackageDraft {
+/**
+ * Package price seed from the product selling price × quantity.
+ */
+export function calculatedPackagePrice(
+    sellingPrice: string,
+    quantity: string,
+): string {
+    const unit = Number(sellingPrice);
+    const qty = Number(quantity);
+
+    if (!Number.isFinite(unit) || unit < 0 || !Number.isFinite(qty) || qty < 1) {
+        return '';
+    }
+
+    return (unit * qty).toFixed(2);
+}
+
+export function emptyProductPackageDraft(
+    sellingPrice = '',
+): ProductPackageDraft {
     return {
         label: '',
         quantity: '1',
-        price: '',
+        price: calculatedPackagePrice(sellingPrice, '1'),
         status: true,
         is_default: false,
     };
 }
 
 /**
- * The protected single-unit package. A blank price means "use the product
- * selling price", which the server resolves on save.
+ * The protected single-unit package. Quantity stays locked at 1; label and
+ * price are editable. A blank price means "use the product selling price".
  */
-export function defaultProductPackageDraft(): ProductPackageDraft {
+export function defaultProductPackageDraft(
+    sellingPrice = '',
+): ProductPackageDraft {
     return {
         label: DEFAULT_PRODUCT_PACKAGE_LABEL,
         quantity: '1',
-        price: '',
+        price: calculatedPackagePrice(sellingPrice, '1'),
         status: true,
         is_default: true,
     };
@@ -45,7 +66,7 @@ export function defaultProductPackageDraft(): ProductPackageDraft {
 type ProductPackagesDraftFieldsProps = {
     packagesEnabled: boolean;
     packages: ProductPackageDraft[];
-    /** Current selling price of the product form; seeds the default package price. */
+    /** Current selling price of the product form; seeds package prices. */
     sellingPrice: string;
     errors: Record<string, string>;
     onPackagesEnabledChange: (value: boolean) => void;
@@ -60,7 +81,38 @@ export function ProductPackagesDraftFields({
     onPackagesEnabledChange,
     onPackagesChange,
 }: ProductPackagesDraftFieldsProps) {
-    const [defaultPriceTouched, setDefaultPriceTouched] = useState(false);
+    const [priceTouched, setPriceTouched] = useState<Record<number, boolean>>(
+        {},
+    );
+
+    useEffect(() => {
+        const next = packages.map((row, index) => {
+            if (priceTouched[index]) {
+                return row;
+            }
+
+            const calculated = calculatedPackagePrice(
+                sellingPrice,
+                row.quantity,
+            );
+
+            if (calculated === '' || calculated === row.price) {
+                return row;
+            }
+
+            return { ...row, price: calculated };
+        });
+
+        const changed = next.some(
+            (row, index) => row.price !== packages[index]?.price,
+        );
+
+        if (changed) {
+            onPackagesChange(next);
+        }
+        // Only re-seed when the product selling price changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
+    }, [sellingPrice]);
 
     const updatePackage = (
         index: number,
@@ -74,11 +126,50 @@ export function ProductPackagesDraftFields({
         );
     };
 
+    const updateQuantity = (index: number, quantity: string) => {
+        const calculated = calculatedPackagePrice(sellingPrice, quantity);
+
+        setPriceTouched((current) => {
+            const next = { ...current };
+            delete next[index];
+
+            return next;
+        });
+
+        onPackagesChange(
+            packages.map((row, rowIndex) =>
+                rowIndex === index
+                    ? {
+                          ...row,
+                          quantity,
+                          ...(calculated !== '' ? { price: calculated } : {}),
+                      }
+                    : row,
+            ),
+        );
+    };
+
     const addPackage = () => {
-        onPackagesChange([...packages, emptyProductPackageDraft()]);
+        onPackagesChange([...packages, emptyProductPackageDraft(sellingPrice)]);
     };
 
     const removePackage = (index: number) => {
+        setPriceTouched((current) => {
+            const next: Record<number, boolean> = {};
+
+            Object.entries(current).forEach(([key, touched]) => {
+                const rowIndex = Number(key);
+
+                if (rowIndex < index) {
+                    next[rowIndex] = touched;
+                } else if (rowIndex > index) {
+                    next[rowIndex - 1] = touched;
+                }
+            });
+
+            return next;
+        });
+
         onPackagesChange(packages.filter((_, rowIndex) => rowIndex !== index));
     };
 
@@ -91,6 +182,27 @@ export function ProductPackagesDraftFields({
 
         const next = [...packages];
         [next[index], next[target]] = [next[target], next[index]];
+
+        setPriceTouched((current) => {
+            const swapped = { ...current };
+            const a = current[index];
+            const b = current[target];
+
+            if (a) {
+                swapped[target] = a;
+            } else {
+                delete swapped[target];
+            }
+
+            if (b) {
+                swapped[index] = b;
+            } else {
+                delete swapped[index];
+            }
+
+            return swapped;
+        });
+
         onPackagesChange(next);
     };
 
@@ -102,9 +214,10 @@ export function ProductPackagesDraftFields({
                         Packages
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Quantity tiers created with this product. The{' '}
-                        {DEFAULT_PRODUCT_PACKAGE_LABEL} package is always
-                        created and cannot be deleted.
+                        Quantity tiers created with this product. The default
+                        package cannot be deleted; its quantity stays at 1.
+                        Changing quantity recalculates price from the selling
+                        price.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -157,7 +270,6 @@ export function ProductPackagesDraftFields({
                             <Input
                                 id={`package-draft-label-${index}`}
                                 value={row.label}
-                                disabled={row.is_default}
                                 onChange={(event) =>
                                     updatePackage(
                                         index,
@@ -182,13 +294,14 @@ export function ProductPackagesDraftFields({
                                 value={row.quantity}
                                 disabled={row.is_default}
                                 onChange={(event) =>
-                                    updatePackage(
-                                        index,
-                                        'quantity',
-                                        event.target.value,
-                                    )
+                                    updateQuantity(index, event.target.value)
                                 }
                             />
+                            {row.is_default ? (
+                                <p className="text-muted-foreground text-xs">
+                                    Default quantity is fixed at 1.
+                                </p>
+                            ) : null}
                             <InputError
                                 message={errors[`packages.${index}.quantity`]}
                             />
@@ -202,16 +315,12 @@ export function ProductPackagesDraftFields({
                                 type="number"
                                 min={0}
                                 step="0.01"
-                                value={
-                                    row.is_default && !defaultPriceTouched
-                                        ? sellingPrice
-                                        : row.price
-                                }
+                                value={row.price}
                                 onChange={(event) => {
-                                    if (row.is_default) {
-                                        setDefaultPriceTouched(true);
-                                    }
-
+                                    setPriceTouched((current) => ({
+                                        ...current,
+                                        [index]: true,
+                                    }));
                                     updatePackage(
                                         index,
                                         'price',
@@ -220,12 +329,10 @@ export function ProductPackagesDraftFields({
                                 }}
                                 placeholder="0.00"
                             />
-                            {row.is_default ? (
-                                <p className="text-muted-foreground text-xs">
-                                    Starts from the selling price. Leave blank
-                                    to use it.
-                                </p>
-                            ) : null}
+                            <p className="text-muted-foreground text-xs">
+                                Auto-fills as selling price × quantity. You can
+                                still edit it.
+                            </p>
                             <InputError
                                 message={errors[`packages.${index}.price`]}
                             />

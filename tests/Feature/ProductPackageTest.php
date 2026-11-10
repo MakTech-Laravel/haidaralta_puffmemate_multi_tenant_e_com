@@ -556,7 +556,7 @@ test('platform product create keeps the edited price, status and position of the
     $product = Product::query()->where('slug', 'create-with-edited-default')->firstOrFail();
     $ordered = $product->packages()->ordered()->get();
 
-    expect($ordered->pluck('label')->all())->toBe(['Pack of 5', '1 Item'])
+    expect($ordered->pluck('label')->all())->toBe(['Pack of 5', 'Renamed By Client'])
         ->and($ordered[1]->is_default)->toBeTrue()
         ->and($ordered[1]->quantity)->toBe(1)
         ->and($ordered[1]->price)->toBe('90.00')
@@ -600,7 +600,7 @@ test('default package cannot be deleted', function () {
     expect($default->fresh()->trashed())->toBeFalse();
 });
 
-test('default package only accepts price and status changes', function () {
+test('default package accepts label, price and status but locks quantity at 1', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $product = Product::factory()->create();
     $default = ProductPackage::factory()->default()->create([
@@ -618,7 +618,7 @@ test('default package only accepts price and status changes', function () {
         ->assertRedirect();
 
     expect($default->fresh())
-        ->label->toBe('1 Item')
+        ->label->toBe('Renamed')
         ->quantity->toBe(1)
         ->price->toBe('62.50')
         ->status->toBeFalse()

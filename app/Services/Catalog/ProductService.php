@@ -76,6 +76,7 @@ class ProductService
                         ? true
                         : (bool) $defaultDraft['status'],
                     (int) ($defaultDraft['sort_order'] ?? 0),
+                    isset($defaultDraft['label']) ? (string) $defaultDraft['label'] : null,
                 );
 
                 foreach ($packages as $package) {
