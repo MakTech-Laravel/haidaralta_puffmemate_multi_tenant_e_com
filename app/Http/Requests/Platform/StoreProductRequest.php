@@ -55,13 +55,25 @@ class StoreProductRequest extends FormRequest
             $rules['packages'] = ['nullable', 'array'];
             $rules['packages.*.label'] = ['required', 'string', 'max:255'];
             $rules['packages.*.quantity'] = ['required', 'integer', 'min:1', 'max:99999'];
-            $rules['packages.*.price'] = ['nullable', 'required_unless:packages.*.is_default,true', 'numeric', 'min:0'];
+            $rules['packages.*.price'] = ['required', 'numeric', 'min:0'];
             $rules['packages.*.status'] = ['sometimes', 'boolean'];
-            $rules['packages.*.is_default'] = ['sometimes', 'boolean'];
             $rules['packages.*.sort_order'] = ['sometimes', 'integer', 'min:0', 'max:99999'];
         }
 
         return $rules;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'packages.*.label.required' => 'Enter a package label, or remove this row.',
+            'packages.*.quantity.required' => 'Enter a package quantity, or remove this row.',
+            'packages.*.quantity.min' => 'Package quantity must be at least 1, or remove this row.',
+            'packages.*.price.required' => 'Enter a package price, or remove this row.',
+        ];
     }
 
     private function prepareProductPackagesInput(): void

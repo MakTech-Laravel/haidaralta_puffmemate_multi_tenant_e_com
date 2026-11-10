@@ -37,7 +37,6 @@ export type CatalogProductPackage = {
     quantity: number;
     price: string | number;
     status: boolean;
-    is_default?: boolean;
     sort_order: number;
 };
 
@@ -48,6 +47,8 @@ type ProductPackagesCardProps = {
     packages: CatalogProductPackage[];
     /** Catalog selling price used to auto-fill package price from quantity. */
     sellingPrice?: string | number | null;
+    /** Fallback when selling price is empty or 0. */
+    regularPrice?: string | number | null;
 };
 
 export function ProductPackagesCard({
@@ -56,6 +57,7 @@ export function ProductPackagesCard({
     packagesEnabled,
     packages,
     sellingPrice = '',
+    regularPrice = '',
 }: ProductPackagesCardProps) {
     const { catalog } = usePage().props;
     const { can } = usePermission();
@@ -110,14 +112,9 @@ export function ProductPackagesCard({
                 accessorKey: 'label',
                 header: 'Label',
                 cell: ({ row }) => (
-                    <div className="flex items-center gap-2">
-                        <DataTableTruncated className="font-medium">
-                            {row.original.label}
-                        </DataTableTruncated>
-                        {row.original.is_default ? (
-                            <Badge variant="secondary">Default</Badge>
-                        ) : null}
-                    </div>
+                    <DataTableTruncated className="font-medium">
+                        {row.original.label}
+                    </DataTableTruncated>
                 ),
             },
             {
@@ -193,20 +190,14 @@ export function ProductPackagesCard({
                                     icon: Pencil,
                                     onSelect: () => openEdit(row.original),
                                 },
-                                ...(row.original.is_default
-                                    ? []
-                                    : [
-                                          {
-                                              label: 'Delete',
-                                              icon: Trash2,
-                                              destructive: true,
-                                              separatorBefore: true,
-                                              onSelect: () =>
-                                                  setDeletingPackageId(
-                                                      row.original.id,
-                                                  ),
-                                          },
-                                      ]),
+                                {
+                                    label: 'Delete',
+                                    icon: Trash2,
+                                    destructive: true,
+                                    separatorBefore: true,
+                                    onSelect: () =>
+                                        setDeletingPackageId(row.original.id),
+                                },
                             ]}
                         />
                     </div>
@@ -331,6 +322,7 @@ export function ProductPackagesCard({
                         }
                         isEdit={editingPackage !== null}
                         sellingPrice={sellingPrice}
+                        regularPrice={regularPrice}
                         defaults={
                             editingPackage
                                 ? {
@@ -338,7 +330,6 @@ export function ProductPackagesCard({
                                       quantity: editingPackage.quantity,
                                       price: editingPackage.price,
                                       status: editingPackage.status,
-                                      is_default: editingPackage.is_default,
                                   }
                                 : undefined
                         }

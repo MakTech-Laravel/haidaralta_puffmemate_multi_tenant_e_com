@@ -1,31 +1,51 @@
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import InputError from '@/components/input-error';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 
-export const DEFAULT_PRODUCT_PACKAGE_LABEL = '1 Item';
-
 export type ProductPackageDraft = {
+    id?: number | null;
     label: string;
     quantity: string;
     price: string;
     status: boolean;
-    is_default: boolean;
 };
 
 /**
- * Package price seed from the product selling price × quantity.
+ * Unit price for package auto-fill: selling price when present and > 0,
+ * otherwise regular price when present and > 0.
+ */
+export function packageUnitPrice(
+    sellingPrice: string | number | null | undefined,
+    regularPrice: string | number | null | undefined = null,
+): string {
+    const selling = Number(sellingPrice);
+
+    if (Number.isFinite(selling) && selling > 0) {
+        return String(selling);
+    }
+
+    const regular = Number(regularPrice);
+
+    if (Number.isFinite(regular) && regular > 0) {
+        return String(regular);
+    }
+
+    return '';
+}
+
+/**
+ * Package price seed from the product unit price × quantity.
  */
 export function calculatedPackagePrice(
-    sellingPrice: string,
+    unitPrice: string,
     quantity: string,
 ): string {
-    const unit = Number(sellingPrice);
+    const unit = Number(unitPrice);
     const qty = Number(quantity);
 
     if (!Number.isFinite(unit) || unit < 0 || !Number.isFinite(qty) || qty < 1) {
@@ -36,38 +56,64 @@ export function calculatedPackagePrice(
 }
 
 export function emptyProductPackageDraft(
-    sellingPrice = '',
+    unitPrice = '',
 ): ProductPackageDraft {
     return {
         label: '',
         quantity: '1',
-        price: calculatedPackagePrice(sellingPrice, '1'),
+        price: calculatedPackagePrice(unitPrice, '1'),
         status: true,
-        is_default: false,
     };
 }
 
 /**
- * The protected single-unit package. Quantity stays locked at 1; label and
- * price are editable. A blank price means "use the product selling price".
+ * Every package draft row must have label, quantity, and price — or be removed.
  */
-export function defaultProductPackageDraft(
-    sellingPrice = '',
-): ProductPackageDraft {
-    return {
-        label: DEFAULT_PRODUCT_PACKAGE_LABEL,
-        quantity: '1',
-        price: calculatedPackagePrice(sellingPrice, '1'),
-        status: true,
-        is_default: true,
-    };
+export function validateProductPackageDrafts(
+    packages: ProductPackageDraft[],
+): Record<string, string> {
+    const errors: Record<string, string> = {};
+
+    packages.forEach((row, index) => {
+        if (row.label.trim() === '') {
+            errors[`packages.${index}.label`] =
+                'Enter a package label, or remove this row.';
+        }
+
+        const quantity = Number(row.quantity);
+
+        if (
+            row.quantity.trim() === '' ||
+            !Number.isFinite(quantity) ||
+            !Number.isInteger(quantity) ||
+            quantity < 1
+        ) {
+            errors[`packages.${index}.quantity`] =
+                'Enter a quantity of at least 1, or remove this row.';
+        }
+
+        const price = Number(row.price);
+
+        if (
+            row.price.trim() === '' ||
+            !Number.isFinite(price) ||
+            price < 0
+        ) {
+            errors[`packages.${index}.price`] =
+                'Enter a package price, or remove this row.';
+        }
+    });
+
+    return errors;
 }
 
 type ProductPackagesDraftFieldsProps = {
     packagesEnabled: boolean;
     packages: ProductPackageDraft[];
-    /** Current selling price of the product form; seeds package prices. */
+    /** Current selling price of the product form; preferred unit for package prices. */
     sellingPrice: string;
+    /** Fallback unit when selling price is empty or 0. */
+    regularPrice?: string;
     errors: Record<string, string>;
     onPackagesEnabledChange: (value: boolean) => void;
     onPackagesChange: (packages: ProductPackageDraft[]) => void;
@@ -77,6 +123,7 @@ export function ProductPackagesDraftFields({
     packagesEnabled,
     packages,
     sellingPrice,
+    regularPrice = '',
     errors,
     onPackagesEnabledChange,
     onPackagesChange,
@@ -84,6 +131,7 @@ export function ProductPackagesDraftFields({
     const [priceTouched, setPriceTouched] = useState<Record<number, boolean>>(
         {},
     );
+    const unitPrice = packageUnitPrice(sellingPrice, regularPrice);
 
     useEffect(() => {
         const next = packages.map((row, index) => {
@@ -92,7 +140,7 @@ export function ProductPackagesDraftFields({
             }
 
             const calculated = calculatedPackagePrice(
-                sellingPrice,
+                unitPrice,
                 row.quantity,
             );
 
@@ -110,9 +158,9 @@ export function ProductPackagesDraftFields({
         if (changed) {
             onPackagesChange(next);
         }
-        // Only re-seed when the product selling price changes.
+        // Only re-seed when the resolved unit price changes.
         // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional
-    }, [sellingPrice]);
+    }, [unitPrice]);
 
     const updatePackage = (
         index: number,
@@ -127,7 +175,7 @@ export function ProductPackagesDraftFields({
     };
 
     const updateQuantity = (index: number, quantity: string) => {
-        const calculated = calculatedPackagePrice(sellingPrice, quantity);
+        const calculated = calculatedPackagePrice(unitPrice, quantity);
 
         setPriceTouched((current) => {
             const next = { ...current };
@@ -150,7 +198,7 @@ export function ProductPackagesDraftFields({
     };
 
     const addPackage = () => {
-        onPackagesChange([...packages, emptyProductPackageDraft(sellingPrice)]);
+        onPackagesChange([...packages, emptyProductPackageDraft(unitPrice)]);
     };
 
     const removePackage = (index: number) => {
@@ -214,10 +262,9 @@ export function ProductPackagesDraftFields({
                         Packages
                     </h2>
                     <p className="text-muted-foreground text-sm">
-                        Quantity tiers created with this product. The default
-                        package cannot be deleted; its quantity stays at 1.
-                        Changing quantity recalculates price from the selling
-                        price.
+                        Optional quantity tiers for this product. Changing
+                        quantity recalculates price from selling price, or
+                        regular price when selling is empty or 0.
                     </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -237,8 +284,9 @@ export function ProductPackagesDraftFields({
 
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-muted-foreground text-xs">
-                    Use the arrows to set the storefront order. Extra rows
-                    without a label are not saved.
+                    Use the arrows to set the storefront order. Fill label,
+                    quantity, and price on every row, or remove it before
+                    saving.
                 </p>
                 <Button
                     type="button"
@@ -258,14 +306,8 @@ export function ProductPackagesDraftFields({
                         className="border-border/70 grid gap-3 rounded-xl border p-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_auto]"
                     >
                         <div className="flex flex-col gap-2">
-                            <Label
-                                htmlFor={`package-draft-label-${index}`}
-                                className="flex items-center gap-2"
-                            >
+                            <Label htmlFor={`package-draft-label-${index}`}>
                                 Label
-                                {row.is_default ? (
-                                    <Badge variant="secondary">Default</Badge>
-                                ) : null}
                             </Label>
                             <Input
                                 id={`package-draft-label-${index}`}
@@ -277,6 +319,7 @@ export function ProductPackagesDraftFields({
                                         event.target.value,
                                     )
                                 }
+                                required
                                 placeholder="e.g. Pack of 5"
                             />
                             <InputError
@@ -291,17 +334,13 @@ export function ProductPackagesDraftFields({
                                 id={`package-draft-quantity-${index}`}
                                 type="number"
                                 min={1}
+                                step={1}
                                 value={row.quantity}
-                                disabled={row.is_default}
                                 onChange={(event) =>
                                     updateQuantity(index, event.target.value)
                                 }
+                                required
                             />
-                            {row.is_default ? (
-                                <p className="text-muted-foreground text-xs">
-                                    Default quantity is fixed at 1.
-                                </p>
-                            ) : null}
                             <InputError
                                 message={errors[`packages.${index}.quantity`]}
                             />
@@ -327,11 +366,13 @@ export function ProductPackagesDraftFields({
                                         event.target.value,
                                     );
                                 }}
+                                required
                                 placeholder="0.00"
                             />
                             <p className="text-muted-foreground text-xs">
-                                Auto-fills as selling price × quantity. You can
-                                still edit it.
+                                Auto-fills as unit price × quantity (selling, or
+                                regular when selling is empty/0). You can still
+                                edit it.
                             </p>
                             <InputError
                                 message={errors[`packages.${index}.price`]}
@@ -373,18 +414,16 @@ export function ProductPackagesDraftFields({
                             >
                                 <ArrowDown className="size-4" />
                             </Button>
-                            {row.is_default ? null : (
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="size-9 shrink-0"
-                                    onClick={() => removePackage(index)}
-                                    aria-label="Remove package draft"
-                                >
-                                    <Trash2 className="size-4" />
-                                </Button>
-                            )}
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="icon"
+                                className="size-9 shrink-0"
+                                onClick={() => removePackage(index)}
+                                aria-label="Remove package draft"
+                            >
+                                <Trash2 className="size-4" />
+                            </Button>
                         </div>
                     </div>
                 ))}

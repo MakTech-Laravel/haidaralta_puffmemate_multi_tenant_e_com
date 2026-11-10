@@ -4,7 +4,6 @@ namespace App\Services\Catalog;
 
 use App\Models\Product;
 use App\Models\ProductPackage;
-use DomainException;
 use Illuminate\Support\Facades\DB;
 
 class ProductPackageService
@@ -33,7 +32,6 @@ class ProductPackageService
                 'quantity' => (int) $data['quantity'],
                 'price' => number_format((float) $data['price'], 2, '.', ''),
                 'status' => $data['status'] ?? true,
-                'is_default' => false,
                 'sort_order' => array_key_exists('sort_order', $data)
                     ? (int) $data['sort_order']
                     : $this->nextSortOrder($product),
@@ -42,40 +40,6 @@ class ProductPackageService
     }
 
     /**
-     * Create the protected single-unit package of a product.
-     *
-     * Quantity is always 1. Label defaults to {@see ProductPackage::DEFAULT_LABEL}.
-     * The price falls back to the product selling price when none is given.
-     */
-    public function createDefault(
-        Product $product,
-        float|string|null $price = null,
-        bool $status = true,
-        int $sortOrder = 0,
-        ?string $label = null,
-    ): ProductPackage {
-        $resolvedPrice = $price === null || $price === ''
-            ? (float) $product->selling_price
-            : (float) $price;
-
-        $resolvedLabel = is_string($label) && trim($label) !== ''
-            ? trim($label)
-            : ProductPackage::DEFAULT_LABEL;
-
-        return ProductPackage::query()->create([
-            'product_id' => $product->id,
-            'label' => $resolvedLabel,
-            'quantity' => 1,
-            'price' => number_format($resolvedPrice, 2, '.', ''),
-            'status' => $status,
-            'is_default' => true,
-            'sort_order' => $sortOrder,
-        ]);
-    }
-
-    /**
-     * Update a package. The default package keeps quantity locked at 1.
-     *
      * @param  array{
      *     label?: string,
      *     quantity?: int,
@@ -86,12 +50,6 @@ class ProductPackageService
      */
     public function update(ProductPackage $package, array $data): ProductPackage
     {
-        unset($data['is_default']);
-
-        if ($package->is_default) {
-            unset($data['quantity']);
-        }
-
         if (array_key_exists('price', $data)) {
             $data['price'] = number_format((float) $data['price'], 2, '.', '');
         }
@@ -153,16 +111,65 @@ class ProductPackageService
         });
     }
 
-    /**
-     * @throws DomainException when the package is the protected default one
-     */
     public function delete(ProductPackage $package): void
     {
-        if ($package->is_default) {
-            throw new DomainException('The default package cannot be deleted. Disable it instead.');
-        }
-
         $package->delete();
+    }
+
+    /**
+     * Replace a product's packages with the submitted rows.
+     *
+     * Rows with a matching product package id are updated; others are created.
+     * Existing packages missing from the payload are soft-deleted.
+     *
+     * @param  list<array{
+     *     id?: int|string|null,
+     *     label: string,
+     *     quantity: int|string,
+     *     price: float|string,
+     *     status?: bool,
+     *     sort_order?: int|string
+     * }>  $packages
+     */
+    public function syncForProduct(Product $product, array $packages): void
+    {
+        DB::transaction(function () use ($product, $packages): void {
+            $existing = ProductPackage::query()
+                ->where('product_id', $product->id)
+                ->get()
+                ->keyBy('id');
+
+            $keptIds = [];
+
+            foreach (array_values($packages) as $index => $row) {
+                $id = isset($row['id']) ? (int) $row['id'] : 0;
+                $payload = [
+                    'label' => $row['label'],
+                    'quantity' => (int) $row['quantity'],
+                    'price' => $row['price'],
+                    'status' => array_key_exists('status', $row)
+                        ? (bool) $row['status']
+                        : true,
+                    'sort_order' => (int) ($row['sort_order'] ?? $index),
+                ];
+
+                if ($id > 0 && $existing->has($id)) {
+                    $this->update($existing->get($id), $payload);
+                    $keptIds[] = $id;
+
+                    continue;
+                }
+
+                $created = $this->create($product, $payload);
+                $keptIds[] = $created->id;
+            }
+
+            foreach ($existing as $package) {
+                if (! in_array($package->id, $keptIds, true)) {
+                    $this->delete($package);
+                }
+            }
+        });
     }
 
     public function restore(ProductPackage $package): ProductPackage
