@@ -4,6 +4,7 @@ use App\Contracts\SendsSms;
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
 use App\Enums\CustomerRegistrationStatus;
+use App\Enums\DriverAssignmentStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
@@ -18,6 +19,8 @@ use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\DeliveryShift;
+use App\Models\DriverBranchAssignment;
+use App\Models\DriverProfile;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Payment;
@@ -1123,7 +1126,8 @@ test('placing an order writes an area allocation decision log for the matched br
     expect($log->winning_branch_id)->toBe($winner->id)
         ->and($log->considered_branches)->not->toBeEmpty()
         ->and($log->considered_branches[0]['branch_id'])->toBe($winner->id)
-        ->and($log->considered_branches[0]['allocation'] ?? null)->toBe('area_nearest')
+        // The default checkout payload is same-day, so the zone branch inside the radius wins.
+        ->and($log->considered_branches[0]['allocation'] ?? null)->toBe('same_day_area_radius')
         ->and($log->rejected_branches)->toBe([]);
 });
 
@@ -1283,4 +1287,145 @@ test('placing an order without saving as default leaves the saved address untouc
         ->and($saved->refresh()->address)->toBe('9 Saved Lane')
         ->and($order->address_id)->toBeNull()
         ->and($order->shipping_address_snapshot['address'])->toBe('5 One Off Road');
+});
+
+/**
+ * Zone branch sits outside the same-day radius; the other-zone branch is a few km from the pin.
+ *
+ * @return array{zone: Branch, nearby: Branch}
+ */
+function sameDayRadiusBranches(Product $product): array
+{
+    $zone = Branch::factory()->create(['latitude' => -34.5, 'longitude' => 151.2, 'status' => true]);
+    $nearby = Branch::factory()->create(['latitude' => -33.87, 'longitude' => 151.21, 'status' => true]);
+
+    BranchArea::factory()->forBranch($zone)->create([
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
+    ]);
+    BranchArea::factory()->forBranch($nearby)->create([
+        'polygon' => Polygon::squareAround(-30.0, 150.0, 0.05),
+        'is_active' => true,
+    ]);
+
+    foreach ([$zone, $nearby] as $branch) {
+        Inventory::factory()->create([
+            'branch_id' => $branch->id,
+            'product_id' => $product->id,
+            'variant_id' => null,
+            'quantity' => 10,
+            'status' => true,
+        ]);
+    }
+
+    return ['zone' => $zone, 'nearby' => $nearby];
+}
+
+test('same-day checkout uses a nearby branch from another zone when the zone branch is outside the radius', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'same-day-radius-item']);
+    $branches = sameDayRadiusBranches($product);
+
+    $this->actingAs($user, 'customer')->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($user, 'customer')
+        ->postJson(route('checkout.shipping'), [
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
+            'delivery_method' => 'regular',
+        ])
+        ->assertOk()
+        ->assertJsonPath('matchedBranchId', $branches['nearby']->id);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload(['delivery_method' => 'regular']))
+        ->assertRedirect();
+
+    expect(Order::query()->firstOrFail()->fulfillment->branch_id)->toBe($branches['nearby']->id);
+});
+
+test('late delivery checkout keeps the zone branch even when another branch is nearer', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'late-zone-item']);
+    $branches = sameDayRadiusBranches($product);
+
+    $this->actingAs($user, 'customer')->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($user, 'customer')
+        ->postJson(route('checkout.shipping'), [
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
+            'delivery_method' => 'express',
+        ])
+        ->assertOk()
+        ->assertJsonPath('matchedBranchId', $branches['zone']->id);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
+        ]))
+        ->assertRedirect();
+
+    expect(Order::query()->firstOrFail()->fulfillment->branch_id)->toBe($branches['zone']->id);
+});
+
+test('a repeat customer order is placed straight away and reserves a branch driver without changing status', function () {
+    $user = User::factory()->create();
+    Order::factory()->delivered()->create(['customer_id' => $user->id]);
+    $product = storefrontCheckoutProduct(['slug' => 'repeat-customer-driver-item']);
+    $branch = storefrontCheckoutBranchWithStock($product);
+
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'is_active' => true,
+        'branch_id' => null,
+    ]);
+    DriverProfile::factory()->available()->create(['user_id' => $driver->id]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $driver->id,
+        'branch_id' => $branch->id,
+        'status' => DriverAssignmentStatus::Active,
+    ]);
+    scheduleDriverOnDuty($driver, $branch);
+
+    $this->actingAs($user, 'customer')->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    $fulfillment = Order::query()->latest('id')->firstOrFail()->fulfillment;
+
+    expect($fulfillment->status)->toBe(FulfillmentStatus::Placed)
+        ->and($fulfillment->reserved_driver_id)->toBe($driver->id)
+        ->and($fulfillment->driver_id)->toBeNull();
+});
+
+test('a new customer order stays pending and has no driver reserved until staff confirm it', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'new-customer-driver-item']);
+    $branch = storefrontCheckoutBranchWithStock($product);
+
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'is_active' => true,
+        'branch_id' => null,
+    ]);
+    DriverProfile::factory()->available()->create(['user_id' => $driver->id]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $driver->id,
+        'branch_id' => $branch->id,
+        'status' => DriverAssignmentStatus::Active,
+    ]);
+    scheduleDriverOnDuty($driver, $branch);
+
+    $this->actingAs($user, 'customer')->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    $fulfillment = Order::query()->latest('id')->firstOrFail()->fulfillment;
+
+    expect($fulfillment->status)->toBe(FulfillmentStatus::Pending)
+        ->and($fulfillment->reserved_driver_id)->toBeNull();
 });

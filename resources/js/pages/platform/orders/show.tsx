@@ -64,6 +64,7 @@ type FulfillmentSummary = {
     isPaid: boolean;
     driverId: number | null;
     driverName: string | null;
+    reservedDriverName: string | null;
     canAssign: boolean;
     canCancel: boolean;
     canRetry: boolean;
@@ -334,6 +335,13 @@ function FulfillmentCard({
                                 Driver{' '}
                                 <span className="text-foreground font-medium">
                                     {fulfillment.driverName}
+                                </span>
+                            </>
+                        ) : fulfillment.reservedDriverName ? (
+                            <>
+                                Reserved driver{' '}
+                                <span className="text-foreground font-medium">
+                                    {fulfillment.reservedDriverName}
                                 </span>
                             </>
                         ) : (

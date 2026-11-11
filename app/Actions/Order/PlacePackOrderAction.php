@@ -22,6 +22,7 @@ use App\Services\Customer\CustomerAccountService;
 use App\Services\Notifications\NotificationService;
 use App\Services\Order\AllocationDecisionRecorder;
 use App\Services\Order\BranchDeliveryQuote;
+use App\Services\Order\DriverAutoAssignService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Support\BranchProductPriceDisplay;
 use App\Support\MediaUrl;
@@ -240,6 +241,9 @@ class PlacePackOrderAction
 
         if ($placed) {
             $this->placements->issue($order);
+
+            // Repeat customers open as Placed; new customers get a driver when staff confirm.
+            rescue(fn () => app(DriverAutoAssignService::class)->reserve($order->fulfillment));
         }
 
         // Non-critical: an SMS failure must never fail an order that is already placed.

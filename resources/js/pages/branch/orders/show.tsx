@@ -71,6 +71,7 @@ type FulfillmentDetail = {
     drivers: { id: number; name: string }[];
     driverId: number | null;
     driverName: string | null;
+    reservedDriverName: string | null;
     canAssign: boolean;
     canResendCode: boolean;
     canCancel: boolean;
@@ -480,6 +481,15 @@ export default function BranchOrderShow({
                                                 Driver{' '}
                                                 <span className="text-foreground font-medium">
                                                     {fulfillment.driverName}
+                                                </span>
+                                            </>
+                                        ) : fulfillment.reservedDriverName ? (
+                                            <>
+                                                Reserved driver{' '}
+                                                <span className="text-foreground font-medium">
+                                                    {
+                                                        fulfillment.reservedDriverName
+                                                    }
                                                 </span>
                                             </>
                                         ) : (
