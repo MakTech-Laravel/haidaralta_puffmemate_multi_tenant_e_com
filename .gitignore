@@ -11,11 +11,12 @@
 /storage/app/*firebase*
 /resources/js/actions
 /resources/js/routes
-temp_auto_push.bat
 /resources/js/wayfinder
 /vendor
 .DS_Store
+.env
 .env.backup
+.env.production
 .phpactor.json
 .phpunit.result.cache
 npm-debug.log
@@ -24,7 +25,5 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
+/.vscode
 /.zed
-
-.gitignore
-branch_structure.json
