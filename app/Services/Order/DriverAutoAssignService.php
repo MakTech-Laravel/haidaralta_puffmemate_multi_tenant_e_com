@@ -101,21 +101,25 @@ class DriverAutoAssignService
     }
 
     /**
-     * Eligible branch driver with the fewest open orders (reserved ones included);
-     * ties go to the driver whose live position is closest to the customer. A driver
-     * with no recent position sorts last but is not excluded.
+     * Branch driver rostered for the customer's delivery day and shift (see
+     * DriverAssignmentService::candidates) with the fewest open orders due that day,
+     * reserved ones included. For a same-day delivery, ties go to the driver whose live
+     * position is closest to the customer (no recent position sorts last); future days
+     * have no live position to compare, so ties fall back to the driver id.
      */
     public function pickDriver(OrderFulfillment $fulfillment): ?User
     {
         $order = $fulfillment->order;
         $latitude = $order?->latitude !== null ? (float) $order->latitude : null;
         $longitude = $order?->longitude !== null ? (float) $order->longitude : null;
-        $workload = $this->drivers->workload();
+        $window = $this->drivers->deliveryWindow($fulfillment);
+        $workload = $this->drivers->workload($window['date'] ?? null);
+        $useLiveDistance = $window === null || $window['is_today'];
 
         return $this->drivers->candidates($fulfillment)
             ->sortBy(fn (User $driver): array => [
                 (int) ($workload[$driver->id] ?? 0),
-                $this->distanceToCustomer($driver, $latitude, $longitude),
+                $useLiveDistance ? $this->distanceToCustomer($driver, $latitude, $longitude) : 0.0,
                 $driver->id,
             ])
             ->first();
