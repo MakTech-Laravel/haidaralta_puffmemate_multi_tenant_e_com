@@ -27,3 +27,4 @@ yarn-error.log
 /.zed
 .env.gitignore
 branch_structure.json
+.env
