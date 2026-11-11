@@ -36,7 +36,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
             >
                 <div className="bg-muted relative aspect-3/2 overflow-hidden">
                     {hasOffer ? (
-                        <span className="absolute top-2 right-2 z-10 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm sm:top-3 sm:right-3 sm:px-2.5 sm:py-1">
+                        <span className="bg-primary/70 text-primary-foreground absolute top-2 right-2 z-10 rounded-full px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:top-3 sm:right-3 sm:px-2.5 sm:py-1">
                             Offer Product
                         </span>
                     ) : null}
@@ -52,7 +52,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                         }}
                     />
                     <div
-                        className="absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-xs font-medium text-white backdrop-blur-sm sm:right-3 sm:bottom-3 sm:px-2.5 sm:py-1"
+                        className="bg-primary/70 text-primary-foreground absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:right-3 sm:bottom-3 sm:px-2.5 sm:py-1"
                         aria-label={`${displayViews} views`}
                     >
                         <EyeIcon className="size-3.5 sm:size-4" />
@@ -82,7 +82,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 <Button
                     type="button"
                     size="sm"
-                    className="h-9 w-full rounded-none text-xs font-bold tracking-wide uppercase"
+                    className="h-9 w-full rounded-none text-xs font-semibold tracking-wide uppercase"
                     disabled={adding}
                     onClick={() => {
                         setAdding(true);

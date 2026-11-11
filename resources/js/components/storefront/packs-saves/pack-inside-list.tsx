@@ -14,7 +14,7 @@ export function PackInsideList({ title, items, className }: PackInsideListProps)
 
     return (
         <div className={cn('bg-muted/60 rounded-lg p-4', className)}>
-            <p className="text-foreground text-[11px] font-bold tracking-wider uppercase">
+            <p className="text-foreground text-[11px] font-semibold tracking-wider uppercase">
                 {title}
             </p>
             <ul className="mt-3 grid gap-2 sm:grid-cols-2">

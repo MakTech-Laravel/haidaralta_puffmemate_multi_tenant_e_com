@@ -20,7 +20,7 @@ export function FeaturesBar({ features, className }: FeaturesBarProps) {
                                     'before:bg-border before:absolute before:top-1/2 before:left-0 before:hidden before:h-12 before:w-px before:-translate-y-1/2 lg:before:block',
                             )}
                         >
-                            <h3 className="text-foreground text-base font-bold tracking-tight">
+                            <h3 className="text-foreground text-base font-semibold tracking-tight">
                                 {feature.title}
                             </h3>
                             <p className="text-muted-foreground text-sm leading-snug">

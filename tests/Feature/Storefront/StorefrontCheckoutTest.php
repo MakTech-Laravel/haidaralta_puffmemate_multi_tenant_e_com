@@ -152,7 +152,7 @@ test('checkout shares the application settings name', function () {
         'app_short_name' => 'Harbour',
         'date_format' => 'Y-m-d',
         'time_format' => 'H:i',
-        'theme_color' => '#C4472F',
+        'theme_color' => '#174B36',
         'background_color' => '#FFFFFF',
     ]);
 

@@ -1030,7 +1030,7 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                                 : 'Discount'
                                         }
                                     >
-                                        <span className="text-emerald-600 dark:text-emerald-400">
+                                        <span className="text-foreground">
                                             −{order.discountLabel}
                                         </span>
                                     </SummaryRow>

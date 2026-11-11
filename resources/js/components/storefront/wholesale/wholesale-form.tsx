@@ -267,7 +267,7 @@ export function WholesaleForm({
                     <Button
                         type="submit"
                         disabled={processing}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90 h-11 cursor-pointer rounded-none px-6 font-semibold"
+                        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-11 cursor-pointer rounded-none px-6 font-semibold"
                     >
                         {copy.submitLabel ?? 'Send Message'}
                     </Button>

@@ -325,7 +325,7 @@ class ApplicationSettingsService
             'app_name' => (string) config('app.name', 'PuffMeMate'),
             'app_short_name' => (string) config('pwa.short_name', config('app.name', 'PuffMeMate')),
             'short_description' => null,
-            'theme_color' => (string) config('pwa.theme_color', '#C4472F'),
+            'theme_color' => (string) config('pwa.theme_color', '#174B36'),
             'background_color' => (string) config('pwa.background_color', '#FFFFFF'),
             'date_format' => 'Y-m-d',
             'time_format' => 'H:i',
@@ -355,7 +355,7 @@ class ApplicationSettingsService
             'faviconUrl' => null,
             'dateFormat' => 'Y-m-d',
             'timeFormat' => 'H:i',
-            'themeColor' => (string) config('pwa.theme_color', '#C4472F'),
+            'themeColor' => (string) config('pwa.theme_color', '#174B36'),
             'backgroundColor' => (string) config('pwa.background_color', '#FFFFFF'),
         ];
     }

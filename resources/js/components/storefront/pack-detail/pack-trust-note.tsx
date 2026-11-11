@@ -15,7 +15,7 @@ export function PackTrustNote({ className }: PackTrustNoteProps) {
         >
             <CircleCheck className="text-primary mt-0.5 size-5 shrink-0" />
             <div className="min-w-0">
-                <p className="text-foreground text-sm font-bold">
+                <p className="text-foreground text-sm font-semibold">
                     100% Genuine Australian Duty-Paid Licensed Stock
                 </p>
                 <p className="text-muted-foreground mt-1 text-xs leading-relaxed">

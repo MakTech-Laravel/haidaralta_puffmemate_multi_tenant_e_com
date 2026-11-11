@@ -42,7 +42,7 @@ function SectionBlocks({ blocks }: { blocks: PrivacyBlock[] }) {
                     return (
                         <h3
                             key={`s-${index}`}
-                            className="text-foreground pt-1 text-sm font-bold sm:text-base"
+                            className="text-foreground pt-1 text-sm font-semibold sm:text-base"
                         >
                             {block.text}
                         </h3>
@@ -81,7 +81,7 @@ function SectionBlocks({ blocks }: { blocks: PrivacyBlock[] }) {
 export function PrivacySection({ section, className }: PrivacySectionProps) {
     return (
         <section id={section.id} className={cn('scroll-mt-28', className)}>
-            <h2 className="text-foreground text-base font-bold tracking-tight uppercase sm:text-2xl">
+            <h2 className="text-foreground text-base font-semibold tracking-tight uppercase sm:text-2xl">
                 {section.number}. {section.title}
             </h2>
             <SectionBlocks blocks={section.blocks} />

@@ -102,7 +102,7 @@ function RequiredMark() {
 
 function SectionHint({ children }: { children: string }) {
     return (
-        <span className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
+        <span className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
             {children}
         </span>
     );
@@ -202,7 +202,7 @@ export function CheckoutForm({
             ) : null}
             <Card className={sectionCardClass}>
                 <CardHeader>
-                    <CardTitle className="text-foreground text-lg font-extrabold">
+                    <CardTitle className="text-foreground text-lg font-semibold">
                         1. Your details
                     </CardTitle>
                 </CardHeader>
@@ -256,7 +256,7 @@ export function CheckoutForm({
 
             <Card className={sectionCardClass}>
                 <CardHeader>
-                    <CardTitle className="text-foreground text-lg font-extrabold">
+                    <CardTitle className="text-foreground text-lg font-semibold">
                         2. Where should we deliver?
                     </CardTitle>
                 </CardHeader>
@@ -413,7 +413,7 @@ export function CheckoutForm({
 
             <Card className={sectionCardClass}>
                 <CardHeader className="flex flex-row items-start justify-between gap-3">
-                    <CardTitle className="text-foreground text-lg font-extrabold">
+                    <CardTitle className="text-foreground text-lg font-semibold">
                         3. Delivery method
                     </CardTitle>
                     <SectionHint>Choose one</SectionHint>
@@ -486,7 +486,7 @@ export function CheckoutForm({
                             {showDeliveryDate ? (
                                 <div className="border-border/80 bg-background space-y-3 rounded-none border p-4">
                                     <div className="space-y-1">
-                                        <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+                                        <p className="text-foreground text-xs font-semibold tracking-wider uppercase">
                                             Delivery date
                                         </p>
                                         <p className="text-muted-foreground text-sm">
@@ -532,7 +532,7 @@ export function CheckoutForm({
                             ) : null}
                             {showTimeSlots ? (
                                 <div className="space-y-2">
-                                    <p className="text-foreground text-xs font-extrabold tracking-wider uppercase">
+                                    <p className="text-foreground text-xs font-semibold tracking-wider uppercase">
                                         Available delivery shifts
                                     </p>
                                     <p className="text-muted-foreground text-sm">
@@ -577,7 +577,7 @@ export function CheckoutForm({
 
             <Card className={sectionCardClass}>
                 <CardHeader className="flex flex-row items-start justify-between gap-3">
-                    <CardTitle className="text-foreground text-lg font-extrabold">
+                    <CardTitle className="text-foreground text-lg font-semibold">
                         4. Payment method
                     </CardTitle>
                     {paymentHint ? (

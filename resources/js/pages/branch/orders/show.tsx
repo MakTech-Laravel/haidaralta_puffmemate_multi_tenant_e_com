@@ -1138,7 +1138,7 @@ export default function BranchOrderShow({
                                                 : 'Discount'
                                         }
                                     >
-                                        <span className="text-emerald-600 dark:text-emerald-400">
+                                        <span className="text-foreground">
                                             −{fulfillment.order.discountLabel}
                                         </span>
                                     </SummaryRow>

@@ -174,7 +174,7 @@ export function StorefrontHeader() {
 
     return (
         <div className="sticky top-0 z-40">
-            <div className="bg-foreground text-primary-foreground">
+            <div className="bg-primary text-primary-foreground">
                 <p className="px-4 py-2 text-center text-sm font-normal uppercase">
                     {storefrontAnnouncement}
                 </p>

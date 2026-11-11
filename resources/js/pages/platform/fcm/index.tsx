@@ -287,7 +287,7 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                         pushes by token(s) or user(s).
                     </p>
                     {!firebaseConfigured ? (
-                        <p className="mt-2 text-xs text-red-600">
+                        <p className="text-destructive mt-2 text-xs">
                             Set VITE_FIREBASE_* (including VAPID key) in .env
                             and restart Vite / rebuild.
                         </p>
@@ -473,12 +473,12 @@ export default function FcmIndex({ users, firebaseConfigured }: Props) {
                                         <span
                                             className={
                                                 l.level === 'error'
-                                                    ? 'text-red-500'
+                                                    ? 'text-destructive'
                                                     : l.level === 'warn'
-                                                      ? 'text-yellow-600'
+                                                      ? 'text-primary'
                                                       : l.level === 'success'
-                                                        ? 'text-green-600'
-                                                        : 'text-blue-500'
+                                                        ? 'text-foreground'
+                                                        : 'text-muted-foreground'
                                             }
                                         >
                                             [{l.level.toUpperCase()}]

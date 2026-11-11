@@ -538,7 +538,7 @@ function AggregateProgressRow({
                               : `Uploading ${Math.round(capped)}%`}
                     </span>
                     {!indeterminate && capped >= 100 && (
-                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-green-500" />
+                        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-foreground" />
                     )}
                 </div>
                 <div className="bg-muted h-1.5 w-full overflow-hidden rounded-full">
@@ -729,7 +729,7 @@ function FileCard({
                     <div
                         className={cn(
                             'absolute inset-0 flex flex-col items-center justify-center gap-2',
-                            'rounded-[inherit] bg-black/60 backdrop-blur-[2px]',
+                            'rounded-[inherit] bg-scrim backdrop-blur-[2px]',
                             classNames.progressOverlay,
                         )}
                     >
@@ -762,7 +762,7 @@ function FileCard({
                     <div
                         className={cn(
                             'pointer-events-none absolute inset-0 flex items-center justify-center',
-                            'animate-in fade-in rounded-[inherit] bg-green-900/40 duration-150',
+                            'animate-in fade-in rounded-[inherit] bg-primary/40 duration-150',
                         )}
                     >
                         <CheckCircle2 className="h-9 w-9 text-white drop-shadow-md" />

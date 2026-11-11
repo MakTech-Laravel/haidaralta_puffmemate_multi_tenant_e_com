@@ -102,10 +102,10 @@ export function CheckoutOrderSummary({
             className={cn('bg-accent h-fit p-5 lg:sticky lg:top-28', className)}
         >
             <div className="flex items-center justify-between gap-3">
-                <h2 className="text-foreground text-2xl font-bold tracking-tight">
+                <h2 className="text-foreground text-2xl font-semibold tracking-tight">
                     Your order
                 </h2>
-                <span className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
+                <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                     {itemCount} item{itemCount === 1 ? '' : 's'}
                 </span>
             </div>
@@ -135,7 +135,7 @@ export function CheckoutOrderSummary({
                                 Quantity x {item.quantity}
                             </p>
                         </div>
-                        <p className="text-foreground shrink-0 text-sm font-bold">
+                        <p className="text-foreground shrink-0 text-sm font-semibold">
                             {item.formattedLineTotal}
                         </p>
                     </li>
@@ -243,7 +243,7 @@ export function CheckoutOrderSummary({
                 ) : null}
                 <div className="flex items-center justify-between gap-3 text-sm">
                     <dt className="text-muted-foreground">Delivery</dt>
-                    <dd className="text-foreground font-bold">
+                    <dd className="text-foreground font-semibold">
                         {deliveryLabel}
                     </dd>
                 </div>
@@ -257,10 +257,10 @@ export function CheckoutOrderSummary({
             </dl>
 
             <div className="border-border mt-4 flex items-end justify-between gap-3 border-t pt-4">
-                <span className="text-foreground text-base font-bold">
+                <span className="text-foreground text-base font-semibold">
                     Total
                 </span>
-                <span className="text-foreground text-2xl font-bold">
+                <span className="text-foreground text-2xl font-semibold">
                     {formatStorefrontMoney(total)}
                 </span>
             </div>
@@ -341,7 +341,7 @@ export function CheckoutOrderSummary({
                         ? undefined
                         : 'Fill every required field to place your order.'
                 }
-                className="mt-5 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
+                className="mt-5 h-12 w-full rounded-none text-sm font-semibold tracking-wide uppercase"
             >
                 {processing ? 'Placing order…' : 'Place order'}
             </Button>

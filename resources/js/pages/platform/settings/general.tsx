@@ -419,8 +419,8 @@ export default function PlatformGeneralSettings({
                                 PWA
                             </h2>
                             <p className="text-muted-foreground text-sm">
-                                Theme colors and install icons for progressive
-                                web app installs.
+                                Browser bar colors and install icons for
+                                progressive web app installs.
                             </p>
                         </div>
 
@@ -428,8 +428,13 @@ export default function PlatformGeneralSettings({
                             <div className="grid gap-5 sm:grid-cols-2">
                                 <div className="flex flex-col gap-2">
                                     <Label htmlFor="theme_color">
-                                        Theme color
+                                        Browser bar color
                                     </Label>
+                                    <p className="text-muted-foreground text-xs">
+                                        Phone browser bar and installed-app
+                                        color. Site colors are set in the
+                                        design tokens (app.css).
+                                    </p>
                                     <Input
                                         id="theme_color"
                                         type="color"
