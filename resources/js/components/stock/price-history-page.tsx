@@ -57,12 +57,9 @@ type SelectedOption = {
 type FilterOption = { value?: string; label?: string };
 
 const softBadge = {
-    priceUpsert:
-        'border-transparent bg-amber-500/10 text-amber-800 dark:bg-amber-500/15 dark:text-amber-400',
-    stockIn:
-        'border-transparent bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400',
-    productCreate:
-        'border-transparent bg-sky-500/10 text-sky-700 dark:bg-sky-500/15 dark:text-sky-400',
+    priceUpsert: 'border-transparent bg-secondary text-foreground',
+    stockIn: 'border-transparent bg-primary/15 text-foreground',
+    productCreate: 'border-transparent bg-muted text-muted-foreground',
 } as const;
 
 function sourceBadgeClass(source: string): string {

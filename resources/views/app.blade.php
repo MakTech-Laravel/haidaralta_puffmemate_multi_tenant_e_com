@@ -14,22 +14,16 @@
 
         @php
             $applicationSettings = app(\App\Services\Application\ApplicationSettingsService::class);
-            $themeColor = (string) config('pwa.theme_color', '#C4472F');
+            $themeColor = (string) config('pwa.theme_color', '#174B36');
             $shortDescription = $applicationSettings->shortDescription();
             $hasCustomFavicon = $applicationSettings->hasCustomFavicon();
         @endphp
 
+        {{-- Pre-paint canvas only. Keep in sync with --palette-sage-50 in resources/css/app.css.
+             Site colours live in app.css; $themeColor below feeds only the browser bar meta. --}}
         <style>
             html {
-                background-color: oklch(1 0 0);
-            }
-
-            :root {
-                --primary: {{ $themeColor }};
-                --ring: {{ $themeColor }};
-                --sidebar-primary: {{ $themeColor }};
-                --sidebar-ring: {{ $themeColor }};
-                --chart-1: {{ $themeColor }};
+                background-color: #f3f5f2;
             }
         </style>
 

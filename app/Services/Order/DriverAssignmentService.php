@@ -30,17 +30,7 @@ class DriverAssignmentService
      */
     public function candidates(OrderFulfillment $fulfillment): Collection
     {
-        $workload = OrderFulfillment::query()
-            ->whereIn('status', [
-                FulfillmentStatus::Assigned->value,
-                FulfillmentStatus::PickedUp->value,
-                FulfillmentStatus::OutForDelivery->value,
-                FulfillmentStatus::Arrived->value,
-                FulfillmentStatus::DeliveryFailed->value,
-                FulfillmentStatus::Returning->value,
-            ])
-            ->get()
-            ->countBy('driver_id');
+        $workload = $this->workload();
 
         return User::query()
             ->where('user_type', UserType::DRIVER)
@@ -62,6 +52,37 @@ class DriverAssignmentService
                 return [$available, $load, $this->distanceFromBranch($fulfillment, $driver), $driver->id];
             })
             ->values();
+    }
+
+    /**
+     * Open orders per driver id: fulfillments the driver is working (assigned through
+     * returning) plus orders still waiting for packing that have the driver reserved.
+     *
+     * @return Collection<int, int>
+     */
+    public function workload(): Collection
+    {
+        $working = OrderFulfillment::query()
+            ->whereNotNull('driver_id')
+            ->whereIn('status', FulfillmentStatus::driverWorkload())
+            ->pluck('driver_id')
+            ->countBy();
+
+        $reserved = OrderFulfillment::query()
+            ->whereNotNull('reserved_driver_id')
+            ->whereNotIn('status', [FulfillmentStatus::Delivered, FulfillmentStatus::Cancelled])
+            ->pluck('reserved_driver_id')
+            ->countBy();
+
+        $totals = [];
+
+        foreach ([$working, $reserved] as $counts) {
+            foreach ($counts as $driverId => $count) {
+                $totals[$driverId] = ($totals[$driverId] ?? 0) + $count;
+            }
+        }
+
+        return collect($totals);
     }
 
     /**
@@ -105,7 +126,7 @@ class DriverAssignmentService
     public function assign(
         OrderFulfillment $fulfillment,
         User $driver,
-        User $actor,
+        ?User $actor,
         ?string $reason = null,
         ?FulfillmentStatus $advance = null,
     ): OrderFulfillment {
@@ -143,7 +164,8 @@ class DriverAssignmentService
             ]);
         }
 
-        $fulfillment->forceFill(['driver_id' => $driver->id])->save();
+        // A real assignment (manual or promoted) always supersedes an auto reservation.
+        $fulfillment->forceFill(['driver_id' => $driver->id, 'reserved_driver_id' => null])->save();
 
         OrderDriverAssignmentHistory::query()->create([
             'order_id' => $fulfillment->order_id,
@@ -151,7 +173,7 @@ class DriverAssignmentService
             'from_driver_id' => $fromDriverId,
             'to_driver_id' => $driver->id,
             'reason' => $reason,
-            'changed_by' => $actor->id,
+            'changed_by' => $actor?->id,
         ]);
 
         $this->advanceAfterAssign($fulfillment->refresh(), $actor, $advance);
@@ -165,7 +187,7 @@ class DriverAssignmentService
     /**
      * Inbox notification plus a live refresh signal for the driver's open pages.
      */
-    private function notifyDriver(OrderFulfillment $fulfillment, User $driver, User $actor): void
+    private function notifyDriver(OrderFulfillment $fulfillment, User $driver, ?User $actor): void
     {
         $orderNumber = (string) $fulfillment->order()->value('order_number');
 
@@ -184,7 +206,7 @@ class DriverAssignmentService
         DriverOrdersChanged::dispatch($driver->id, $orderNumber, DriverOrdersChanged::REASON_ASSIGNED);
     }
 
-    private function advanceAfterAssign(OrderFulfillment $fulfillment, User $actor, ?FulfillmentStatus $advance): void
+    private function advanceAfterAssign(OrderFulfillment $fulfillment, ?User $actor, ?FulfillmentStatus $advance): void
     {
         $steps = [FulfillmentStatus::Assigned];
 

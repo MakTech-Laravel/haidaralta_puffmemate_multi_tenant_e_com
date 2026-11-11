@@ -23,7 +23,7 @@ export default function StorefrontCart(cart: StorefrontCart) {
 
                     <div className="mt-4 mb-8">
                         <div className="flex flex-wrap items-baseline gap-3">
-                            <h1 className="text-foreground text-4xl font-extrabold tracking-tight">
+                            <h1 className="text-foreground text-4xl font-semibold tracking-tight">
                                 Your cart
                             </h1>
                             <span className="text-muted-foreground text-lg font-medium">

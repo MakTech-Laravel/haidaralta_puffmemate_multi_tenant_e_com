@@ -24,6 +24,7 @@ use Illuminate\Support\Carbon;
  * @property int $order_id
  * @property int $branch_id
  * @property int|null $driver_id
+ * @property int|null $reserved_driver_id
  * @property string $fulfillment_number
  * @property FulfillmentStatus $status
  * @property string|null $distance_km
@@ -33,6 +34,7 @@ use Illuminate\Support\Carbon;
  * @property-read Order $order
  * @property-read Branch $branch
  * @property-read User|null $driver
+ * @property-read User|null $reservedDriver
  */
 class OrderFulfillment extends Model implements DataTableConfigurable
 {
@@ -46,6 +48,7 @@ class OrderFulfillment extends Model implements DataTableConfigurable
         'order_id',
         'branch_id',
         'driver_id',
+        'reserved_driver_id',
         'fulfillment_number',
         'status',
         'distance_km',
@@ -93,6 +96,16 @@ class OrderFulfillment extends Model implements DataTableConfigurable
     public function driver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'driver_id');
+    }
+
+    /**
+     * Driver picked automatically at placement; becomes driver_id once the order is Ready.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function reservedDriver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'reserved_driver_id');
     }
 
     /**

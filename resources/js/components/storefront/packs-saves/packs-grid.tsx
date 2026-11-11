@@ -27,7 +27,7 @@ export function PacksGrid({
     return (
         <section className={className}>
             <div className="mb-5 flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-                <h2 className="text-foreground text-2xl font-extrabold tracking-tight">
+                <h2 className="text-foreground text-2xl font-semibold tracking-tight">
                     All Packages
                 </h2>
                 <p className="text-muted-foreground text-xs">

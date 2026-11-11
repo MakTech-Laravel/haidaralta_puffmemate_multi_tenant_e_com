@@ -335,6 +335,7 @@ class OrderController extends Controller
             ),
             'driverId' => $fulfillment->driver_id,
             'driverName' => $fulfillment->driver?->name,
+            'reservedDriverName' => $fulfillment->reservedDriver?->name,
             'shippingCostLabel' => '$'.number_format((float) $fulfillment->shipping_cost, 2),
             'distanceKmLabel' => $fulfillment->distance_km !== null ? number_format((float) $fulfillment->distance_km, 2).' km' : '—',
             'isPaid' => $fulfillment->isPaid(),

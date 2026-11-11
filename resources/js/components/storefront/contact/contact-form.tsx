@@ -188,7 +188,7 @@ export function ContactForm({ className, copy }: ContactFormProps) {
                     <Button
                         type="submit"
                         disabled={processing}
-                        className="bg-foreground text-background hover:bg-foreground/90 h-11 rounded-md px-6 font-semibold"
+                        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-11 rounded-md px-6 font-semibold"
                     >
                         {copy.submitLabel ?? 'Send Message'}
                     </Button>

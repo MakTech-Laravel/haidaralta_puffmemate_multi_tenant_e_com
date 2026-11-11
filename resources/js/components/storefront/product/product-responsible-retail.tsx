@@ -10,7 +10,7 @@ export function ProductResponsibleRetail({
             <h2 className="text-foreground font-inter text-2xl font-semibold uppercase">
                 Responsible Retail
             </h2>
-            <p className="text-primary font-inter text-lg font-bold">
+            <p className="text-primary font-inter text-lg font-semibold">
                 For Adults 18+ Only
             </p>
             <ol className="text-foreground font-inter list-decimal space-y-2 pl-5 text-base leading-relaxed font-normal">

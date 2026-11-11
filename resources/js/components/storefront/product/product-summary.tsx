@@ -73,7 +73,7 @@ export function ProductSummary({
                 {badges.map((badge) => (
                     <span
                         key={badge}
-                        className="bg-foreground text-background font-inter rounded-md px-3 py-2 text-xs font-semibold"
+                        className="bg-secondary text-secondary-foreground font-inter rounded-md px-3 py-2 text-xs font-semibold"
                     >
                         {badge}
                     </span>
@@ -112,7 +112,7 @@ export function ProductSummary({
             </div>
 
             <div className="flex min-w-0 flex-wrap items-center gap-3">
-                <span className="text-primary text-3xl font-bold">
+                <span className="text-primary text-3xl font-semibold">
                     {displayPrice}
                 </span>
                 {displayCompareAt ? (
@@ -124,7 +124,7 @@ export function ProductSummary({
 
             {hasPackages ? (
                 <div className="min-w-0 space-y-3">
-                    <h2 className="text-foreground font-inter text-base font-bold">
+                    <h2 className="text-foreground font-inter text-base font-semibold">
                         Choose a package
                     </h2>
                     <ul className="flex flex-col gap-2">
@@ -158,7 +158,7 @@ export function ProductSummary({
                                             </p>
                                         </div>
                                         <div className="flex shrink-0 items-center gap-2">
-                                            <span className="text-primary text-sm font-bold">
+                                            <span className="text-primary text-sm font-semibold">
                                                 {pkg.formattedPrice}
                                             </span>
                                             {pkg.formattedUnitTotal ? (
@@ -176,7 +176,7 @@ export function ProductSummary({
             ) : null}
 
             <div className="min-w-0">
-                <h2 className="text-foreground font-inter mt-10 text-base font-bold">
+                <h2 className="text-foreground font-inter mt-10 text-base font-semibold">
                     About this product
                 </h2>
                 <p className="text-muted-foreground font-inter mt-2 text-sm leading-relaxed font-normal break-words">
@@ -211,7 +211,7 @@ export function ProductSummary({
                 <Button
                     type="button"
                     size="lg"
-                    className="h-12 w-full max-w-full min-w-0 shrink rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
+                    className="h-12 w-full max-w-full min-w-0 shrink rounded-none text-sm font-semibold tracking-wide uppercase sm:flex-1"
                     onClick={() =>
                         addToCart(slug, quantity, undefined, {
                             productPackageId: selectedPackage?.id,
@@ -227,7 +227,7 @@ export function ProductSummary({
                 <div className="flex min-w-0 items-start gap-2.5">
                     <Clock className="text-primary mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0">
-                        <p className="text-foreground font-inter text-base leading-snug font-bold break-words">
+                        <p className="text-foreground font-inter text-base leading-snug font-semibold break-words">
                             Fast delivery from West Village
                         </p>
                         <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">
@@ -238,7 +238,7 @@ export function ProductSummary({
                 <div className="flex min-w-0 items-start gap-2.5">
                     <Check className="text-primary mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0">
-                        <p className="text-foreground font-inter text-base leading-snug font-bold break-words">
+                        <p className="text-foreground font-inter text-base leading-snug font-semibold break-words">
                             Catalog pricing
                         </p>
                         <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">

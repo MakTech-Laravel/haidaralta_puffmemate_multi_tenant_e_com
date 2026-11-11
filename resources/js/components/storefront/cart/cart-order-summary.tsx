@@ -18,7 +18,7 @@ export function CartOrderSummary({ cart, className }: CartOrderSummaryProps) {
                 className,
             )}
         >
-            <h2 className="text-foreground text-lg font-bold tracking-tight">
+            <h2 className="text-foreground text-lg font-semibold tracking-tight">
                 Order summary
             </h2>
 
@@ -35,10 +35,10 @@ export function CartOrderSummary({ cart, className }: CartOrderSummaryProps) {
             </dl>
 
             <div className="border-border mt-5 flex min-w-0 items-end justify-between gap-3 border-t pt-4">
-                <span className="text-foreground text-base font-bold">
+                <span className="text-foreground text-base font-semibold">
                     Total
                 </span>
-                <span className="text-primary shrink-0 text-2xl font-bold">
+                <span className="text-primary shrink-0 text-2xl font-semibold">
                     {cart.formattedSubtotal}
                 </span>
             </div>
@@ -46,7 +46,7 @@ export function CartOrderSummary({ cart, className }: CartOrderSummaryProps) {
             <Button
                 asChild
                 size="lg"
-                className="mt-5 h-12 w-full rounded-none text-sm font-bold tracking-wide"
+                className="mt-5 h-12 w-full rounded-none text-sm font-semibold tracking-wide"
                 disabled={cart.itemCount === 0}
             >
                 <Link href={checkout.url()} prefetch>

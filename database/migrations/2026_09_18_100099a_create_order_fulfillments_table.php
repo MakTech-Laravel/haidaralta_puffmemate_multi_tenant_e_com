@@ -13,6 +13,8 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->cascadeOnDelete();
             $table->foreignId('branch_id')->constrained()->restrictOnDelete();
             $table->foreignId('driver_id')->nullable()->constrained('users')->nullOnDelete();
+            // Driver picked automatically at placement; promoted into driver_id when the order is Ready.
+            $table->foreignId('reserved_driver_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('fulfillment_number', 40)->unique();
             $table->string('status', 32)->default('pending');
             $table->decimal('distance_km', 8, 2)->nullable();
@@ -22,6 +24,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['branch_id', 'status']);
+            $table->index('reserved_driver_id');
             $table->unique('order_id');
         });
     }

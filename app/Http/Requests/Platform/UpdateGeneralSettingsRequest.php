@@ -22,7 +22,7 @@ class UpdateGeneralSettingsRequest extends FormRequest
             'app_name' => ['required', 'string', 'max:120'],
             'app_short_name' => ['required', 'string', 'max:60'],
             'short_description' => ['nullable', 'string', 'max:500'],
-            'theme_color' => ['required', 'string', 'max:32'],
+            'theme_color' => ['required', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
             'background_color' => ['required', 'string', 'max:32'],
             'date_format' => ['required', 'string', Rule::in(ApplicationSettingsService::DATE_FORMAT_PRESETS)],
             'time_format' => ['required', 'string', Rule::in(ApplicationSettingsService::TIME_FORMAT_PRESETS)],

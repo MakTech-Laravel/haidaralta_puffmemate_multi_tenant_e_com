@@ -70,65 +70,150 @@
     --color-sidebar-ring: var(--sidebar-ring);
     --color-tertiary: var(--tertiary);
     --color-review-star: var(--review-star);
+
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-success-tint: var(--success-tint);
+
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-warning-tint: var(--warning-tint);
+
+    --color-destructive-tint: var(--destructive-tint);
+
+    --color-fallback: var(--fallback);
+    --color-scrim: var(--scrim);
 }
 
 /*
- * Brand palette: red / black / white (light theme only).
- * Red = fills (buttons, logo tile, rings). Text stays black.
- * Soft red tint = accent / active backgrounds only.
+ * =====================================================================
+ * BRAND THEME  (light theme only)
+ * =====================================================================
+ * Look: calm, minimalist, "app finish" - Apple grey + white + grey-green.
+ * Reference: client Product & Price Guide sheet (sampled values below).
+ *
+ * HOW TO RE-COLOR THE SITE
+ *   1. Layer 1 (PALETTE) is the ONLY place that contains hex values.
+ *      Change a value there and the whole site follows after a rebuild.
+ *   2. Layer 2 (SEMANTIC ROLES) maps palette values to UI roles
+ *      (background, primary, border...). Re-point a role only when you
+ *      want a different palette colour for that job.
+ *   3. Components must use role utilities (bg-primary, text-muted-foreground,
+ *      bg-fallback ...). Never hardcode hex or Tailwind palette colours.
+ *
  * `.dark` mirrors `:root` so a stray dark class cannot flip the UI.
+ * Not driven by the database any more - application_settings.theme_color
+ * only feeds the PWA manifest and the browser address-bar colour.
+ * =====================================================================
  */
 :root,
 .dark {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.16 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.16 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.16 0 0);
-    --primary: oklch(0.52 0.21 25);
-    --primary-foreground: oklch(1 0 0);
-    --secondary: oklch(0.96 0 0);
-    --secondary-foreground: oklch(0.16 0 0);
-    --muted: oklch(0.96 0 0);
-    --muted-foreground: oklch(0.45 0 0);
-    --accent: oklch(0.972 0.004 106);
-    --accent-foreground: oklch(0.16 0 0);
-    --destructive: oklch(0.48 0.2 25);
-    --destructive-foreground: oklch(1 0 0);
-    --border: oklch(0.88 0 0);
-    --input: oklch(0.88 0 0);
-    --ring: oklch(0.52 0.21 25);
-    --chart-1: oklch(0.52 0.21 25);
-    --chart-2: oklch(0.28 0 0);
-    --chart-3: oklch(0.68 0.16 25);
-    --chart-4: oklch(0.55 0 0);
-    --chart-5: oklch(0.82 0.08 25);
+    /* ---------------------------------------------------------------
+     * LAYER 1 - PALETTE (raw colours, edit here)
+     * ------------------------------------------------------------- */
+
+    /* Grey-green family (brand) */
+    --palette-green-950: #103a2a; /* Darkest green: hover/pressed states, modal scrim base. */
+    --palette-green-900: #174b36; /* BRAND grey-green: banners, prices, links, active states, primary buttons. */
+    --palette-green-500: #4f8a6b; /* Mid green: secondary chart series, driver map marker. */
+    --palette-green-200: #a9c4b4; /* Light green: soft chart series, subtle accents. */
+
+    /* Sage / off-white surfaces */
+    --palette-sage-100: #eaf0eb; /* Sage tint: chips, soft buttons, footer, image + section fallbacks, skeletons. */
+    --palette-sage-50: #f3f5f2; /* Page canvas (cards stay white on top of it). */
+    --palette-white: #ffffff; /* Cards, popovers, inputs, text on green. */
+
+    /* Text + lines */
+    --palette-ink: #202923; /* Body text and headings (a dark green-black, never pure black). */
+    --palette-ink-muted: #5f6863; /* Secondary text. 5.8:1 on white, 5.0:1 on sage - safe for small copy. */
+    --palette-line: #d9e0da; /* Borders and dividers. */
+
+    /* Apple grey (neutral). Use for icons, placeholders, disabled UI. NOT for text (fails AA on white). */
+    --palette-apple-grey: #8e8e93; /* iOS system grey. */
+    --palette-apple-grey-100: #f2f2f7; /* iOS light grey surface. */
+
+    /* Status colours (muted, never loud) */
+    --palette-danger: #8b3a3a; /* Muted brick: errors, delete, out of stock, failed. */
+    --palette-danger-tint: #f7eeee; /* Soft background behind danger text. */
+    --palette-warning: #8a5a14; /* Muted amber-brown: verify / pending / refunded. */
+    --palette-warning-tint: #f6f0e4; /* Soft background behind warning text. */
+    --palette-star: #b7862a; /* Review stars. Set to var(--palette-green-900) for green stars. */
+
+    /* ---------------------------------------------------------------
+     * LAYER 2 - SEMANTIC ROLES (what the UI uses, edit rarely)
+     * ------------------------------------------------------------- */
+
+    /* Surfaces */
+    --background: var(--palette-sage-50); /* Page canvas. */
+    --foreground: var(--palette-ink); /* Default text. */
+    --card: var(--palette-white); /* Cards and panels. */
+    --card-foreground: var(--palette-ink);
+    --popover: var(--palette-white); /* Dropdowns, popovers. */
+    --popover-foreground: var(--palette-ink);
+
+    /* Brand actions */
+    --primary: var(--palette-green-900); /* Brand: primary buttons, banners, prices, links, active nav. */
+    --primary-foreground: var(--palette-white); /* Text/icons on primary. */
+    --secondary: var(--palette-sage-100); /* Soft buttons and chips. */
+    --secondary-foreground: var(--palette-green-900);
+
+    /* Quiet surfaces */
+    --muted: var(--palette-sage-100); /* Quiet blocks, footer. */
+    --muted-foreground: var(--palette-ink-muted); /* Secondary text. */
+    --accent: var(--palette-sage-100); /* Hover / active row background. */
+    --accent-foreground: var(--palette-green-900);
+
+    /* Status */
+    --destructive: var(--palette-danger); /* Errors, delete buttons. */
+    --destructive-foreground: var(--palette-white);
+    --destructive-tint: var(--palette-danger-tint); /* Soft error background. */
+    --success: var(--palette-green-900);
+    --success-foreground: var(--palette-white);
+    --success-tint: var(--palette-sage-100);
+    --warning: var(--palette-warning);
+    --warning-foreground: var(--palette-white);
+    --warning-tint: var(--palette-warning-tint);
+
+    /* Lines + focus */
+    --border: var(--palette-line);
+    --input: var(--palette-line);
+    --ring: var(--palette-green-500); /* Visible focus ring (components apply it at ~50%). */
+
+    /* Fallbacks + overlays: never black, yellow or red */
+    --fallback: var(--palette-sage-100); /* Behind images while loading, empty sections, skeletons. */
+    --scrim: color-mix(in srgb, var(--palette-green-950) 45%, transparent); /* Modal / sheet backdrop. */
+
+    /* Charts (5 distinct, on-theme series) */
+    --chart-1: var(--palette-green-900);
+    --chart-2: var(--palette-green-500);
+    --chart-3: var(--palette-apple-grey);
+    --chart-4: var(--palette-green-200);
+    --chart-5: var(--palette-ink);
+
     --radius: 0.625rem;
-    --sidebar: oklch(0.985 0 0);
-    --sidebar-foreground: oklch(0.16 0 0);
-    --sidebar-primary: oklch(0.52 0.21 25);
-    --sidebar-primary-foreground: oklch(1 0 0);
-    --sidebar-accent: oklch(0.95 0.03 25);
-    --sidebar-accent-foreground: oklch(0.16 0 0);
-    --sidebar-border: oklch(0.88 0 0);
-    --sidebar-ring: oklch(0.52 0.21 25);
-    --tertiary: oklch(0.49 0.13 153);
-    --review-star: oklch(0.769 0.188 70.08);
 
-    /*
-     * Scrollbars: gray track, brand-red thumb, darker red hover, black active.
-     * Prefer standard scrollbar-color (Firefox + modern Chromium). Keep
-     * ::-webkit-* for Safari and older Chromium that still honor them.
-     */
+    /* Sidebar (portals) */
+    --sidebar: var(--palette-white);
+    --sidebar-foreground: var(--palette-ink);
+    --sidebar-primary: var(--palette-green-900);
+    --sidebar-primary-foreground: var(--palette-white);
+    --sidebar-accent: var(--palette-sage-100);
+    --sidebar-accent-foreground: var(--palette-green-900);
+    --sidebar-border: var(--palette-line);
+    --sidebar-ring: var(--ring);
+
+    /* Misc accents */
+    --tertiary: var(--palette-green-900); /* Cart summary accent. */
+    --review-star: var(--palette-star); /* Review stars. */
+
+    /* Scrollbars: sage track, apple-grey thumb, green on hover/active */
     --scrollbar-size: 10px;
-    --scrollbar-track: oklch(0.92 0 0);
-    --scrollbar-thumb: var(--primary);
-    --scrollbar-thumb-hover: oklch(0.42 0.2 25);
-    --scrollbar-thumb-active: oklch(0.22 0 0);
+    --scrollbar-track: var(--palette-sage-100);
+    --scrollbar-thumb: var(--palette-apple-grey);
+    --scrollbar-thumb-hover: var(--palette-green-500);
+    --scrollbar-thumb-active: var(--palette-green-900);
 }
-
-@layer base {
+ase {
     * {
         @apply border-border;
         scrollbar-width: thin;

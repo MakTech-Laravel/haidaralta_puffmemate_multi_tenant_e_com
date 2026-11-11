@@ -10,17 +10,17 @@ type ProductSpecificationsProps = {
 export function ProductSpecifications({ rows }: ProductSpecificationsProps) {
     return (
         <section className="bg-accent flex flex-col gap-4 p-5">
-            <h2 className="text-foreground text-xl font-bold tracking-tight uppercase">
+            <h2 className="text-foreground text-xl font-semibold tracking-tight uppercase">
                 Specifications
             </h2>
             <div className="overflow-hidden">
                 <table className="w-full text-left text-sm">
                     <thead className="bg-primary/15">
                         <tr>
-                            <th className="text-primary font-inter px-4 py-3 font-bold">
+                            <th className="text-primary font-inter px-4 py-3 font-semibold">
                                 Specification
                             </th>
-                            <th className="text-primary font-inter px-4 py-3 font-bold">
+                            <th className="text-primary font-inter px-4 py-3 font-semibold">
                                 Details
                             </th>
                         </tr>

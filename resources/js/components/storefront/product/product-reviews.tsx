@@ -50,7 +50,7 @@ export function ProductReviews({
                         ))}
                     </div>
 
-                    <p className="text-foreground font-inter text-lg font-bold">
+                    <p className="text-foreground font-inter text-lg font-semibold">
                         {rating} out of 5
                     </p>
                 </div>
@@ -62,7 +62,7 @@ export function ProductReviews({
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-foreground font-inter text-sm font-normal">
                                 By{' '}
-                                <span className="text-primary text-base font-bold">
+                                <span className="text-primary text-base font-semibold">
                                     {' '}
                                     {review.author}
                                 </span>{' '}

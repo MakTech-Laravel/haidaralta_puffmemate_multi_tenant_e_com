@@ -18,7 +18,9 @@ return [
 
     'lang' => 'en-AU',
 
-    'theme_color' => '#C4472F',
+    // Browser bar / installed-app colour only. Site colours live in resources/css/app.css.
+    // Keep in sync with --palette-green-900 there.
+    'theme_color' => '#174B36',
 
     'background_color' => '#FFFFFF',
 

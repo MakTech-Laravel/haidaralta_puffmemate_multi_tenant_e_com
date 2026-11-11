@@ -48,7 +48,7 @@ export function ShiftDayActions({
                 'flex min-w-0 items-center gap-1 rounded-md pl-1.5 text-[10px] leading-tight sm:text-xs',
                 !replacing && !removing && 'bg-primary text-primary-foreground',
                 replacing &&
-                    'border-2 border-dashed border-sky-700 bg-sky-100 text-sky-950',
+                    'border-2 border-dashed border-primary/40 bg-secondary text-foreground',
                 removing &&
                     'border-destructive/70 bg-destructive/10 text-destructive border-2 border-dashed line-through',
             )}
@@ -89,7 +89,7 @@ export function ShiftDayActions({
                             className={cn(
                                 'size-7 shrink-0',
                                 replacing
-                                    ? 'hover:bg-sky-200/80'
+                                    ? 'hover:bg-primary/10'
                                     : 'hover:bg-background/20',
                             )}
                             aria-label={`Actions for ${label}`}

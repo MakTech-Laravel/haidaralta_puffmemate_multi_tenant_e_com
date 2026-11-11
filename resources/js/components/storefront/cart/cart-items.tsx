@@ -50,12 +50,12 @@ export function CartItems({ items, className }: CartItemsProps) {
                                 />
                             </Link>
                             <div className="min-w-0 flex-1">
-                                <p className="text-muted-foreground text-xs font-extrabold uppercase">
+                                <p className="text-muted-foreground text-xs font-semibold uppercase">
                                     {item.category}
                                 </p>
                                 <Link
                                     href={productShow.url(item.slug)}
-                                    className="text-foreground text-sm font-bold break-words sm:text-base"
+                                    className="text-foreground text-sm font-semibold break-words sm:text-base"
                                 >
                                     {item.name}
                                 </Link>
@@ -76,7 +76,7 @@ export function CartItems({ items, className }: CartItemsProps) {
 
                         <div className="flex w-full min-w-0 items-center justify-between gap-3 xl:max-w-sm xl:shrink-0">
                             <div className="min-w-0 shrink-0">
-                                <p className="text-primary text-base font-bold">
+                                <p className="text-primary text-base font-semibold">
                                     {item.formattedLineTotal}
                                 </p>
                                 <p className="text-muted-foreground text-xs font-medium">

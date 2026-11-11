@@ -62,7 +62,7 @@ function CopyButton({ text, className }: { text: string; className?: string }) {
             className={cn(
                 'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-all duration-150',
                 copied
-                    ? 'bg-emerald-500/20 text-emerald-400'
+                    ? 'bg-primary/20 text-foreground'
                     : 'bg-zinc-800 text-zinc-400 hover:bg-zinc-700 hover:text-zinc-200',
                 className,
             )}
@@ -227,7 +227,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                             style={{ background: 'rgba(239,68,68,0.15)' }}
                         >
                             <AlertTriangle
-                                className="size-4 text-red-400"
+                                className="size-4 text-destructive"
                                 aria-hidden
                             />
                         </div>
@@ -238,7 +238,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                                     Unhandled Error
                                 </span>
                                 {active.count > 1 && (
-                                    <span className="rounded-full bg-red-500/20 px-1.5 py-0.5 text-[10px] font-semibold text-red-400">
+                                    <span className="rounded-full bg-destructive/20 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
                                         ×{active.count}
                                     </span>
                                 )}
@@ -304,7 +304,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                         borderBottom: '1px solid rgba(239,68,68,0.12)',
                     }}
                 >
-                    <p className="font-mono text-sm leading-snug font-medium text-red-300">
+                    <p className="font-mono text-sm leading-snug font-medium text-destructive">
                         {active.message}
                     </p>
                 </div>
@@ -330,7 +330,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                             >
                                 {t.label}
                                 {tab === t.id && (
-                                    <span className="absolute inset-x-2 bottom-0 h-[2px] rounded-full bg-red-400" />
+                                    <span className="absolute inset-x-2 bottom-0 h-[2px] rounded-full bg-destructive" />
                                 )}
                             </button>
                         );
@@ -352,7 +352,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                                         <button
                                             type="button"
                                             onClick={handleClearAll}
-                                            className="flex items-center gap-1 text-[11px] text-zinc-500 transition hover:text-red-400"
+                                            className="flex items-center gap-1 text-[11px] text-zinc-500 transition hover:text-destructive"
                                         >
                                             <Trash2 className="size-3" />
                                             Clear all
@@ -370,7 +370,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                                                 className={cn(
                                                     'flex w-full items-start gap-2.5 rounded-lg px-3 py-2 text-left transition',
                                                     i === activeIdx
-                                                        ? 'bg-red-500/10 ring-1 ring-red-500/20'
+                                                        ? 'bg-destructive/10 ring-1 ring-destructive/20'
                                                         : 'hover:bg-zinc-800/60',
                                                 )}
                                             >
@@ -378,7 +378,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                                                     className={cn(
                                                         'mt-0.5 size-1.5 shrink-0 rounded-full',
                                                         i === activeIdx
-                                                            ? 'bg-red-400'
+                                                            ? 'bg-destructive'
                                                             : 'bg-zinc-600',
                                                     )}
                                                 />
@@ -392,7 +392,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                                                         )}{' '}
                                                         · {abbreviateUrl(e.url)}
                                                         {e.count > 1 && (
-                                                            <span className="ml-1.5 rounded-full bg-red-500/20 px-1 py-px text-[10px] text-red-400">
+                                                            <span className="ml-1.5 rounded-full bg-destructive/20 px-1 py-px text-[10px] text-destructive">
                                                                 ×{e.count}
                                                             </span>
                                                         )}
@@ -589,7 +589,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                             <button
                                 type="button"
                                 onClick={handleClearAll}
-                                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-red-400 transition hover:bg-red-500/10"
+                                className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium text-destructive transition hover:bg-destructive/10"
                             >
                                 <Trash2 className="size-3.5" />
                                 Clear all ({total})
@@ -598,7 +598,7 @@ export function ErrorOverlay({ error, resetErrorBoundary }: ErrorOverlayProps) {
                         <button
                             type="button"
                             onClick={resetErrorBoundary}
-                            className="flex items-center gap-1.5 rounded-lg bg-red-500 px-4 py-1.5 text-xs font-semibold text-white shadow-lg shadow-red-500/25 transition hover:bg-red-400 active:scale-[0.98]"
+                            className="flex items-center gap-1.5 rounded-lg bg-destructive px-4 py-1.5 text-xs font-semibold text-primary-foreground shadow-lg shadow-destructive/25 transition hover:bg-destructive/90 active:scale-[0.98]"
                         >
                             <RotateCcw className="size-3.5" />
                             Try again
