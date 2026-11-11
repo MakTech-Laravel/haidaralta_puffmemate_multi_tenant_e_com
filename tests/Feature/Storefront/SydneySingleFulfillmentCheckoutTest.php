@@ -135,7 +135,8 @@ test('a sydney customer with a late line gets one area fulfillment without a sto
         'branch_id' => $sydney->id,
         'status' => DriverAssignmentStatus::Active,
     ]);
-    scheduleDriverOnDuty($driver, $sydney);
+    // The order is a late delivery for tomorrow, so the driver must be rostered for that day.
+    scheduleDriverOnDuty($driver, $sydney, app(DeliveryShiftAvailability::class)->lateMinDate());
 
     $fulfillment = $order->fulfillment->refresh();
     $statuses = app(FulfillmentStatusService::class);
