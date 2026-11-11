@@ -20,6 +20,8 @@ class DriverOrdersChanged implements ShouldBroadcastNow, ShouldDispatchAfterComm
 
     public const REASON_ASSIGNED = 'assigned';
 
+    public const REASON_UNASSIGNED = 'unassigned';
+
     public function __construct(
         public int $driverId,
         public string $orderNumber,
