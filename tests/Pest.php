@@ -52,8 +52,10 @@ pest()->extend(TestCase::class)
 |
 */
 
-function scheduleDriverOnDuty(User $driver, Branch $branch): void
+function scheduleDriverOnDuty(User $driver, Branch $branch, ?string $date = null): void
 {
+    $date ??= now()->toDateString();
+
     $template = ShiftTemplate::factory()->create([
         'start_time' => '00:00',
         'end_time' => '23:59',
@@ -63,8 +65,8 @@ function scheduleDriverOnDuty(User $driver, Branch $branch): void
         'user_id' => $driver->id,
         'branch_id' => $branch->id,
         'shift_template_id' => $template->id,
-        'start_date' => now()->toDateString(),
-        'end_date' => now()->toDateString(),
+        'start_date' => $date,
+        'end_date' => $date,
         'status' => ShiftAssignmentStatus::Scheduled,
     ]);
 }
