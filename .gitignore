@@ -11,7 +11,6 @@
 /storage/app/*firebase*
 /resources/js/actions
 /resources/js/routes
-temp_auto_push.bat
 /resources/js/wayfinder
 /vendor
 .DS_Store
@@ -24,7 +23,14 @@ yarn-error.log
 /.fleet
 /.idea
 /.nova
+/.vscode
 /.zed
 .env.gitignore
 branch_structure.json
 .env
+temp_auto_push.bat
+temp_interactive_push.bat
+config.bat
+api.js
+/dist
+/public/fonts
