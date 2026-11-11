@@ -43,7 +43,7 @@ class PlaceOrderRequest extends FormRequest
                 'required',
                 'string',
                 'max:32',
-                ...($this->user('customer') === null ? Phone::validationRule() : []),
+                ...Phone::validationRule(allowInternational: false),
             ],
             'address' => ['required', 'string', 'max:500'],
             'city' => ['nullable', 'string', 'max:80'],
@@ -68,6 +68,7 @@ class PlaceOrderRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'mobile.phone' => 'Enter a valid Australian mobile number.',
             'payment_method.in' => 'Choose an available payment method.',
             'time_slot_id.required' => 'Choose a delivery shift.',
             'delivery_date.required' => 'Choose a delivery date.',

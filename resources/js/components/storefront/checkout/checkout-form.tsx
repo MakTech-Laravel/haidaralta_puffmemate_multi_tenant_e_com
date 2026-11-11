@@ -147,8 +147,9 @@ export function CheckoutForm({
     onPinSelect,
     className,
 }: CheckoutFormProps) {
-    const { auth } = usePage<{ auth: { user: unknown | null } }>().props;
-    const isGuest = !auth.user;
+    const { portal } = usePage<{ portal: string | null }>().props;
+    // Staff portal users check out the guest way, so only customers save an address.
+    const isGuest = portal !== 'customer';
     const selectedMethod = deliveryMethods.find(
         (method) => method.id === details.deliveryMethodId,
     );
@@ -248,6 +249,9 @@ export function CheckoutForm({
                                 aria-invalid={Boolean(errors.mobile)}
                                 className={fieldClass}
                             />
+                            <p className="text-muted-foreground text-xs">
+                                Australian mobile numbers only.
+                            </p>
                             <FieldError message={errors.mobile} />
                         </div>
                     </div>

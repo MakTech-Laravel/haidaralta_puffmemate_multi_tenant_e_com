@@ -3,7 +3,6 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
-use App\Support\PortalAuth;
 use App\Support\Toast;
 use Closure;
 use Illuminate\Http\Request;
@@ -11,8 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Checkout is open to guests and customers. Staff portals (platform / branch /
- * driver) are redirected to their own dashboard instead of the storefront place-order flow.
+ * Checkout is open to everyone. Guests and staff portal users (platform / branch /
+ * driver) order the guest way, through the customer resolved from the mobile number.
+ * A logged-in customer must be an active customer account.
  */
 class EnsureStorefrontCustomer
 {
@@ -21,17 +21,6 @@ class EnsureStorefrontCustomer
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $activeGuard = PortalAuth::activeGuard();
-
-        if (in_array($activeGuard, ['platform', 'branch', 'driver'], true)) {
-            /** @var User $staff */
-            $staff = Auth::guard($activeGuard)->user();
-
-            Toast::error('Checkout is only available for customer accounts.');
-
-            return redirect(PortalAuth::dashboardPath($staff));
-        }
-
         if (! Auth::guard('customer')->check()) {
             return $next($request);
         }
