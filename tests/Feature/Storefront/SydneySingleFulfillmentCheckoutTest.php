@@ -19,7 +19,6 @@ use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
-use App\Services\Order\DriverAssignmentService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
 use App\Services\Sms\FakeSmsSender;
@@ -143,7 +142,10 @@ test('a sydney customer with a late line gets one area fulfillment without a sto
     $statuses->transition($fulfillment, FulfillmentStatus::Placed, $sydneyStaff);
     $statuses->transition($fulfillment->refresh(), FulfillmentStatus::Processing, $sydneyStaff);
     $statuses->transition($fulfillment->refresh(), FulfillmentStatus::Ready, $sydneyStaff);
-    app(DriverAssignmentService::class)->assign($fulfillment->refresh(), $driver, $sydneyStaff);
+
+    // Marking Ready promotes the auto-picked driver, so no manual assign is needed.
+    expect($fulfillment->refresh()->driver_id)->toBe($driver->id)
+        ->and($fulfillment->status)->toBe(FulfillmentStatus::Assigned);
 
     Inventory::factory()->create([
         'branch_id' => $sydney->id,

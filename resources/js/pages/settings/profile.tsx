@@ -281,7 +281,7 @@ export default function Profile({
                                         </p>
 
                                         {status && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
+                                            <div className="mt-2 text-sm font-medium text-foreground">
                                                 {status}
                                             </div>
                                         )}

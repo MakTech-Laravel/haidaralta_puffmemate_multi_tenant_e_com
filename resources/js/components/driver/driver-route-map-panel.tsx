@@ -70,7 +70,7 @@ export function DriverRouteMapPanel({
             lng: stop.longitude as number,
             kind: 'stop',
             label: String(stops.indexOf(stop) + 1 || index + 1),
-            color: stop.id === focusStop?.id ? '#dc2626' : '#374151',
+            color: stop.id === focusStop?.id ? '#174B36' : '#5f6863',
             title: stop.customerName,
             onClick: () => setSelectedId(stop.id),
         }));

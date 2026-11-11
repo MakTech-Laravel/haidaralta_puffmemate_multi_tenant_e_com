@@ -41,7 +41,7 @@ export function AgeGateDialog() {
                 onEscapeKeyDown={(event) => event.preventDefault()}
             >
                 <div className="border-primary text-primary mx-auto flex size-16 items-center justify-center rounded-xl border-2">
-                    <span className="text-2xl font-extrabold tracking-tight">
+                    <span className="text-2xl font-semibold tracking-tight">
                         18+
                     </span>
                 </div>
@@ -51,12 +51,12 @@ export function AgeGateDialog() {
                         className="text-primary size-3.5 shrink-0"
                         aria-hidden
                     />
-                    <span className="text-[0.65rem] font-extrabold tracking-wider uppercase">
+                    <span className="text-[0.65rem] font-semibold tracking-wider uppercase">
                         Statutory compliance
                     </span>
                 </div>
 
-                <DialogTitle className="text-foreground mt-5 text-center text-xl font-bold tracking-tight sm:text-2xl">
+                <DialogTitle className="text-foreground mt-5 text-center text-xl font-semibold tracking-tight sm:text-2xl">
                     Are you 18 years or older?
                 </DialogTitle>
 
@@ -71,7 +71,7 @@ export function AgeGateDialog() {
                     <Button
                         type="button"
                         size="lg"
-                        className="h-12 w-full rounded-xl text-sm font-bold"
+                        className="h-12 w-full rounded-xl text-sm font-semibold"
                         onClick={acknowledge}
                     >
                         <span className="bg-primary-foreground/20 flex size-5 items-center justify-center rounded-full">
@@ -83,7 +83,7 @@ export function AgeGateDialog() {
                         type="button"
                         variant="outline"
                         size="lg"
-                        className="h-12 w-full rounded-xl text-sm font-bold"
+                        className="h-12 w-full rounded-xl text-sm font-semibold"
                         onClick={acknowledge}
                     >
                         No, I am under 18

@@ -480,7 +480,7 @@ export function ConversationThread({
                                     {online.length > 0 ? (
                                         <span className="mr-1 inline-flex items-center gap-1.5">
                                             <span
-                                                className="inline-block size-2 rounded-full bg-emerald-500"
+                                                className="inline-block size-2 rounded-full bg-primary"
                                                 aria-hidden
                                             />
                                             {online.length} online ·

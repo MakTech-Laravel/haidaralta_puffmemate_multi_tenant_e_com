@@ -243,4 +243,11 @@ return [
     */
     'late_delivery_max_days' => (int) env('LATE_DELIVERY_MAX_DAYS', 14),
 
+    /*
+    | Same-day delivery branch radius (straight-line km). Same-day checkout prefers
+    | the nearest branch inside this radius (same zone first, then any zone) before
+    | falling back to the normal zone pick. See AreaBranchResolver::resolveForSameDay.
+    */
+    'same_day_radius_km' => (float) env('SAME_DAY_RADIUS_KM', 15),
+
 ];

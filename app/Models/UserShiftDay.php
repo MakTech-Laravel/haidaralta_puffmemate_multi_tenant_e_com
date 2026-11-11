@@ -63,6 +63,26 @@ class UserShiftDay extends Model
     }
 
     /**
+     * Whether this on-duty day's shift overlaps a same-day time window (the day itself
+     * is matched by the caller, e.g. the delivery date).
+     */
+    public function overlapsWindow(string $startTime, string $endTime): bool
+    {
+        $template = $this->shiftTemplate;
+
+        if (! $this->kind->isOnDuty() || $template === null) {
+            return false;
+        }
+
+        return DutyWindow::timesOverlap(
+            $template->startTimeValue(),
+            $template->endTimeValue(),
+            $startTime,
+            $endTime,
+        );
+    }
+
+    /**
      * @param  Builder<self>  $query
      * @return Builder<self>
      */

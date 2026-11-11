@@ -56,7 +56,7 @@ export function PackBuyControls({
             </div>
             <Button
                 type="button"
-                className="h-11 flex-1 rounded-md text-sm font-bold tracking-wide uppercase"
+                className="h-11 flex-1 rounded-md text-sm font-semibold tracking-wide uppercase"
                 disabled={processing || (stockLeft !== null && stockLeft !== undefined && stockLeft < 1)}
                 onClick={() => onBuyNow?.(quantity)}
             >

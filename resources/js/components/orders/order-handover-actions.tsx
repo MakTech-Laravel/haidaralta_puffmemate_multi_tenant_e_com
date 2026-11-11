@@ -68,14 +68,14 @@ export function OrderHandoverActions({
             {showWithoutCode && withoutCodeForm ? (
                 <Form
                     {...withoutCodeForm}
-                    className="space-y-3 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4"
+                    className="space-y-3 rounded-xl border border-primary/40 bg-primary/5 p-4"
                     options={{ preserveScroll: true }}
                     data-test="order-complete-without-code"
                 >
                     {({ processing, errors }) => (
                         <>
                             <div className="flex items-start gap-3">
-                                <ShieldAlert className="mt-0.5 size-5 shrink-0 text-amber-600" />
+                                <ShieldAlert className="mt-0.5 size-5 shrink-0 text-primary" />
                                 <div className="space-y-1">
                                     <h2 className="text-foreground text-lg font-semibold">
                                         Complete without code

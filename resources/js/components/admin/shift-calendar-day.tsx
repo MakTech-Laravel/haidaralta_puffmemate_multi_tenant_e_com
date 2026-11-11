@@ -103,21 +103,21 @@ export function ShiftCalendarDay({
                     'bg-muted/55',
                 isPendingAssignment &&
                     inCurrentMonth &&
-                    'border-amber-500 bg-amber-50 ring-2 ring-amber-400/60',
+                    'border-primary bg-primary/5 ring-2 ring-primary/60',
                 isPendingAssignment &&
                     !inCurrentMonth &&
-                    'border-amber-400/80 bg-amber-50/60 ring-2 ring-amber-300/50',
+                    'border-primary/80 bg-primary/5 ring-2 ring-primary/50',
                 hasPendingDayChange &&
                     !isPendingAssignment &&
                     inCurrentMonth &&
-                    'border-sky-500 bg-sky-50 ring-2 ring-sky-400/50',
+                    'border-primary/50 bg-secondary ring-2 ring-primary/50',
                 hasPendingDayChange &&
                     !isPendingAssignment &&
                     !inCurrentMonth &&
-                    'border-sky-400/80 bg-sky-50/60 ring-2 ring-sky-300/50',
+                    'border-primary/40 bg-secondary ring-2 ring-primary/30',
                 selection.rangeAnchor === date &&
                     !isPendingAssignment &&
-                    'border-amber-500 ring-2 ring-amber-500',
+                    'border-primary ring-2 ring-primary',
                 isToday &&
                     inCurrentMonth &&
                     !isPendingAssignment &&
@@ -133,10 +133,10 @@ export function ShiftCalendarDay({
                         !isPendingAssignment &&
                         !hasPendingDayChange &&
                         'text-muted-foreground/80 font-medium',
-                    isPendingAssignment && 'bg-amber-500 text-white',
+                    isPendingAssignment && 'bg-primary text-primary-foreground',
                     hasPendingDayChange &&
                         !isPendingAssignment &&
-                        'bg-sky-600 text-white',
+                        'bg-primary/50 text-primary-foreground',
                 )}
             >
                 {dayNumber}
@@ -149,7 +149,7 @@ export function ShiftCalendarDay({
                 )}
             >
                 {isPendingAssignment ? (
-                    <div className="rounded-md border-2 border-dashed border-amber-600 bg-amber-100 px-1.5 py-1 text-[10px] font-semibold text-amber-950 sm:text-xs">
+                    <div className="rounded-md border-2 border-dashed border-primary/40 bg-secondary px-1.5 py-1 text-[10px] font-semibold text-foreground sm:text-xs">
                         <span className="block">New shift</span>
                         <span className="block font-medium opacity-80">
                             Unsaved

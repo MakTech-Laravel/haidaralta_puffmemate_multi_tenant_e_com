@@ -24,7 +24,7 @@ export function AboutCta({ data, className }: AboutCtaProps) {
                 <p className="text-primary-foreground/85 text-xs font-semibold tracking-[0.14em] uppercase">
                     {data.eyebrow}
                 </p>
-                <h2 className="text-primary-foreground mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+                <h2 className="text-primary-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
                     {data.heading}
                 </h2>
                 <p className="text-primary-foreground/85 font-inter mt-4 text-sm leading-relaxed font-normal sm:text-lg">
@@ -34,7 +34,7 @@ export function AboutCta({ data, className }: AboutCtaProps) {
                     <Button
                         asChild
                         size="lg"
-                        className="bg-background text-primary hover:bg-background/90 font-inter h-11 rounded-md px-6 font-bold"
+                        className="bg-background text-primary hover:bg-background/90 font-inter h-11 rounded-md px-6 font-semibold"
                     >
                         <Link href={shop()} prefetch>
                             {data.primaryLabel}
@@ -45,7 +45,7 @@ export function AboutCta({ data, className }: AboutCtaProps) {
                         asChild
                         size="lg"
                         variant="outline"
-                        className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 font-inter h-11 rounded-md border bg-transparent px-6 font-bold"
+                        className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 font-inter h-11 rounded-md border bg-transparent px-6 font-semibold"
                     >
                         <Link href={shop()} prefetch>
                             {data.secondaryLabel}

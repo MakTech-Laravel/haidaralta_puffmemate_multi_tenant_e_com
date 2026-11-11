@@ -12,7 +12,7 @@ export default function AuthSplitLayout({
 
     return (
         <div className="bg-background grid min-h-dvh lg:grid-cols-2">
-            <aside className="relative isolate overflow-x-hidden bg-black px-5 py-4 text-white sm:px-8 sm:py-5 lg:flex lg:min-h-dvh lg:flex-col lg:justify-between lg:overflow-hidden lg:px-12 lg:py-14">
+            <aside className="bg-primary text-primary-foreground relative isolate overflow-x-hidden px-5 py-4 sm:px-8 sm:py-5 lg:flex lg:min-h-dvh lg:flex-col lg:justify-between lg:overflow-hidden lg:px-12 lg:py-14">
                 <div
                     className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,color-mix(in_oklab,var(--primary)_38%,transparent),transparent_55%),linear-gradient(145deg,transparent_40%,color-mix(in_oklab,var(--primary)_18%,transparent))] opacity-90 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-700"
                     aria-hidden
@@ -45,7 +45,7 @@ export default function AuthSplitLayout({
 
                     <div className="bg-primary h-0.5 w-10 lg:h-1 lg:w-14" aria-hidden />
 
-                    <p className="font-dm-sans hidden max-w-sm text-sm leading-relaxed text-white/85 sm:text-base lg:block">
+                    <p className="font-dm-sans text-primary-foreground/85 hidden max-w-sm text-sm leading-relaxed sm:text-base lg:block">
                         Sign in to order, deliver, or run the desk — one account
                         entry for every portal.
                     </p>

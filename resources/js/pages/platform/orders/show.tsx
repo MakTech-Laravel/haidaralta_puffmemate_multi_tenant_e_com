@@ -64,6 +64,7 @@ type FulfillmentSummary = {
     isPaid: boolean;
     driverId: number | null;
     driverName: string | null;
+    reservedDriverName: string | null;
     canAssign: boolean;
     canCancel: boolean;
     canRetry: boolean;
@@ -334,6 +335,13 @@ function FulfillmentCard({
                                 Driver{' '}
                                 <span className="text-foreground font-medium">
                                     {fulfillment.driverName}
+                                </span>
+                            </>
+                        ) : fulfillment.reservedDriverName ? (
+                            <>
+                                Reserved driver{' '}
+                                <span className="text-foreground font-medium">
+                                    {fulfillment.reservedDriverName}
                                 </span>
                             </>
                         ) : (
@@ -1030,7 +1038,7 @@ export default function PlatformOrderShow({ order }: { order: OrderDetail }) {
                                                 : 'Discount'
                                         }
                                     >
-                                        <span className="text-emerald-600 dark:text-emerald-400">
+                                        <span className="text-foreground">
                                             −{order.discountLabel}
                                         </span>
                                     </SummaryRow>

@@ -19,7 +19,7 @@ export function WholesaleInfo({
     return (
         <aside
             className={cn(
-                'bg-foreground text-primary-foreground relative flex min-h-80 flex-col overflow-hidden p-6 sm:p-8',
+                'bg-primary text-primary-foreground relative flex min-h-80 flex-col overflow-hidden p-6 sm:p-8',
                 className,
             )}
         >
@@ -27,7 +27,7 @@ export function WholesaleInfo({
                 <h2 className="text-xl font-semibold tracking-tight uppercase sm:text-2xl">
                     {title}
                 </h2>
-                <p className="font-inter mt-3 text-base leading-relaxed font-normal text-white">
+                <p className="font-inter mt-3 text-base leading-relaxed font-normal text-primary-foreground">
                     {subtitle}
                 </p>
 
@@ -77,11 +77,11 @@ export function WholesaleInfo({
             <ContactSocialLinks socials={contacts.socials} />
 
             <div
-                className="pointer-events-none absolute -right-16 -bottom-20 size-56 rounded-full bg-white/10"
+                className="pointer-events-none absolute -right-16 -bottom-20 size-56 rounded-full bg-primary-foreground/10"
                 aria-hidden
             />
             <div
-                className="pointer-events-none absolute -right-6 -bottom-6 size-36 rounded-full bg-white/10"
+                className="pointer-events-none absolute -right-6 -bottom-6 size-36 rounded-full bg-primary-foreground/10"
                 aria-hidden
             />
         </aside>

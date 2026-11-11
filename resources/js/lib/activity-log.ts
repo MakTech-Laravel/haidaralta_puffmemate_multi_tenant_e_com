@@ -5,7 +5,7 @@ type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>['variant']>;
 
 /**
  * Map Spatie activity events to theme badge variants from app.css tokens.
- * created → primary red fill; updated → secondary gray; deleted → destructive red.
+ * created → primary green fill; updated → secondary sage; deleted → destructive tint.
  */
 export function eventBadgeVariant(event: string | null): BadgeVariant {
     switch (event) {
