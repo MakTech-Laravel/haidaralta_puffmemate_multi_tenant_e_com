@@ -36,7 +36,7 @@ export function useAppBrand(): AppBrand {
         logoUrl: customLogo || FALLBACK_LOGO,
         hasCustomLogo: Boolean(customLogo),
         faviconUrl: application?.faviconUrl ?? null,
-        themeColor: application?.themeColor || '#C4472F',
+        themeColor: application?.themeColor || '#174B36',
         backgroundColor: application?.backgroundColor || '#FFFFFF',
         timezone: resolveViewerTimezone(),
         dateFormat: application?.dateFormat || 'Y-m-d',

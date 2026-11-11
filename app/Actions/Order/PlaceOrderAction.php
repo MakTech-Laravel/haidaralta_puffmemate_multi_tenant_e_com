@@ -26,6 +26,7 @@ use App\Services\Inventory\InventoryReservationService;
 use App\Services\Notifications\NotificationService;
 use App\Services\Order\Allocation\AreaCheckoutAllocator;
 use App\Services\Order\AllocationDecisionRecorder;
+use App\Services\Order\DriverAutoAssignService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\StockTransferService;
 use App\Support\Delivery\DeliveryShiftAvailability;
@@ -128,6 +129,7 @@ class PlaceOrderAction
                 $cart->items,
                 $acceptLate,
                 true,
+                $data['delivery_method'] ?? null,
             );
 
             if ($plan['requires_late_delivery']
@@ -274,6 +276,9 @@ class PlaceOrderAction
 
         if ($placed) {
             $this->placements->issue($order);
+
+            // Repeat customers open as Placed; new customers get a driver when staff confirm.
+            rescue(fn () => app(DriverAutoAssignService::class)->reserve($order->fulfillment));
         }
 
         // Non-critical: an SMS failure must never fail an order that is already placed.

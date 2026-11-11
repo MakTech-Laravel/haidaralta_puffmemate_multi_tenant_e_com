@@ -20,18 +20,18 @@ export function AboutHero({ data, className }: AboutHeroProps) {
             )}
         >
             <div
-                className="bg-foreground absolute inset-0 bg-cover bg-center"
+                className="bg-primary absolute inset-0 bg-cover bg-center"
                 style={{ backgroundImage: `url(${data.image})` }}
                 aria-hidden
             />
             <div
-                className="from-foreground/80 via-foreground/55 to-foreground/35 absolute inset-0 bg-linear-to-r"
+                className="from-primary/80 via-primary/55 to-primary/35 absolute inset-0 bg-linear-to-r"
                 aria-hidden
             />
 
             <div className="relative container mx-auto flex min-h-[40vh] flex-col justify-center px-4 py-16 sm:min-h-[48vh] sm:px-6 sm:py-20">
                 <div className="text-primary-foreground max-w-xl">
-                    <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+                    <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
                         {data.title}
                     </h1>
                     <p className="font-inter mt-4 max-w-md text-sm leading-relaxed font-normal opacity-90 sm:text-base">

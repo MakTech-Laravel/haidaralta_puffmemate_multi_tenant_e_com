@@ -71,14 +71,14 @@ export function CartSheet({
             >
                 <ShoppingCart className="size-6 md:size-8" strokeWidth={1.75} />
                 {cartData.itemCount > 0 ? (
-                    <span className="bg-primary text-primary-foreground absolute top-0.5 right-0.5 min-w-4 rounded-full px-1 text-[10px] font-bold">
+                    <span className="bg-primary text-primary-foreground absolute top-0.5 right-0.5 min-w-4 rounded-full px-1 text-[10px] font-semibold">
                         {cartData.itemCount}
                     </span>
                 ) : null}
             </SheetTrigger>
             <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
                 <SheetHeader className="border-border border-b">
-                    <SheetTitle className="text-lg font-bold tracking-tight">
+                    <SheetTitle className="text-lg font-semibold tracking-tight">
                         Your cart ({cartData.itemCount})
                     </SheetTitle>
                 </SheetHeader>
@@ -103,7 +103,7 @@ export function CartSheet({
                                     />
                                 </Link>
                                 <div className="min-w-0 flex-1">
-                                    <p className="text-foreground text-sm font-bold break-words">
+                                    <p className="text-foreground text-sm font-semibold break-words">
                                         {item.name}
                                     </p>
                                     {item.packageLabel ? (
@@ -119,7 +119,7 @@ export function CartSheet({
                                         </p>
                                     ) : null}
                                     <p className="mt-1 text-sm">
-                                        <span className="text-primary font-bold">
+                                        <span className="text-primary font-semibold">
                                             {item.formattedUnitPrice}
                                         </span>
                                         {item.formattedCompareAtUnitPrice ? (
@@ -188,17 +188,17 @@ export function CartSheet({
                 </div>
                 <SheetFooter className="border-border gap-3 border-t">
                     <div className="flex w-full items-end justify-between">
-                        <span className="text-foreground text-sm font-bold">
+                        <span className="text-foreground text-sm font-semibold">
                             Subtotal
                         </span>
-                        <span className="text-primary text-xl font-bold">
+                        <span className="text-primary text-xl font-semibold">
                             {cartData.formattedSubtotal}
                         </span>
                     </div>
                     <Button
                         asChild
                         variant="outline"
-                        className="h-11 w-full rounded-none text-sm font-bold"
+                        className="h-11 w-full rounded-none text-sm font-semibold"
                     >
                         <Link
                             href={cart.url()}
@@ -209,7 +209,7 @@ export function CartSheet({
                     </Button>
                     <Button
                         asChild
-                        className="h-11 w-full rounded-none text-sm font-bold tracking-wide"
+                        className="h-11 w-full rounded-none text-sm font-semibold tracking-wide"
                     >
                         <Link
                             href={checkout.url()}

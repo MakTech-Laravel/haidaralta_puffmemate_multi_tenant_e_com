@@ -64,11 +64,11 @@ export function PrivacyIntro({ className, title, data }: PrivacyIntroProps) {
                     </BreadcrumbList>
                 </Breadcrumb>
 
-                <p className="text-primary mt-8 text-[0.7rem] font-bold tracking-[0.12em] uppercase sm:text-xs">
+                <p className="text-primary mt-8 text-[0.7rem] font-semibold tracking-[0.12em] uppercase sm:text-xs">
                     {data.eyebrow}
                 </p>
 
-                <h1 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+                <h1 className="text-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
                     {title}
                 </h1>
 
@@ -119,7 +119,7 @@ export function PrivacyIntro({ className, title, data }: PrivacyIntroProps) {
                                 <div className="min-w-0">
                                     <a
                                         href={`#${point.id}`}
-                                        className="text-primary hover:text-primary/80 text-sm font-bold transition-colors sm:text-base"
+                                        className="text-primary hover:text-primary/80 text-sm font-semibold transition-colors sm:text-base"
                                     >
                                         {point.title}
                                     </a>

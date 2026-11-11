@@ -118,7 +118,7 @@ export default function StorefrontOrderTracking({ order }: OrderTrackingProps) {
                                 <Button
                                     asChild
                                     size="lg"
-                                    className=" mx-auto max-w-[200px]  rounded-none text-sm font-bold tracking-wide uppercase"
+                                    className=" mx-auto max-w-[200px]  rounded-none text-sm font-semibold tracking-wide uppercase"
                                 >
                                     <Link href={shop.url()}>
                                         Continue shopping

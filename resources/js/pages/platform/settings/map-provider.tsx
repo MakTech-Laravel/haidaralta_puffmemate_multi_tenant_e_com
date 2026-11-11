@@ -119,7 +119,7 @@ function UsageMeter({
                         percent >= 100 && '[&>div]:bg-destructive',
                         percent >= 80 &&
                             percent < 100 &&
-                            '[&>div]:bg-amber-500',
+                            '[&>div]:bg-primary/50',
                     )}
                 />
             ) : null}

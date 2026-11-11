@@ -39,13 +39,13 @@ function getXsrfToken(): string {
 }
 
 const STATUS_DOT: Record<string, string> = {
-    connected: 'bg-green-500',
-    connecting: 'bg-yellow-500 animate-pulse',
-    unavailable: 'bg-orange-500',
-    disconnected: 'bg-orange-500',
-    failed: 'bg-red-500',
-    idle: 'bg-gray-400',
-    disabled: 'bg-gray-400',
+    connected: 'bg-primary',
+    connecting: 'bg-primary animate-pulse',
+    unavailable: 'bg-muted-foreground',
+    disconnected: 'bg-muted-foreground',
+    failed: 'bg-destructive',
+    idle: 'bg-muted-foreground',
+    disabled: 'bg-muted-foreground',
 };
 
 export default function RealtimeIndex() {
@@ -289,7 +289,7 @@ export default function RealtimeIndex() {
                 <section className="border-border bg-card space-y-3 rounded-lg border p-4">
                     <div className="flex items-center gap-3">
                         <span
-                            className={`h-3 w-3 rounded-full ${STATUS_DOT[status] ?? 'bg-gray-400'}`}
+                            className={`h-3 w-3 rounded-full ${STATUS_DOT[status] ?? 'bg-muted-foreground'}`}
                         />
                         <span className="text-foreground font-semibold">
                             {CONNECTION_STATUS_LABELS[status]}
@@ -297,7 +297,7 @@ export default function RealtimeIndex() {
                         {socketId ? (
                             <span className="text-muted-foreground text-xs">
                                 socket_id:{' '}
-                                <span className="text-green-600">
+                                <span className="text-foreground">
                                     {socketId}
                                 </span>
                             </span>
@@ -305,7 +305,7 @@ export default function RealtimeIndex() {
                     </div>
 
                     {lastError ? (
-                        <p className="text-xs text-red-600">{lastError}</p>
+                        <p className="text-destructive text-xs">{lastError}</p>
                     ) : null}
 
                     {(status === 'failed' ||
@@ -343,7 +343,7 @@ export default function RealtimeIndex() {
                             type="button"
                             onClick={firePrivate}
                             disabled={busy || !connected || !user}
-                            className="rounded bg-purple-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-500 disabled:opacity-40"
+                            className="bg-primary text-primary-foreground rounded px-3 py-1.5 text-xs font-medium hover:opacity-90 disabled:opacity-40"
                         >
                             Trigger private test
                         </button>
@@ -357,7 +357,7 @@ export default function RealtimeIndex() {
                                 });
                                 addLog('info', 'Local Sonner toast requested');
                             }}
-                            className="rounded border border-amber-600 px-3 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:bg-amber-950/40"
+                            className="border-primary/40 text-foreground hover:bg-secondary rounded border px-3 py-1.5 text-xs font-medium"
                         >
                             Test toast UI
                         </button>
@@ -446,7 +446,7 @@ export default function RealtimeIndex() {
                                         className="border-border bg-card rounded border p-2 text-xs"
                                     >
                                         <div className="text-muted-foreground mb-1 flex justify-between">
-                                            <span className="text-green-600">
+                                            <span className="text-primary">
                                                 {ev.channel} → {ev.event}
                                             </span>
                                             <span>{ev.ts}</span>
@@ -481,12 +481,12 @@ export default function RealtimeIndex() {
                                         <span
                                             className={
                                                 l.level === 'error'
-                                                    ? 'text-red-500'
+                                                    ? 'text-destructive'
                                                     : l.level === 'warn'
-                                                      ? 'text-yellow-600'
+                                                      ? 'text-primary'
                                                       : l.level === 'success'
-                                                        ? 'text-green-600'
-                                                        : 'text-blue-500'
+                                                        ? 'text-foreground'
+                                                        : 'text-muted-foreground'
                                             }
                                         >
                                             [{l.level.toUpperCase()}]
@@ -509,8 +509,8 @@ export default function RealtimeIndex() {
                         <pre
                             className={`bg-muted/40 rounded p-2 text-xs break-all whitespace-pre-wrap ${
                                 apiResponse.startsWith('ERROR')
-                                    ? 'text-red-500'
-                                    : 'text-green-600'
+                                    ? 'text-destructive'
+                                    : 'text-foreground'
                             }`}
                         >
                             {apiResponse}

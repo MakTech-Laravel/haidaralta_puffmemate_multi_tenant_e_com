@@ -48,7 +48,7 @@ function FaqQuestion({ item }: { item: FaqItem }) {
                         className="bg-primary mt-2 size-1.5 shrink-0 rounded-full"
                         aria-hidden
                     />
-                    <span className="text-foreground font-inter min-w-0 flex-1 text-sm font-bold sm:text-lg">
+                    <span className="text-foreground font-inter min-w-0 flex-1 text-sm font-semibold sm:text-lg">
                         {item.question}
                     </span>
                     <ChevronDown
@@ -93,11 +93,11 @@ export function FaqCategories({ className, categories }: FaqCategoriesProps) {
                                     <span className="bg-primary/10 text-primary flex size-9 shrink-0 items-center justify-center rounded-full">
                                         <Icon className="size-4" aria-hidden />
                                     </span>
-                                    <h2 className="text-foreground text-lg font-bold tracking-tight sm:text-2xl">
+                                    <h2 className="text-foreground text-lg font-semibold tracking-tight sm:text-2xl">
                                         {category.title}
                                     </h2>
                                 </div>
-                                <span className="text-muted-foreground shrink-0 text-[0.65rem] font-extrabold tracking-wider uppercase">
+                                <span className="text-muted-foreground shrink-0 text-[0.65rem] font-semibold tracking-wider uppercase">
                                     {count} question{count === 1 ? '' : 's'}
                                 </span>
                             </div>

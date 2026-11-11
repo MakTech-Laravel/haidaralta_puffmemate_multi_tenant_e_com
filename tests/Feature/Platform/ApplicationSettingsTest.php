@@ -73,7 +73,7 @@ test('platform admin can update general branding and formats', function () {
             'app_name' => 'PuffMeMate Ops',
             'app_short_name' => 'PMM Ops',
             'short_description' => 'Multi-vendor tobacco marketplace',
-            'theme_color' => '#C4472F',
+            'theme_color' => '#174B36',
             'background_color' => '#FFFFFF',
             'date_format' => 'd/m/Y',
             'time_format' => 'g:i A',
@@ -95,7 +95,7 @@ test('datetime format helper uses viewer timezone from request', function () {
         'app_short_name' => 'PuffMeMate',
         'date_format' => 'Y-m-d',
         'time_format' => 'H:i',
-        'theme_color' => '#C4472F',
+        'theme_color' => '#174B36',
         'background_color' => '#FFFFFF',
     ]);
 
@@ -322,6 +322,26 @@ test('payment gateway settings update labels and feed enabled methods', function
         ->and($enabled[1]['id'])->toBe('payment_link');
 });
 
+test('general settings reject a theme color that is not a six digit hex value', function (string $invalid) {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->put(route('platform.settings.general.update'), [
+            'app_name' => 'PuffMeMate',
+            'app_short_name' => 'PuffMeMate',
+            'theme_color' => $invalid,
+            'background_color' => '#FFFFFF',
+            'date_format' => 'Y-m-d',
+            'time_format' => 'H:i',
+            'maintenance_mode' => false,
+        ])
+        ->assertSessionHasErrors('theme_color');
+})->with(['red', '#FFF', '174B36', 'url(javascript:alert(1))']);
+
+test('theme color falls back to the brand grey-green default', function () {
+    expect(config('pwa.theme_color'))->toBe('#174B36');
+});
+
 test('guests are redirected from application settings', function () {
     $this->get(route('platform.settings.general.edit'))
         ->assertRedirect(route('login'));
@@ -335,7 +355,7 @@ test('platform admin can upload and remove application branding media', function
         '_method' => 'PUT',
         'app_name' => 'PuffMeMate',
         'app_short_name' => 'PuffMeMate',
-        'theme_color' => '#C4472F',
+        'theme_color' => '#174B36',
         'background_color' => '#FFFFFF',
         'date_format' => 'Y-m-d',
         'time_format' => 'H:i',

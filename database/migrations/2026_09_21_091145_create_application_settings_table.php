@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('app_name');
             $table->string('app_short_name');
             $table->text('short_description')->nullable();
-            $table->string('theme_color', 32)->default('#C4472F');
+            $table->string('theme_color', 32)->default('#8E8E93');
             $table->string('background_color', 32)->default('#FFFFFF');
             $table->string('date_format', 32)->default('Y-m-d');
             $table->string('time_format', 32)->default('H:i');

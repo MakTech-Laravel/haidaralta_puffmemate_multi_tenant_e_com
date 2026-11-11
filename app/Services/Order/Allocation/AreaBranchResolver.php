@@ -44,6 +44,36 @@ class AreaBranchResolver
     }
 
     /**
+     * Same-day pick: nearest branch within the radius that is linked to the pin's
+     * zone, else nearest active branch within the radius from any zone, else the
+     * normal checkout pick.
+     *
+     * @return array{branch: Branch, distance_km: float, allocation: string}|null
+     */
+    public function resolveForSameDay(float $latitude, float $longitude, float $radiusKm): ?array
+    {
+        $zoneMatch = $this->nearest($latitude, $longitude);
+
+        if ($zoneMatch !== null && $zoneMatch['distance_km'] <= $radiusKm) {
+            return [
+                ...$zoneMatch,
+                'allocation' => 'same_day_area_radius',
+            ];
+        }
+
+        $anyMatch = $this->nearestActiveBranch($latitude, $longitude);
+
+        if ($anyMatch !== null && $anyMatch['distance_km'] <= $radiusKm) {
+            return [
+                ...$anyMatch,
+                'allocation' => 'same_day_radius',
+            ];
+        }
+
+        return $this->resolveForCheckout($latitude, $longitude);
+    }
+
+    /**
      * @return array{branch: Branch, distance_km: float}|null
      */
     public function nearest(float $latitude, float $longitude): ?array

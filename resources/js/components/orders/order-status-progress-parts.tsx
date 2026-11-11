@@ -116,9 +116,7 @@ export function ProgressRail({
                                     className={cn(
                                         'absolute top-3 right-1/2 h-0.5 w-full -translate-y-1/2',
                                         reached
-                                            ? isProblem && isActive
-                                                ? 'bg-rose-500'
-                                                : 'bg-primary'
+                                            ? 'bg-primary'
                                             : 'bg-border',
                                     )}
                                 />
@@ -131,9 +129,7 @@ export function ProgressRail({
                                         !isActive &&
                                         'bg-primary text-primary-foreground',
                                     isActive &&
-                                        (isProblem
-                                            ? 'bg-rose-500 text-white ring-4 ring-rose-500/20'
-                                            : 'bg-primary text-primary-foreground ring-primary/20 ring-4'),
+                                        'bg-primary text-primary-foreground ring-primary/20 ring-4',
                                     !reached &&
                                         'border-border bg-background border-2',
                                 )}

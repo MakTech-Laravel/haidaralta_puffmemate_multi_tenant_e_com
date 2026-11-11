@@ -44,41 +44,35 @@ export const DEFAULT_ENABLED_MODES: readonly ColorPickerMode[] = [
 
 export const DEFAULT_RADIAL_POSITION = 'circle at center';
 
-/** Default swatch palette: white, gray, black, red (+ related shades). */
+/** Default swatch palette: white, gray, black, brand primary/secondary. */
 export const DEFAULT_COLOR_PRESETS = [
     '#FFFFFF',
+    '#F2F5F1',
     '#FAFAFA',
     '#F5F5F5',
     '#E5E7EB',
     '#D1D5DB',
     '#9CA3AF',
+    '#8E8E93',
     '#6B7280',
     '#4B5563',
     '#1F2937',
     '#111827',
     '#000000',
-    '#FEF2F2',
-    '#FECACA',
-    '#F87171',
-    '#EF4444',
-    '#DC2626',
-    '#B91C1C',
-    '#991B1B',
 ] as const;
 
 export const DEFAULT_SOLID_QUICK_SELECT: readonly SolidQuickSelectOption[] = [
     { label: 'White', color: '#FFFFFF' },
+    { label: 'Secondary', color: '#F2F5F1' },
     { label: 'Light gray', color: '#E5E7EB' },
+    { label: 'Primary', color: '#8E8E93' },
+    { label: 'Ink', color: '#3B5850' },
     { label: 'Gray', color: '#6B7280' },
     { label: 'Dark gray', color: '#1F2937' },
-    { label: 'Black', color: '#000000' },
-    { label: 'Light red', color: '#FECACA' },
-    { label: 'Red', color: '#EF4444' },
-    { label: 'Deep red', color: '#991B1B' },
 ] as const;
 
 /** Palette swatch only — catalog create defaults to transparent, not this fill. */
-export const DEFAULT_CATALOG_SOLID_COLOR = '#EF4444';
+export const DEFAULT_CATALOG_SOLID_COLOR = '#8E8E93';
 
 export function defaultCatalogColorPickerValue(): ColorPickerValue {
     return { mode: 'transparent' };
@@ -117,21 +111,21 @@ export const DEFAULT_GRADIENT_QUICK_SELECT: readonly GradientQuickSelectOption[]
             angle: 135,
         },
         {
-            label: 'Blush',
-            from: '#FECACA',
+            label: 'Secondary wash',
+            from: '#F2F5F1',
             to: '#FFFFFF',
             angle: 135,
         },
         {
-            label: 'Red glow',
-            from: '#EF4444',
-            to: '#FEE2E2',
+            label: 'Primary fade',
+            from: '#8E8E93',
+            to: '#F2F5F1',
             angle: 135,
         },
         {
-            label: 'Deep crimson',
-            from: '#991B1B',
-            to: '#FECACA',
+            label: 'Primary charcoal',
+            from: '#8E8E93',
+            to: '#1F2937',
             angle: 135,
         },
     ] as const;

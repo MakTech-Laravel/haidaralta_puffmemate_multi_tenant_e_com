@@ -84,9 +84,9 @@ function StatDelta({
 
     const tone =
         performance.direction === 'up' || performance.direction === 'new'
-            ? 'text-emerald-600'
+            ? 'text-foreground'
             : performance.direction === 'down'
-              ? 'text-rose-600'
+              ? 'text-destructive'
               : 'text-muted-foreground';
 
     const changeText =

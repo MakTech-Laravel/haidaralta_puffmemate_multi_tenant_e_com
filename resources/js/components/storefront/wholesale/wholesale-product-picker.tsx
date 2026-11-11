@@ -192,7 +192,7 @@ export function WholesaleProductPicker({
                                         />
                                     </div>
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-foreground truncate text-sm font-bold">
+                                        <p className="text-foreground truncate text-sm font-semibold">
                                             {line.name}
                                         </p>
                                         <p className="text-muted-foreground truncate text-xs">

@@ -122,7 +122,7 @@ export function OrderList({
                                             </span>
                                         ))}
                                         {hasMoreProducts ? (
-                                            <span className="bg-foreground text-background rounded-md px-2.5 py-1 text-sm font-medium">
+                                            <span className="bg-secondary text-secondary-foreground rounded-md px-2.5 py-1 text-sm font-medium">
                                                 More
                                             </span>
                                         ) : null}

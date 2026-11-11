@@ -18,16 +18,16 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
             )}
         >
             <div
-                className="bg-foreground absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
+                className="bg-primary absolute inset-0 bg-cover bg-center transition duration-500 group-hover:scale-105"
                 style={{ backgroundImage: `url(${category.image})` }}
                 aria-hidden
             />
             <div
-                className="from-foreground/75 via-foreground/5 absolute inset-0 bg-linear-to-t to-transparent"
+                className="from-primary/75 via-primary/5 absolute inset-0 bg-linear-to-t to-transparent"
                 aria-hidden
             />
             <div className="absolute inset-x-0 bottom-0 p-3 sm:p-5">
-                <h3 className="text-primary-foreground line-clamp-2 text-base font-bold sm:text-2xl">
+                <h3 className="text-primary-foreground line-clamp-2 text-base font-semibold sm:text-2xl">
                     {category.name}
                 </h3>
                 <p className="text-primary-foreground font-dm-sans mt-1 line-clamp-2 text-xs font-normal sm:text-sm">

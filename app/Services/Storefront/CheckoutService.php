@@ -250,6 +250,7 @@ class CheckoutService
             $cart->items,
             (bool) $request->boolean('accept_late_delivery'),
             false,
+            $request->filled('delivery_method') ? (string) $request->input('delivery_method') : null,
         );
         $fee = round($this->shipping->cost($plan['branch'], $plan['distance_km']), 2);
 

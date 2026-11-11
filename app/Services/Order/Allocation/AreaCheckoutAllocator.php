@@ -5,6 +5,7 @@ namespace App\Services\Order\Allocation;
 use App\Models\Branch;
 use App\Models\CartItem;
 use App\Services\Order\ShippingCalculator;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\Geo\Australia;
 use Illuminate\Support\Collection;
 use Illuminate\Validation\ValidationException;
@@ -54,6 +55,7 @@ class AreaCheckoutAllocator
         Collection $cartItems,
         bool $acceptLateDelivery = false,
         bool $enforceLateAcceptance = false,
+        ?string $deliveryMethod = null,
     ): array {
         $cartItems->loadMissing(['product', 'package']);
 
@@ -81,7 +83,9 @@ class AreaCheckoutAllocator
             ]);
         }
 
-        $match = $this->areas->resolveForCheckout($latitude, $longitude);
+        $match = $deliveryMethod === DeliveryShiftAvailability::METHOD_SAME_DAY
+            ? $this->areas->resolveForSameDay($latitude, $longitude, (float) config('catalog.same_day_radius_km'))
+            : $this->areas->resolveForCheckout($latitude, $longitude);
 
         if ($match === null) {
             throw ValidationException::withMessages([

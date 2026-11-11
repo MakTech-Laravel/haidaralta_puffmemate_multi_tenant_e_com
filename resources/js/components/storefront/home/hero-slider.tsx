@@ -20,7 +20,7 @@ type HomeHeroSliderProps = {
 const AUTOPLAY_MS = 4000;
 
 const navButtonClass =
-    'border-primary-foreground/25 bg-foreground/30 text-primary-foreground hover:bg-foreground/50 hover:text-primary-foreground size-8 rounded-full border backdrop-blur-sm transition disabled:opacity-40 sm:size-10';
+    'border-primary-foreground/25 bg-primary/30 text-primary-foreground hover:bg-primary/50 hover:text-primary-foreground size-8 rounded-full border backdrop-blur-sm transition disabled:opacity-40 sm:size-10';
 
 export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
     const [api, setApi] = useState<CarouselApi>();
@@ -61,12 +61,12 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                         className="relative isolate min-h-112 basis-full pl-0 sm:min-h-128 lg:min-h-144"
                     >
                         <div
-                            className="bg-foreground absolute inset-0 bg-cover bg-center"
+                            className="bg-primary absolute inset-0 bg-cover bg-center"
                             style={{ backgroundImage: `url(${slide.image})` }}
                             aria-hidden
                         />
                         <div
-                            className="from-foreground/72 via-foreground/45 to-foreground/25 absolute inset-0 bg-linear-to-r"
+                            className="from-primary/72 via-primary/45 to-primary/25 absolute inset-0 bg-linear-to-r"
                             aria-hidden
                         />
 
@@ -106,7 +106,7 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                                         asChild
                                         size="lg"
                                         variant="outline"
-                                        className="border-primary-foreground/40 bg-foreground/30 text-primary-foreground hover:bg-foreground/50 hover:text-primary-foreground h-10 px-4 text-sm sm:h-11 sm:px-8 sm:text-base"
+                                        className="border-primary-foreground/40 bg-primary/30 text-primary-foreground hover:bg-primary/50 hover:text-primary-foreground h-10 px-4 text-sm sm:h-11 sm:px-8 sm:text-base"
                                     >
                                         {slide.secondaryCta.href.startsWith(
                                             '#',

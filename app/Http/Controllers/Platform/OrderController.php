@@ -326,6 +326,7 @@ class OrderController extends Controller
                 'isPaid' => $row->isPaid(),
                 'driverId' => $row->driver_id,
                 'driverName' => $row->driver?->name,
+                'reservedDriverName' => $row->reservedDriver?->name,
                 'canAssign' => $this->orderAssign->canAssign($row),
                 'canCancel' => $row->status->allowsStaffCancel(),
                 'canRetry' => false,

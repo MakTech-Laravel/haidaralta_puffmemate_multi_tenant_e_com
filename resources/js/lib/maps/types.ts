@@ -55,10 +55,14 @@ export type MapConfigPayload = {
     leaflet: MapDisplayConfig;
 };
 
+/**
+ * Map marker colours. Map SDKs cannot read CSS variables, so these hex values mirror the
+ * palette in resources/css/app.css. Keep them in sync when the palette changes.
+ */
 export const MARKER_COLORS: Record<string, string> = {
-    primary: '#111827',
-    driver: '#2563eb',
-    stop: '#dc2626',
-    branch: '#16a34a',
-    muted: '#9ca3af',
+    primary: '#174B36', // --palette-green-900 (brand)
+    driver: '#4F8A6B', // --palette-green-500
+    stop: '#202923', // --palette-ink
+    branch: '#174B36', // --palette-green-900 (brand)
+    muted: '#8E8E93', // --palette-apple-grey
 };

@@ -268,7 +268,7 @@ export function PlaceOrderProductsSection({
                                                       : 'Not stocked at this branch'}
                                             </p>
                                             {belowMinimum ? (
-                                                <p className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                                                <p className="text-xs font-medium text-primary">
                                                     Below wholesale minimum of{' '}
                                                     {line.minQuantity}
                                                 </p>

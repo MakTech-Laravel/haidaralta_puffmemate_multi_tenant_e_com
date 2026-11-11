@@ -75,12 +75,12 @@ export function ErrorBadge({ onOpen }: ErrorBadgeProps) {
                 className="flex items-center gap-2 bg-zinc-900 px-3 py-2 transition hover:bg-zinc-800"
             >
                 <span
-                    className="flex size-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white"
+                    className="flex size-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-primary-foreground"
                     aria-hidden
                 >
                     {total > 9 ? '9+' : total}
                 </span>
-                <AlertTriangle className="size-3.5 text-red-400" aria-hidden />
+                <AlertTriangle className="size-3.5 text-destructive" aria-hidden />
                 <span className="max-w-[180px] truncate font-mono text-[11px] text-zinc-300">
                     {current.message}
                 </span>
