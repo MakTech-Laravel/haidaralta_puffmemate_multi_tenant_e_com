@@ -176,7 +176,9 @@ test('checkout shares the application settings name', function () {
             ->where('application.name', 'Harbour Smoke'));
 });
 
-test('platform branch and driver staff cannot open storefront checkout', function (string $guard, UserType $type) {
+test('platform branch and driver staff can open storefront checkout', function (string $guard, UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => "staff-open-{$guard}"]);
+
     $user = User::factory()->create([
         'user_type' => $type,
         'branch_id' => $type === UserType::BRANCH
@@ -185,21 +187,26 @@ test('platform branch and driver staff cannot open storefront checkout', functio
     ]);
 
     $this->actingAs($user, $guard)
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, $guard)
         ->get(route('checkout'))
-        ->assertRedirect(match ($type) {
-            UserType::PLATFORM => '/platform/dashboard',
-            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
-            UserType::DRIVER => '/driver/dashboard',
-            default => route('login'),
-        });
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->has('items', 1)
+            ->where('savedAddress', null));
 })->with([
     'platform' => ['platform', UserType::PLATFORM],
     'branch' => ['branch', UserType::BRANCH],
     'driver' => ['driver', UserType::DRIVER],
 ]);
 
-test('platform branch and driver staff cannot place a storefront order', function (string $guard, UserType $type) {
-    $product = storefrontCheckoutProduct(['slug' => "staff-blocked-{$guard}"]);
+test('platform branch and driver staff place a storefront order for the customer who owns the phone', function (string $guard, UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => "staff-order-{$guard}"]);
     storefrontCheckoutBranchWithStock($product);
 
     $user = User::factory()->create([
@@ -216,20 +223,86 @@ test('platform branch and driver staff cannot place a storefront order', functio
         ]);
 
     $this->actingAs($user, $guard)
-        ->post(route('checkout.store'), checkoutPayload())
-        ->assertRedirect(match ($type) {
-            UserType::PLATFORM => '/platform/dashboard',
-            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
-            UserType::DRIVER => '/driver/dashboard',
-            default => route('login'),
-        });
+        ->post(route('checkout.store'), checkoutPayload(['save_as_default' => true]))
+        ->assertSessionDoesntHaveErrors();
 
-    expect(Order::query()->count())->toBe(0);
+    $order = Order::query()->firstOrFail();
+    $customer = User::query()->findOrFail($order->customer_id);
+
+    expect($customer->id)->not->toBe($user->id)
+        ->and($customer->phone)->toBe(Phone::toE164('0410123456'))
+        ->and($customer->user_type)->toBe(UserType::CUSTOMER)
+        ->and($customer->registration_status)->toBe(CustomerRegistrationStatus::Provisional)
+        ->and(Address::query()->count())->toBe(0);
+
+    $this->actingAs($user, $guard)
+        ->get(route('checkout.confirmation', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout-confirmation')
+            ->where('order.viewOrderUrl', fn ($url): bool => str_contains((string) $url, '/order-status/')));
 })->with([
     'platform' => ['platform', UserType::PLATFORM],
     'branch' => ['branch', UserType::BRANCH],
     'driver' => ['driver', UserType::DRIVER],
 ]);
+
+test('a logged-in staff user ordering with their own phone gets the order on their own account', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'staff-own-phone-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'phone' => Phone::toE164('0410123456'),
+    ]);
+    $usersBefore = User::query()->count();
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertSessionDoesntHaveErrors();
+
+    expect(Order::query()->firstOrFail()->customer_id)->toBe($driver->id)
+        ->and(User::query()->count())->toBe($usersBefore);
+});
+
+test('checkout rejects a phone that is not an Australian mobile number', function (bool $loggedIn, string $mobile) {
+    $product = storefrontCheckoutProduct(['slug' => 'non-au-phone-item-'.md5($loggedIn.$mobile)]);
+    storefrontCheckoutBranchWithStock($product);
+
+    if ($loggedIn) {
+        $this->actingAs(User::factory()->create(), 'customer');
+    }
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload(['mobile' => $mobile]))
+        ->assertSessionHasErrors(['mobile' => 'Enter a valid Australian mobile number.']);
+
+    expect(Order::query()->count())->toBe(0);
+})->with([
+    'guest, bangladesh mobile' => [false, '+8801712345678'],
+    'guest, us number' => [false, '+12025550123'],
+    'guest, australian landline' => [false, '0291234567'],
+    'customer, bangladesh mobile' => [true, '+8801712345678'],
+    'customer, us number' => [true, '+12025550123'],
+    'customer, australian landline' => [true, '0291234567'],
+    'customer, not a number' => [true, 'call me maybe'],
+]);
+
+test('checkout accepts an Australian mobile number in international format', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'au-e164-phone-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload(['mobile' => '+61410123456']))
+        ->assertSessionDoesntHaveErrors();
+
+    expect(Order::query()->count())->toBe(1);
+});
 
 test('checkout without a delivery shift is rejected', function () {
     $user = User::factory()->create();

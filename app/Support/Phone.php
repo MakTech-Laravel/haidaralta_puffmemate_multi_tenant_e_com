@@ -20,11 +20,15 @@ final class Phone
     }
 
     /**
+     * Pass `allowInternational: false` to accept numbers of the default region only.
+     *
      * @return array<int, string>
      */
-    public static function validationRule(bool $mobileOnly = true): array
+    public static function validationRule(bool $mobileOnly = true, bool $allowInternational = true): array
     {
-        $parameters = ['INTERNATIONAL', self::DEFAULT_REGION];
+        $parameters = $allowInternational
+            ? ['INTERNATIONAL', self::DEFAULT_REGION]
+            : [self::DEFAULT_REGION];
 
         if ($mobileOnly) {
             $parameters[] = 'mobile';
