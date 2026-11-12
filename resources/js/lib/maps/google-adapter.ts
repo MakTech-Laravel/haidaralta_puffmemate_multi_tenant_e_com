@@ -177,6 +177,9 @@ export async function createGoogleAdapter(
                 }
             });
         },
+        invalidateSize() {
+            google.maps.event.trigger(map, 'resize');
+        },
         onClick(handler) {
             map.addListener('click', (event: any) =>
                 handler(event.latLng.lat(), event.latLng.lng()),

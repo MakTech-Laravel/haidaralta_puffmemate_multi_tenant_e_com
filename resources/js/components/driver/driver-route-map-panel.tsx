@@ -1,12 +1,19 @@
 import { Link } from '@inertiajs/react';
-import { Loader2, Navigation, Route as RouteIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import {
+    Loader2,
+    Maximize2,
+    Navigation,
+    Route as RouteIcon,
+    X,
+} from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 import type { DriverAssignedOrder } from '@/components/driver/driver-order-types';
 import { MapView } from '@/components/map/map-view';
 import { Button } from '@/components/ui/button';
 import { distanceMeters } from '@/lib/driver-location';
 import { useDriverPosition } from '@/lib/driver-position-store';
 import type { LatLngTuple, MarkerSpec, PolylineSpec } from '@/lib/maps/types';
+import { cn } from '@/lib/utils';
 import { directions } from '@/routes/driver/route';
 import { show as orderShow } from '@/routes/driver/orders';
 
@@ -51,6 +58,7 @@ export function DriverRouteMapPanel({
     } | null>(null);
     const [loading, setLoading] = useState(false);
     const [routeError, setRouteError] = useState<string | null>(null);
+    const [fullScreen, setFullScreen] = useState(false);
 
     const focusStop =
         stops.find((stop) => stop.id === (selectedId ?? highlightId)) ??
@@ -143,32 +151,110 @@ export function DriverRouteMapPanel({
         }
     };
 
+    useEffect(() => {
+        if (!fullScreen) {
+            return;
+        }
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setFullScreen(false);
+            }
+        };
+
+        const previousOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+        window.addEventListener('keydown', onKeyDown);
+
+        return () => {
+            document.body.style.overflow = previousOverflow;
+            window.removeEventListener('keydown', onKeyDown);
+        };
+    }, [fullScreen]);
+
     const center: LatLngTuple = position
         ? [position.lat, position.lng]
         : pinned[0]
           ? [pinned[0].latitude as number, pinned[0].longitude as number]
           : SYDNEY;
 
+    const mapFitKey = `${pinned.length}-${position ? 'me' : 'no'}-${roadRoute ? 'road' : 'none'}-${fullScreen ? 'fs' : 'card'}`;
+
     return (
-        <section className="border-border overflow-hidden rounded-2xl border">
-            <div className="relative" data-test="driver-route-map">
+        <section
+            className={cn(
+                'border-border overflow-hidden rounded-2xl border',
+                fullScreen &&
+                    'fixed inset-0 z-50 rounded-none border-0 bg-background',
+            )}
+            data-test="driver-route-map"
+            data-fullscreen={fullScreen ? 'true' : 'false'}
+        >
+            <div className="relative">
                 <MapView
                     center={center}
                     markers={markers}
                     polylines={polylines}
-                    fitKey={`${pinned.length}-${position ? 'me' : 'no'}-${roadRoute ? 'road' : 'none'}`}
-                    className="h-72 w-full sm:h-96"
+                    fitKey={mapFitKey}
+                    className={cn(
+                        'w-full',
+                        fullScreen
+                            ? 'h-[100svh]'
+                            : 'h-72 sm:h-96',
+                    )}
                 />
 
+                <div
+                    className={cn(
+                        'absolute top-3 right-3 z-[1000] flex gap-2',
+                        fullScreen &&
+                            'top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))]',
+                    )}
+                >
+                    {fullScreen ? (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            className="bg-background/95 shadow-md"
+                            onClick={() => setFullScreen(false)}
+                            aria-label="Exit full screen"
+                            data-test="driver-route-map-exit-fullscreen"
+                        >
+                            <X data-icon="inline-start" />
+                            Close
+                        </Button>
+                    ) : (
+                        <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            className="bg-background/95 shadow-md"
+                            onClick={() => setFullScreen(true)}
+                            aria-label="Open map full screen"
+                            data-test="driver-route-map-fullscreen"
+                        >
+                            <Maximize2 data-icon="inline-start" />
+                            Full screen
+                        </Button>
+                    )}
+                </div>
+
                 {pinned.length === 0 ? (
-                    <p className="bg-background/90 text-muted-foreground pointer-events-none absolute inset-x-3 top-3 z-[1000] rounded-lg px-3 py-2 text-sm">
+                    <p className="bg-background/90 text-muted-foreground pointer-events-none absolute inset-x-3 top-14 z-[1000] rounded-lg px-3 py-2 text-sm">
                         These stops have no map pin yet. Use Navigate to open
                         the address in your maps app.
                     </p>
                 ) : null}
 
                 {focusStop ? (
-                    <div className="absolute inset-x-3 bottom-3 z-[1000] rounded-xl bg-white/95 p-3 shadow-lg sm:inset-x-auto sm:right-3 sm:left-auto sm:w-80">
+                    <div
+                        className={cn(
+                            'absolute inset-x-3 bottom-3 z-[1000] rounded-xl bg-white/95 p-3 shadow-lg sm:inset-x-auto sm:right-3 sm:left-auto sm:w-80',
+                            fullScreen &&
+                                'bottom-[max(0.75rem,env(safe-area-inset-bottom))]',
+                        )}
+                    >
                         <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
                             {highlightId === focusStop.id
                                 ? 'Selected stop'
@@ -191,8 +277,8 @@ export function DriverRouteMapPanel({
                             </p>
                         ) : straightLine !== null ? (
                             <p className="text-muted-foreground mt-1.5 text-sm">
-                                About {kmLabel(straightLine)} away in a straight
-                                line
+                                About {kmLabel(straightLine)} away in a
+                                straight line
                             </p>
                         ) : null}
 
@@ -238,23 +324,29 @@ export function DriverRouteMapPanel({
                 ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                <div className="min-w-0">
-                    <p className="text-foreground text-sm font-medium">
-                        {areaLabel ?? "Today's run"}
-                    </p>
-                    <p className="text-muted-foreground text-sm">
-                        {stops.length} {stops.length === 1 ? 'drop' : 'drops'}{' '}
-                        on this map
-                    </p>
+            {!fullScreen ? (
+                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                    <div className="min-w-0">
+                        <p className="text-foreground text-sm font-medium">
+                            {areaLabel ?? "Today's run"}
+                        </p>
+                        <p className="text-muted-foreground text-sm">
+                            {stops.length}{' '}
+                            {stops.length === 1 ? 'drop' : 'drops'} on this map
+                        </p>
+                    </div>
+                    <Button type="button" variant="outline" size="sm" asChild>
+                        <a
+                            href={navigateHref}
+                            target="_blank"
+                            rel="noreferrer"
+                        >
+                            <Navigation data-icon="inline-start" />
+                            Navigate
+                        </a>
+                    </Button>
                 </div>
-                <Button type="button" variant="outline" size="sm" asChild>
-                    <a href={navigateHref} target="_blank" rel="noreferrer">
-                        <Navigation data-icon="inline-start" />
-                        Navigate
-                    </a>
-                </Button>
-            </div>
+            ) : null}
         </section>
     );
 }
