@@ -22,7 +22,7 @@ Header = Home · Shop · [DB categories with `show_in_nav`, ordered by `nav_sort
 
 ## Catalog seeder featured set
 
-`CategorySeeder` seeds root featured categories matching homepage cards: cigarettes, vapes, tobacco, nicotine-pouches, accessories (max `featured_categories_max` = 5). Vapes children disposables / pod-systems get category images and stay out of header nav. Packs & Saves and Wholesale remain fixed pages — never catalog categories.
+`CategorySeeder` seeds root featured categories matching homepage cards: cigarettes, vapes, tobacco, nicotine-pouches, accessories, disposables (max `featured_categories_max` = 6). Pod-systems get category images and stay out of header nav; disposables is featured on the homepage but not in nav. Packs & Saves and Wholesale remain fixed pages — never catalog categories.
 
 ## Nav categories are cached + Inertia once
 
