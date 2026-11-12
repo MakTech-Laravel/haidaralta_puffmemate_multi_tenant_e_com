@@ -34,7 +34,7 @@ type ContactFormProps = {
 };
 
 const underlineFieldClass =
-    'border-border h-10 rounded-none border-0 border-b bg-transparent px-0 shadow-none focus-visible:border-foreground focus-visible:ring-0';
+    'h-11 rounded-xl';
 
 const CONTACT_TYPE_OPTIONS = [
     { value: 'general_inquiry', label: 'General inquiry' },
@@ -179,7 +179,7 @@ export function ContactForm({ className, copy }: ContactFormProps) {
                         }
                         placeholder={copy.messagePlaceholder}
                         rows={3}
-                        className="border-border focus-visible:border-foreground min-h-20 resize-none rounded-none border-0 border-b bg-transparent px-0 shadow-none focus-visible:ring-0"
+                        className="min-h-28 resize-none rounded-xl"
                     />
                     <InputError message={errors.message} />
                 </div>
@@ -188,7 +188,7 @@ export function ContactForm({ className, copy }: ContactFormProps) {
                     <Button
                         type="submit"
                         disabled={processing}
-                        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-11 rounded-md px-6 font-semibold"
+                        className="h-12 px-8 font-semibold"
                     >
                         {copy.submitLabel ?? 'Send Message'}
                     </Button>

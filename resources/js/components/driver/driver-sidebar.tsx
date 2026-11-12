@@ -15,7 +15,7 @@ export function DriverSidebar({ className }: DriverSidebarProps) {
 
     return (
         <nav
-            className={cn('hidden flex-col xl:flex', className)}
+            className={cn('hidden flex-col gap-1 xl:flex', className)}
             aria-label="Driver"
         >
             {driverNavItems.map((item) => {
@@ -28,7 +28,7 @@ export function DriverSidebar({ className }: DriverSidebarProps) {
                             key={item.id}
                             href={logout()}
                             as="button"
-                            className="border-border text-foreground hover:text-primary flex cursor-pointer items-center gap-3 border-b px-0 py-3 text-left text-base font-medium transition-colors first:border-t"
+                            className="text-muted-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium transition-colors"
                             data-test="driver-logout"
                         >
                             <Icon className="size-5 shrink-0" aria-hidden />
@@ -43,10 +43,10 @@ export function DriverSidebar({ className }: DriverSidebarProps) {
                         href={item.href!}
                         prefetch
                         className={cn(
-                            'flex items-center gap-3 border-b px-0 py-3 text-base font-medium transition-colors first:border-t',
+                            'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors',
                             active
-                                ? 'text-primary border-primary'
-                                : 'border-border text-foreground hover:text-primary',
+                                ? 'bg-muted text-foreground'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                         )}
                         aria-current={active ? 'page' : undefined}
                     >

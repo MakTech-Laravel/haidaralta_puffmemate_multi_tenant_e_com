@@ -20,7 +20,7 @@ export function OrderTrackProducts({
     totalLabel,
 }: OrderTrackProductsProps) {
     return (
-        <Card className="bg-background gap-0 rounded-none border-none py-5 shadow-none">
+        <Card className="bg-background gap-0 rounded-2xl border py-5 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-3 px-5 pb-0">
                 <CardTitle className="text-foreground text-lg font-semibold sm:text-xl">
                     Items

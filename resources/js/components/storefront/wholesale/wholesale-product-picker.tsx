@@ -239,12 +239,12 @@ export function WholesaleProductPicker({
                                         disabled={disabled}
                                     >
                                         <SelectTrigger
-                                            className="border-border h-9 w-full rounded-none bg-transparent shadow-none data-[size=default]:h-9 sm:w-40"
+                                            className="h-10 w-full rounded-xl data-[size=default]:h-10 sm:w-40"
                                             aria-label={`${line.name} option`}
                                         >
                                             <SelectValue />
                                         </SelectTrigger>
-                                        <SelectContent className="rounded-none">
+                                        <SelectContent>
                                             <SelectItem
                                                 value={ANY_VARIANT}
                                                 disabled={lines.some(

@@ -11,7 +11,11 @@ import {
     type CheckoutDetails,
 } from '@/components/storefront/checkout/checkout-form';
 import { CheckoutOrderSummary } from '@/components/storefront/checkout/checkout-order-summary';
-import { filterUpcomingDeliverySlots } from '@/lib/delivery-shift-availability';
+import {
+    filterUpcomingDeliverySlots,
+    SAME_DAY_METHOD_ID,
+    sameDayOutOfRadiusMessage,
+} from '@/lib/delivery-shift-availability';
 import type {
     StorefrontCartItem,
     StorefrontDeliveryMethod,
@@ -45,6 +49,9 @@ type ShippingQuote = {
     longitude: string;
     requiresLateDelivery: boolean;
     shortfallLines: ShortfallLine[];
+    /** Pin is inside the same-day radius of a branch; null when not applicable. */
+    sameDayInRadius?: boolean | null;
+    sameDayRadiusKm?: number | null;
 } | null;
 
 type CheckoutPageProps = {
@@ -71,8 +78,9 @@ function filled(value: string): boolean {
     return value.trim() !== '';
 }
 
-/** Delivery method id (server key) for Same day; mirrors DeliveryShiftAvailability::METHOD_SAME_DAY. */
-const SAME_DAY_METHOD_ID = 'regular';
+/** Shown when Same day is selected but no delivery shift is left today. */
+const SAME_DAY_NO_SHIFTS_MESSAGE =
+    "Same day delivery isn't available right now because no delivery shifts are left today. Choose Late delivery to schedule a later day.";
 
 /** Mirrors DeliveryShiftAvailability::SAME_DAY_LATE_ITEMS_MESSAGE. */
 const SAME_DAY_LATE_ITEMS_MESSAGE =
@@ -85,6 +93,7 @@ function checkoutCanPlaceOrder(
     requiresLateDelivery: boolean,
     acceptLateDelivery: boolean,
     sameDayLateConflict: boolean,
+    sameDayOutsideRadius: boolean,
 ): boolean {
     const method = methods.find((row) => row.id === details.deliveryMethodId);
     const pinReady =
@@ -110,7 +119,7 @@ function checkoutCanPlaceOrder(
         return false;
     }
 
-    if (sameDayLateConflict) {
+    if (sameDayLateConflict || sameDayOutsideRadius) {
         return false;
     }
 
@@ -135,6 +144,70 @@ function checkoutCanPlaceOrder(
     return true;
 }
 
+/** Slots the customer can still book for a method (Same day only keeps shifts that have not started). */
+function usableSlots(method: StorefrontDeliveryMethod) {
+    return method.requiresDate
+        ? method.timeSlots
+        : filterUpcomingDeliverySlots(method.timeSlots);
+}
+
+/**
+ * The checkout form is kept in sessionStorage so a customer who leaves (for example to remove a
+ * cart item) finds their details again. Terms, coupon and late-delivery opt-in are never kept:
+ * they depend on the cart and must be confirmed again.
+ */
+const CHECKOUT_DRAFT_KEY = 'storefront.checkout.draft';
+
+type CheckoutDraft = {
+    name?: unknown;
+    mobile?: unknown;
+    address?: unknown;
+    city?: unknown;
+    postal_code?: unknown;
+    latitude?: unknown;
+    longitude?: unknown;
+    delivery_method?: unknown;
+    delivery_date?: unknown;
+    time_slot_id?: unknown;
+    payment_method?: unknown;
+};
+
+function readCheckoutDraft(): CheckoutDraft | null {
+    try {
+        const raw = window.sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
+        const parsed: unknown = raw ? JSON.parse(raw) : null;
+
+        return parsed !== null && typeof parsed === 'object'
+            ? (parsed as CheckoutDraft)
+            : null;
+    } catch {
+        return null;
+    }
+}
+
+function writeCheckoutDraft(draft: Record<string, string>): void {
+    try {
+        window.sessionStorage.setItem(
+            CHECKOUT_DRAFT_KEY,
+            JSON.stringify(draft),
+        );
+    } catch {
+        // Storage can be unavailable (private mode); the form still works without a draft.
+    }
+}
+
+function clearCheckoutDraft(): void {
+    try {
+        window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+    } catch {
+        // Nothing to clear.
+    }
+}
+
+function draftText(value: unknown): string | null {
+    return typeof value === 'string' ? value : null;
+}
+
 export default function StorefrontCheckout({
     itemCount,
     items,
@@ -147,12 +220,13 @@ export default function StorefrontCheckout({
     couponsAllowed = true,
 }: CheckoutPageProps) {
     const page = usePage<{ errors?: Record<string, string> }>();
-    const defaultMethod = deliveryMethods[0];
-    const defaultSlots = defaultMethod
-        ? defaultMethod.requiresDate
-            ? defaultMethod.timeSlots
-            : filterUpcomingDeliverySlots(defaultMethod.timeSlots)
-        : [];
+    // Same day stays listed even when no shifts remain, so start on the first method that can be
+    // booked; if none can, start on Late rather than the greyed-out Same day card.
+    const defaultMethod =
+        deliveryMethods.find((method) => usableSlots(method).length > 0) ??
+        deliveryMethods.find((method) => method.id !== SAME_DAY_METHOD_ID) ??
+        deliveryMethods[0];
+    const defaultSlots = defaultMethod ? usableSlots(defaultMethod) : [];
     const form = useForm({
         name: savedAddress?.name ?? '',
         mobile: savedAddress?.mobile ?? '',
@@ -176,6 +250,105 @@ export default function StorefrontCheckout({
     });
 
     const [couponCode, setCouponCode] = useState(appliedCoupon?.code ?? '');
+
+    // Restore the draft after hydration (SSR renders the empty form first), then start saving.
+    const [draftReady, setDraftReady] = useState(false);
+
+    useEffect(() => {
+        const draft = readCheckoutDraft();
+
+        if (draft) {
+            form.setData((current) => {
+                const method = deliveryMethods.find(
+                    (row) => row.id === draft.delivery_method,
+                );
+                let deliveryMethod = current.delivery_method;
+                let deliveryDate = current.delivery_date;
+                let timeSlot = current.time_slot_id;
+
+                if (method) {
+                    const slots = usableSlots(method);
+                    const draftDate = draftText(draft.delivery_date);
+                    const draftSlot = draftText(draft.time_slot_id);
+                    const dateInRange =
+                        draftDate !== null &&
+                        method.minDate != null &&
+                        method.maxDate != null &&
+                        draftDate >= method.minDate &&
+                        draftDate <= method.maxDate;
+
+                    deliveryMethod = method.id;
+                    deliveryDate = method.requiresDate
+                        ? dateInRange
+                            ? draftDate
+                            : (method.minDate ?? '')
+                        : '';
+                    timeSlot = slots.some((slot) => slot.id === draftSlot)
+                        ? (draftSlot ?? '')
+                        : (slots[0]?.id ?? '');
+                }
+
+                const payment = draftText(draft.payment_method);
+
+                return {
+                    ...current,
+                    name: draftText(draft.name) ?? current.name,
+                    mobile: draftText(draft.mobile) ?? current.mobile,
+                    address: draftText(draft.address) ?? current.address,
+                    city: draftText(draft.city) ?? current.city,
+                    postal_code:
+                        draftText(draft.postal_code) ?? current.postal_code,
+                    latitude: draftText(draft.latitude) ?? current.latitude,
+                    longitude: draftText(draft.longitude) ?? current.longitude,
+                    delivery_method: deliveryMethod,
+                    delivery_date: deliveryDate,
+                    time_slot_id: timeSlot,
+                    payment_method: paymentMethods.some(
+                        (row) => row.id === payment,
+                    )
+                        ? (payment ?? current.payment_method)
+                        : current.payment_method,
+                };
+            });
+        }
+
+        setDraftReady(true);
+        // Runs once on mount; later edits are saved by the effect below.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    useEffect(() => {
+        if (!draftReady) {
+            return;
+        }
+
+        writeCheckoutDraft({
+            name: form.data.name,
+            mobile: form.data.mobile,
+            address: form.data.address,
+            city: form.data.city,
+            postal_code: form.data.postal_code,
+            latitude: form.data.latitude ?? '',
+            longitude: form.data.longitude ?? '',
+            delivery_method: form.data.delivery_method,
+            delivery_date: form.data.delivery_date,
+            time_slot_id: form.data.time_slot_id,
+            payment_method: form.data.payment_method,
+        });
+    }, [
+        draftReady,
+        form.data.name,
+        form.data.mobile,
+        form.data.address,
+        form.data.city,
+        form.data.postal_code,
+        form.data.latitude,
+        form.data.longitude,
+        form.data.delivery_method,
+        form.data.delivery_date,
+        form.data.time_slot_id,
+        form.data.payment_method,
+    ]);
     // Server errors the customer has already edited away; reset whenever a new response arrives.
     const [dismissedErrors, setDismissedErrors] = useState<string[]>([]);
     const dismissErrors = (...keys: string[]) =>
@@ -214,6 +387,8 @@ export default function StorefrontCheckout({
             formattedFee: string;
             requiresLateDelivery?: boolean;
             shortfallLines?: ShortfallLine[];
+            sameDayInRadius?: boolean | null;
+            sameDayRadiusKm?: number | null;
         }
     >({
         latitude: '',
@@ -277,6 +452,8 @@ export default function StorefrontCheckout({
                     longitude,
                     requiresLateDelivery: requiresLate,
                     shortfallLines: payload.shortfallLines ?? [],
+                    sameDayInRadius: payload.sameDayInRadius ?? null,
+                    sameDayRadiusKm: payload.sameDayRadiusKm ?? null,
                 });
                 if (!requiresLate) {
                     form.setData('accept_late_delivery', false);
@@ -412,6 +589,19 @@ export default function StorefrontCheckout({
         requiresLateDelivery &&
         details.deliveryMethodId === SAME_DAY_METHOD_ID;
 
+    const sameDayInRadius = quotedMatchesPin
+        ? (quote?.sameDayInRadius ?? null)
+        : null;
+    const sameDayOutsideRadius =
+        sameDayInRadius === false &&
+        details.deliveryMethodId === SAME_DAY_METHOD_ID;
+    const selectedDeliveryMethod = deliveryMethods.find(
+        (method) => method.id === details.deliveryMethodId,
+    );
+    const sameDayNoShifts =
+        selectedDeliveryMethod?.id === SAME_DAY_METHOD_ID &&
+        usableSlots(selectedDeliveryMethod).length === 0;
+
     const canPlaceOrder = checkoutCanPlaceOrder(
         details,
         deliveryMethods,
@@ -419,6 +609,7 @@ export default function StorefrontCheckout({
         requiresLateDelivery,
         form.data.accept_late_delivery,
         sameDayLateConflict,
+        sameDayOutsideRadius,
     );
 
     return (
@@ -426,18 +617,22 @@ export default function StorefrontCheckout({
             <Head title="Checkout" />
 
             <div className="flex-1">
-                <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
-                    <div className="max-w-2xl">
-                        <h1 className="text-foreground text-3xl font-semibold tracking-tight sm:text-4xl">
-                            Complete your order.
-                        </h1>
-                        <p className="text-muted-foreground mt-2 text-base font-normal">
-                            Everything you need, in one simple checkout.
-                        </p>
+                <div className="bg-muted">
+                    <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-12">
+                        <div className="max-w-2xl">
+                            <h1 className="text-foreground text-4xl font-semibold tracking-tight sm:text-5xl">
+                                Complete your order.
+                            </h1>
+                            <p className="text-muted-foreground mt-2 text-base font-normal sm:text-lg">
+                                Everything you need, in one simple checkout.
+                            </p>
+                        </div>
                     </div>
+                </div>
 
+                <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
                     <form
-                        className="mt-8 grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8"
+                        className="grid items-start gap-6 lg:grid-cols-[1fr_24rem] lg:gap-8"
                         onSubmit={(event) => {
                             event.preventDefault();
 
@@ -459,6 +654,7 @@ export default function StorefrontCheckout({
                             }));
                             form.post(storeCheckout.url(), {
                                 preserveScroll: true,
+                                onSuccess: () => clearCheckoutDraft(),
                             });
                         }}
                     >
@@ -470,10 +666,17 @@ export default function StorefrontCheckout({
                             errors={errors}
                             deliveryMethodError={
                                 errors.delivery_method ??
-                                (sameDayLateConflict
-                                    ? SAME_DAY_LATE_ITEMS_MESSAGE
-                                    : undefined)
+                                (sameDayOutsideRadius
+                                    ? sameDayOutOfRadiusMessage(
+                                          quote?.sameDayRadiusKm,
+                                      )
+                                    : sameDayNoShifts
+                                      ? SAME_DAY_NO_SHIFTS_MESSAGE
+                                      : sameDayLateConflict
+                                      ? SAME_DAY_LATE_ITEMS_MESSAGE
+                                      : undefined)
                             }
+                            sameDayInRadius={sameDayInRadius}
                             onChange={onDetailChange}
                             onPinSelect={applyPin}
                         />
@@ -510,6 +713,9 @@ export default function StorefrontCheckout({
                             acceptLateDelivery={form.data.accept_late_delivery}
                             acceptLateError={errors.accept_late_delivery}
                             sameDayLateConflict={sameDayLateConflict}
+                            sameDayUnavailable={
+                                sameDayOutsideRadius || sameDayNoShifts
+                            }
                             onAcceptLateDeliveryChange={(accepted) => {
                                 dismissErrors('accept_late_delivery');
                                 form.setData('accept_late_delivery', accepted);

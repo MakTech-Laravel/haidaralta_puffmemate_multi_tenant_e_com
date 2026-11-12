@@ -60,9 +60,9 @@ export type MapConfigPayload = {
  * palette in resources/css/app.css. Keep them in sync when the palette changes.
  */
 export const MARKER_COLORS: Record<string, string> = {
-    primary: '#174B36', // --palette-green-900 (brand)
-    driver: '#4F8A6B', // --palette-green-500
-    stop: '#202923', // --palette-ink
-    branch: '#174B36', // --palette-green-900 (brand)
+    primary: '#2B70DB', // --palette-blue-600 (accent)
+    driver: '#1F5CC0', // --palette-blue-700
+    stop: '#1D1D1F', // --palette-ink
+    branch: '#2B70DB', // --palette-blue-600 (accent)
     muted: '#8E8E93', // --palette-apple-grey
 };

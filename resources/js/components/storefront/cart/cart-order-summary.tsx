@@ -14,7 +14,7 @@ export function CartOrderSummary({ cart, className }: CartOrderSummaryProps) {
     return (
         <aside
             className={cn(
-                'border-border bg-background h-fit w-full max-w-full min-w-0 rounded-xl border p-5 lg:sticky lg:top-28',
+                'border-border bg-background h-fit w-full max-w-full min-w-0 rounded-3xl border p-6 lg:sticky lg:top-28',
                 className,
             )}
         >
@@ -38,7 +38,7 @@ export function CartOrderSummary({ cart, className }: CartOrderSummaryProps) {
                 <span className="text-foreground text-base font-semibold">
                     Total
                 </span>
-                <span className="text-primary shrink-0 text-2xl font-semibold">
+                <span className="text-foreground shrink-0 text-2xl font-semibold tracking-tight">
                     {cart.formattedSubtotal}
                 </span>
             </div>
@@ -46,7 +46,7 @@ export function CartOrderSummary({ cart, className }: CartOrderSummaryProps) {
             <Button
                 asChild
                 size="lg"
-                className="mt-5 h-12 w-full rounded-none text-sm font-semibold tracking-wide"
+                className="mt-5 h-12 w-full text-sm font-semibold"
                 disabled={cart.itemCount === 0}
             >
                 <Link href={checkout.url()} prefetch>

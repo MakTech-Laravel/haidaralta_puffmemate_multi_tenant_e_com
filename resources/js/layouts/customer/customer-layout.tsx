@@ -27,13 +27,13 @@ export default function CustomerLayout({
             <StorefrontHeader />
 
             <main className="flex-1 pb-20 lg:pb-0">
-                <h1 className="bg-accent text-foreground py-4 text-center text-2xl font-bold tracking-tight sm:py-8 sm:text-3xl md:text-[40px]">
+                <h1 className="bg-muted text-foreground py-6 text-center text-3xl font-semibold tracking-tight sm:py-10 sm:text-4xl md:text-5xl">
                     My Account
                 </h1>
                 <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                     <nav
                         aria-label="Breadcrumb"
-                        className="text-muted-foreground mb-6 text-base sm:mb-10 md:mb-20"
+                        className="text-muted-foreground mb-6 text-sm sm:mb-8 md:mb-12"
                     >
                         <ol className="flex flex-wrap items-center gap-1.5">
                             {trail.map((item, index) => {
@@ -64,7 +64,7 @@ export default function CustomerLayout({
                                 );
                             })}
                         </ol>
-                        <div className="bg-border mt-4 hidden h-0.5 w-full lg:block" />
+                        <div className="bg-border mt-4 hidden h-px w-full lg:block" />
                     </nav>
 
                     <div className="grid gap-10 lg:grid-cols-[14rem_minmax(0,1fr)] lg:gap-14">

@@ -63,22 +63,22 @@ export function CartSheet({
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
                 className={cn(
-                    'relative inline-flex size-10 items-center justify-center rounded-md transition-colors',
+                    'relative inline-flex size-10 items-center justify-center rounded-full transition-colors',
                     triggerClassName,
-                    active ? 'text-primary' : 'text-foreground',
+                    active ? 'bg-muted text-foreground' : 'text-foreground hover:bg-muted/70',
                 )}
                 aria-label="Cart"
             >
-                <ShoppingCart className="size-6 md:size-8" strokeWidth={1.75} />
+                <ShoppingCart className="size-5 md:size-[22px]" strokeWidth={1.75} />
                 {cartData.itemCount > 0 ? (
-                    <span className="bg-primary text-primary-foreground absolute top-0.5 right-0.5 min-w-4 rounded-full px-1 text-[10px] font-semibold">
+                    <span className="bg-primary text-primary-foreground absolute top-0 right-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold">
                         {cartData.itemCount}
                     </span>
                 ) : null}
             </SheetTrigger>
             <SheetContent className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
                 <SheetHeader className="border-border border-b">
-                    <SheetTitle className="text-lg font-semibold tracking-tight">
+                    <SheetTitle className="text-xl font-semibold tracking-tight">
                         Your cart ({cartData.itemCount})
                     </SheetTitle>
                 </SheetHeader>
@@ -95,7 +95,7 @@ export function CartSheet({
                             >
                                 <Link
                                     href={productShow.url(item.slug)}
-                                    className="bg-muted size-16 shrink-0 overflow-hidden rounded-lg"
+                                    className="bg-muted size-20 shrink-0 overflow-hidden rounded-2xl"
                                 >
                                     <StorefrontProductImage
                                         src={item.image}
@@ -119,7 +119,7 @@ export function CartSheet({
                                         </p>
                                     ) : null}
                                     <p className="mt-1 text-sm">
-                                        <span className="text-primary font-semibold">
+                                        <span className="text-foreground font-semibold">
                                             {item.formattedUnitPrice}
                                         </span>
                                         {item.formattedCompareAtUnitPrice ? (
@@ -135,7 +135,7 @@ export function CartSheet({
                                         </span>
                                     </p>
                                     <div className="mt-3 flex items-center gap-3">
-                                        <div className="border-primary/50 flex h-9 items-center border">
+                                        <div className="bg-muted flex h-9 items-center rounded-full">
                                             <button
                                                 type="button"
                                                 className="text-foreground flex size-9 items-center justify-center"
@@ -186,19 +186,19 @@ export function CartSheet({
                         ))
                     )}
                 </div>
-                <SheetFooter className="border-border gap-3 border-t">
+                <SheetFooter className="border-border bg-muted gap-3 border-t">
                     <div className="flex w-full items-end justify-between">
                         <span className="text-foreground text-sm font-semibold">
                             Subtotal
                         </span>
-                        <span className="text-primary text-xl font-semibold">
+                        <span className="text-foreground text-xl font-semibold tracking-tight">
                             {cartData.formattedSubtotal}
                         </span>
                     </div>
                     <Button
                         asChild
                         variant="outline"
-                        className="h-11 w-full rounded-none text-sm font-semibold"
+                        className="h-12 w-full text-sm font-semibold"
                     >
                         <Link
                             href={cart.url()}
@@ -209,7 +209,7 @@ export function CartSheet({
                     </Button>
                     <Button
                         asChild
-                        className="h-11 w-full rounded-none text-sm font-semibold tracking-wide"
+                        className="h-12 w-full text-sm font-semibold"
                     >
                         <Link
                             href={checkout.url()}

@@ -40,7 +40,7 @@ type ConfirmationProps = {
 };
 
 const sectionCardClass =
-    'bg-accent gap-3 rounded-none border-none p-3 shadow-none sm:gap-4 sm:p-5';
+    'bg-muted gap-3 rounded-3xl border-none p-4 shadow-none sm:gap-4 sm:p-6';
 
 function Detail({
     label,
@@ -176,7 +176,7 @@ export default function StorefrontCheckoutConfirmation({
                                         key={`${item.name}-${index}`}
                                         className="flex items-center gap-3"
                                     >
-                                        <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md">
+                                        <div className="bg-card size-12 shrink-0 overflow-hidden rounded-xl">
                                             <StorefrontProductImage
                                                 src={item.image}
                                                 alt={item.name}
@@ -246,7 +246,7 @@ export default function StorefrontCheckoutConfirmation({
                             <Button
                                 asChild
                                 size="lg"
-                                className="mt-5 h-12 w-full rounded-none text-sm font-semibold tracking-wide uppercase"
+                                className="mt-5 h-12 w-full text-sm font-semibold"
                             >
                                 <Link href={shop.url()}>Continue shopping</Link>
                             </Button>
@@ -255,7 +255,7 @@ export default function StorefrontCheckoutConfirmation({
                                     asChild
                                     variant="outline"
                                     size="lg"
-                                    className="mt-2 h-12 w-full rounded-none text-sm font-semibold tracking-wide uppercase"
+                                    className="mt-2 h-12 w-full text-sm font-semibold"
                                 >
                                     <Link href={order.viewOrderUrl}>
                                         View order

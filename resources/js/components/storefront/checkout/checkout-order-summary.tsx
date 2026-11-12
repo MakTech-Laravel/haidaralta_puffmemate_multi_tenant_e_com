@@ -49,6 +49,8 @@ type CheckoutOrderSummaryProps = {
     acceptLateError?: string;
     /** Same day is selected while some items are on late delivery. */
     sameDayLateConflict?: boolean;
+    /** Same day is selected but not possible (outside the radius, or no shifts left today). */
+    sameDayUnavailable?: boolean;
     cartUrl?: string;
     onAcceptLateDeliveryChange?: (accepted: boolean) => void;
     onCouponChange: (value: string) => void;
@@ -78,6 +80,7 @@ export function CheckoutOrderSummary({
     acceptLateDelivery = false,
     acceptLateError,
     sameDayLateConflict = false,
+    sameDayUnavailable = false,
     cartUrl = '/cart',
     onAcceptLateDeliveryChange,
     onCouponChange,
@@ -99,7 +102,7 @@ export function CheckoutOrderSummary({
 
     return (
         <aside
-            className={cn('bg-accent h-fit p-5 lg:sticky lg:top-28', className)}
+            className={cn('bg-muted h-fit rounded-3xl p-6 lg:sticky lg:top-28', className)}
         >
             <div className="flex items-center justify-between gap-3">
                 <h2 className="text-foreground text-2xl font-semibold tracking-tight">
@@ -113,7 +116,7 @@ export function CheckoutOrderSummary({
             <ul className="border-border mt-5 max-h-56 space-y-4 overflow-y-auto overscroll-contain border-y py-4 pr-1">
                 {items.map((item) => (
                     <li key={item.id} className="flex items-center gap-3">
-                        <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md">
+                        <div className="bg-card size-12 shrink-0 overflow-hidden rounded-xl">
                             <StorefrontProductImage
                                 src={item.image}
                                 alt={item.name}
@@ -145,7 +148,7 @@ export function CheckoutOrderSummary({
             {couponsAllowed ? (
                 <div className="mt-5 space-y-2">
                     {appliedCoupon ? (
-                        <div className="bg-background flex items-center justify-between gap-3 p-3">
+                        <div className="bg-background flex items-center justify-between gap-3 rounded-xl p-3">
                             <div className="min-w-0">
                                 <p className="text-foreground text-sm font-semibold">
                                     {appliedCoupon.code}
@@ -189,7 +192,7 @@ export function CheckoutOrderSummary({
                                     }}
                                     placeholder="Enter coupon code"
                                     autoComplete="off"
-                                    className="bg-background h-11 rounded-none border-none"
+                                    className="h-11 rounded-xl"
                                 />
                                 <Button
                                     type="button"
@@ -260,13 +263,13 @@ export function CheckoutOrderSummary({
                 <span className="text-foreground text-base font-semibold">
                     Total
                 </span>
-                <span className="text-foreground text-2xl font-semibold">
+                <span className="text-foreground text-2xl font-semibold tracking-tight">
                     {formatStorefrontMoney(total)}
                 </span>
             </div>
 
             {requiresLateDelivery && shortfallLines.length > 0 ? (
-                <div className="border-border bg-background mt-5 space-y-3 border p-3">
+                <div className="border-border bg-background mt-5 space-y-3 rounded-2xl border p-4">
                     <p className="text-foreground text-sm font-semibold">
                         Some items may arrive later
                     </p>
@@ -341,7 +344,7 @@ export function CheckoutOrderSummary({
                         ? undefined
                         : 'Fill every required field to place your order.'
                 }
-                className="mt-5 h-12 w-full rounded-none text-sm font-semibold tracking-wide uppercase"
+                className="mt-5 h-14 w-full text-base font-semibold"
             >
                 {processing ? 'Placing order…' : 'Place order'}
             </Button>
@@ -349,7 +352,9 @@ export function CheckoutOrderSummary({
                 <p className="text-muted-foreground mt-2 text-xs">
                     {requiresLateDelivery && !acceptLateDelivery
                         ? 'Accept late delivery for unavailable items, or remove them from your cart, then place your order.'
-                        : sameDayLateConflict
+                        : sameDayUnavailable
+                          ? 'Same day delivery is not available right now. Choose Late delivery, or enter a closer address if you are outside the same-day radius, then place your order.'
+                          : sameDayLateConflict
                           ? 'Same day delivery is not available for late-delivery items. Choose Late delivery, or remove those items, then place your order.'
                           : 'Fill every required field, including an Express time slot when Express is selected, then place your order.'}
                 </p>

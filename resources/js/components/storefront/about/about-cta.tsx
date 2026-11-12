@@ -19,22 +19,22 @@ type AboutCtaProps = {
 
 export function AboutCta({ data, className }: AboutCtaProps) {
     return (
-        <section className={cn('bg-primary py-16 sm:py-20', className)}>
+        <section className={cn('bg-ink-surface py-16 sm:py-20', className)}>
             <div className="container mx-auto max-w-2xl px-4 text-center sm:px-6">
-                <p className="text-primary-foreground/85 text-xs font-semibold tracking-[0.14em] uppercase">
+                <p className="text-ink-surface-foreground/85 text-xs font-semibold tracking-[0.14em] uppercase">
                     {data.eyebrow}
                 </p>
-                <h2 className="text-primary-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
+                <h2 className="text-ink-surface-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
                     {data.heading}
                 </h2>
-                <p className="text-primary-foreground/85 font-inter mt-4 text-sm leading-relaxed font-normal sm:text-lg">
+                <p className="text-ink-surface-foreground/85 font-inter mt-4 text-sm leading-relaxed font-normal sm:text-lg">
                     {data.body}
                 </p>
                 <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                     <Button
                         asChild
                         size="lg"
-                        className="bg-background text-primary hover:bg-background/90 font-inter h-11 rounded-md px-6 font-semibold"
+                        className="bg-background text-foreground hover:bg-background/90 font-inter h-12 px-7 font-semibold"
                     >
                         <Link href={shop()} prefetch>
                             {data.primaryLabel}
@@ -45,7 +45,7 @@ export function AboutCta({ data, className }: AboutCtaProps) {
                         asChild
                         size="lg"
                         variant="outline"
-                        className="border-primary-foreground text-primary-foreground hover:bg-primary-foreground/10 font-inter h-11 rounded-md border bg-transparent px-6 font-semibold"
+                        className="border-ink-surface-foreground text-ink-surface-foreground hover:bg-ink-surface-foreground/10 font-inter h-12 border bg-transparent px-7 font-semibold"
                     >
                         <Link href={shop()} prefetch>
                             {data.secondaryLabel}

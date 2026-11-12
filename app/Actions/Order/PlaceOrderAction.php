@@ -132,6 +132,13 @@ class PlaceOrderAction
                 $data['delivery_method'] ?? null,
             );
 
+            if (($data['delivery_method'] ?? null) === DeliveryShiftAvailability::METHOD_SAME_DAY
+                && ! $plan['same_day_in_radius']) {
+                throw ValidationException::withMessages([
+                    'delivery_method' => DeliveryShiftAvailability::sameDayOutOfRadiusMessage(),
+                ]);
+            }
+
             if ($plan['requires_late_delivery']
                 && ($data['delivery_method'] ?? null) === DeliveryShiftAvailability::METHOD_SAME_DAY) {
                 throw ValidationException::withMessages([

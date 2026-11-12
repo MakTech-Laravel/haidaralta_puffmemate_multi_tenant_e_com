@@ -14,16 +14,16 @@
 
         @php
             $applicationSettings = app(\App\Services\Application\ApplicationSettingsService::class);
-            $themeColor = (string) config('pwa.theme_color', '#174B36');
+            $themeColor = (string) config('pwa.theme_color', '#1D1D1F');
             $shortDescription = $applicationSettings->shortDescription();
             $hasCustomFavicon = $applicationSettings->hasCustomFavicon();
         @endphp
 
-        {{-- Pre-paint canvas only. Keep in sync with --palette-sage-50 in resources/css/app.css.
+        {{-- Pre-paint canvas only. Keep in sync with --palette-white (--background) in resources/css/app.css.
              Site colours live in app.css; $themeColor below feeds only the browser bar meta. --}}
         <style>
             html {
-                background-color: #f3f5f2;
+                background-color: #ffffff;
             }
         </style>
 
