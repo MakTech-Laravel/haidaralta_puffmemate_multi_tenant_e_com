@@ -13,3 +13,6 @@ Default map is the padded card (`h-72` / `sm:h-96`) inside the normal DriverLayo
 
 ## Route lists remaining stops only
 Route shows map + next/remaining for what’s left. Keep “X left · Y done” in the progress strip from completed counts, but do not render a Completed stop list on Route — that review belongs on Orders.
+
+## Navigate opens Google Maps directions
+Route / Orders / Dashboard Navigate uses `driverMapsDirectionsUrl` (Maps `/dir/` with travelmode=driving) from the driver’s live position to the stop pin (or address). Do not use the search-only pin URL for Navigate.

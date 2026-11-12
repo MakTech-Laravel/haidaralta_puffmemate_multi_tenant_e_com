@@ -3,7 +3,6 @@ import { MapPin, Navigation, Package } from 'lucide-react';
 import { useEffect } from 'react';
 import { DriverEmptyState } from '@/components/driver/driver-empty-state';
 import {
-    driverMapsQuery,
     driverOrderStatusLabel,
     type DriverAssignedOrder,
 } from '@/components/driver/driver-order-types';
@@ -14,10 +13,6 @@ import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { show as orderShow } from '@/routes/driver/orders';
 import { index as routeIndex } from '@/routes/driver/route';
-
-function mapsSearchUrl(query: string): string {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
 
 type DriverRouteProps = {
     remaining: DriverAssignedOrder[];
@@ -74,13 +69,6 @@ export default function DriverRouteIndex({
                     nextStop={nextStop}
                     highlightId={highlightId}
                     areaLabel="Assigned stops"
-                    navigateHref={mapsSearchUrl(
-                        driverMapsQuery(
-                            nextStop?.addressSummary ??
-                                mapStops[0]?.addressSummary ??
-                                '',
-                        ),
-                    )}
                 />
 
                 {highlightedStop ? (

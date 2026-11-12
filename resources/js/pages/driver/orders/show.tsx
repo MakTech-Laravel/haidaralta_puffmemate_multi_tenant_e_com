@@ -15,7 +15,7 @@ import OrderController from '@/actions/App/Http/Controllers/Driver/OrderControll
 import { DriverDeliverOtpForm } from '@/components/driver/driver-deliver-otp-form';
 import { DriverOrderNextAction } from '@/components/driver/driver-order-next-action';
 import {
-    driverMapsQuery,
+    driverMapsDirectionsUrl,
     driverOrderStatusLabel,
     type DriverOrderDetail,
 } from '@/components/driver/driver-order-types';
@@ -26,6 +26,7 @@ import { OrderSourceBadge } from '@/components/orders/order-source-badge';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { useDriverPosition } from '@/lib/driver-position-store';
 import { orderStatusBadgeClass } from '@/lib/order-badges';
 import { usePaymentGatewayLabel } from '@/lib/payment-gateway';
 import { cn } from '@/lib/utils';
@@ -36,15 +37,19 @@ import {
 } from '@/routes/driver/orders';
 import { index as routeIndex } from '@/routes/driver/route';
 
-function mapsSearchUrl(query: string): string {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
-
 type DriverOrderShowProps = {
     order: DriverOrderDetail;
 };
 
 export default function DriverOrderShow({ order }: DriverOrderShowProps) {
+    const position = useDriverPosition();
+    const navigateHref = driverMapsDirectionsUrl({
+        origin: position ? { lat: position.lat, lng: position.lng } : null,
+        destination:
+            order.latitude != null && order.longitude != null
+                ? { lat: order.latitude, lng: order.longitude }
+                : { query: order.addressSummary },
+    });
     const [pendingAction, setPendingAction] = useState<string | null>(null);
     const [lateConfirm, setLateConfirm] = useState<{
         type: 'collect' | 'remove';
@@ -226,9 +231,7 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                             asChild
                         >
                             <a
-                                href={mapsSearchUrl(
-                                    driverMapsQuery(order.addressSummary),
-                                )}
+                                href={navigateHref}
                                 target="_blank"
                                 rel="noreferrer"
                                 data-test="driver-order-navigate"
