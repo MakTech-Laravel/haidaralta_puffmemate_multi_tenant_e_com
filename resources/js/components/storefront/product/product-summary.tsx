@@ -127,38 +127,48 @@ export function ProductSummary({
                     <h2 className="text-foreground font-inter text-base font-semibold">
                         Choose a package
                     </h2>
-                    <ul className="flex flex-col gap-2">
+                    <ul className="flex flex-wrap gap-3">
                         {packages.map((pkg) => {
                             const selected = selectedPackage?.id === pkg.id;
+                            const quantityLabel = `${pkg.quantity} ${
+                                pkg.quantity === 1 ? 'Item' : 'Items'
+                            }`;
+                            // Bare numeric labels read like list numbering (e.g. "1").
+                            const showPackageLabel = !/^\d+$/.test(
+                                pkg.label.trim(),
+                            );
 
                             return (
-                                <li key={pkg.id}>
+                                <li key={pkg.id} className="w-36 max-w-full">
                                     <button
                                         type="button"
                                         onClick={() =>
                                             setSelectedPackageId(pkg.id)
                                         }
                                         className={cn(
-                                            'border-border flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 text-left transition',
+                                            'bg-background flex h-full w-full flex-col items-start rounded-2xl border-2 px-4 py-3.5 text-left transition',
                                             selected
-                                                ? 'border-primary bg-primary-tint ring-primary ring-1'
-                                                : 'hover:border-foreground/30',
+                                                ? 'border-primary'
+                                                : 'border-border hover:border-foreground/25',
                                         )}
                                         aria-pressed={selected}
                                     >
-                                        <div className="min-w-0">
+                                        {showPackageLabel ? (
+                                            <>
+                                                <p className="text-foreground font-inter text-sm font-semibold break-words">
+                                                    {pkg.label}
+                                                </p>
+                                                <p className="text-muted-foreground font-inter text-xs">
+                                                    {quantityLabel}
+                                                </p>
+                                            </>
+                                        ) : (
                                             <p className="text-foreground font-inter text-sm font-semibold">
-                                                {pkg.label}
+                                                {quantityLabel}
                                             </p>
-                                            <p className="text-muted-foreground font-inter text-xs">
-                                                {pkg.quantity}{' '}
-                                                {pkg.quantity === 1
-                                                    ? 'Item'
-                                                    : 'Items'}
-                                            </p>
-                                        </div>
-                                        <div className="flex shrink-0 items-center gap-2">
-                                            <span className="text-foreground text-sm font-semibold">
+                                        )}
+                                        <div className="mt-2 flex flex-col gap-0.5">
+                                            <span className="text-foreground text-base font-semibold">
                                                 {pkg.formattedPrice}
                                             </span>
                                             {pkg.formattedUnitTotal ? (
