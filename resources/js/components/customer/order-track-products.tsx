@@ -20,7 +20,7 @@ export function OrderTrackProducts({
     totalLabel,
 }: OrderTrackProductsProps) {
     return (
-        <Card className="bg-background gap-0 rounded-none border-none py-5 shadow-none">
+        <Card className="bg-background gap-0 rounded-2xl border py-5 shadow-none">
             <CardHeader className="flex flex-row items-center justify-between gap-3 px-5 pb-0">
                 <CardTitle className="text-foreground text-lg font-semibold sm:text-xl">
                     Items
@@ -30,7 +30,7 @@ export function OrderTrackProducts({
                 </span>
             </CardHeader>
             <CardContent className="px-5">
-                <ul className="border-border mt-5 max-h-72 space-y-4 overflow-y-auto overscroll-contain border-y py-4 pr-1">
+                <ul className="border-border mt-5 max-h-72 space-y-4 overflow-y-auto border-y py-4 pr-1">
                     {products.map((product, index) => (
                         <li
                             key={`${product.name}-${index}`}

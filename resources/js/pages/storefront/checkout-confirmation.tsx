@@ -40,7 +40,7 @@ type ConfirmationProps = {
 };
 
 const sectionCardClass =
-    'bg-accent gap-3 rounded-none border-none p-3 shadow-none sm:gap-4 sm:p-5';
+    'bg-muted gap-3 rounded-3xl border-none p-4 shadow-none sm:gap-4 sm:p-6';
 
 function Detail({
     label,
@@ -55,7 +55,7 @@ function Detail({
 
     return (
         <div>
-            <dt className="text-muted-foreground text-[10px] font-extrabold tracking-wider uppercase">
+            <dt className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 {label}
             </dt>
             <dd className="text-foreground mt-1 text-sm font-semibold">
@@ -98,7 +98,7 @@ export default function StorefrontCheckoutConfirmation({
                         <div className="flex flex-col gap-3 sm:gap-4">
                             <Card className={sectionCardClass}>
                                 <CardHeader>
-                                    <CardTitle className="text-foreground text-lg font-extrabold">
+                                    <CardTitle className="text-foreground text-lg font-semibold">
                                         Your details
                                     </CardTitle>
                                 </CardHeader>
@@ -113,7 +113,7 @@ export default function StorefrontCheckoutConfirmation({
 
                             <Card className={sectionCardClass}>
                                 <CardHeader>
-                                    <CardTitle className="text-foreground text-lg font-extrabold">
+                                    <CardTitle className="text-foreground text-lg font-semibold">
                                         Delivery
                                     </CardTitle>
                                 </CardHeader>
@@ -143,7 +143,7 @@ export default function StorefrontCheckoutConfirmation({
 
                             <Card className={sectionCardClass}>
                                 <CardHeader>
-                                    <CardTitle className="text-foreground text-lg font-extrabold">
+                                    <CardTitle className="text-foreground text-lg font-semibold">
                                         Payment at delivery
                                     </CardTitle>
                                 </CardHeader>
@@ -161,10 +161,10 @@ export default function StorefrontCheckoutConfirmation({
 
                         <aside className="bg-accent h-fit p-5 lg:sticky lg:top-28">
                             <div className="flex items-center justify-between gap-3">
-                                <h2 className="text-foreground text-2xl font-bold tracking-tight">
+                                <h2 className="text-foreground text-2xl font-semibold tracking-tight">
                                     Your order
                                 </h2>
-                                <span className="text-muted-foreground text-xs font-extrabold tracking-wider uppercase">
+                                <span className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
                                     {order.itemCount} item
                                     {order.itemCount === 1 ? '' : 's'}
                                 </span>
@@ -176,7 +176,7 @@ export default function StorefrontCheckoutConfirmation({
                                         key={`${item.name}-${index}`}
                                         className="flex items-center gap-3"
                                     >
-                                        <div className="bg-muted size-12 shrink-0 overflow-hidden rounded-md">
+                                        <div className="bg-card size-12 shrink-0 overflow-hidden rounded-xl">
                                             <StorefrontProductImage
                                                 src={item.image}
                                                 alt={item.name}
@@ -198,7 +198,7 @@ export default function StorefrontCheckoutConfirmation({
                                                     .join(' · ')}
                                             </p>
                                         </div>
-                                        <p className="text-foreground shrink-0 text-sm font-bold">
+                                        <p className="text-foreground shrink-0 text-sm font-semibold">
                                             {item.formattedLineTotal}
                                         </p>
                                     </li>
@@ -228,17 +228,17 @@ export default function StorefrontCheckoutConfirmation({
                                     <dt className="text-muted-foreground">
                                         Delivery
                                     </dt>
-                                    <dd className="text-foreground font-bold">
+                                    <dd className="text-foreground font-semibold">
                                         {order.deliveryFee}
                                     </dd>
                                 </div>
                             </dl>
 
                             <div className="border-border mt-4 flex items-end justify-between gap-3 border-t pt-4">
-                                <span className="text-foreground text-base font-bold">
+                                <span className="text-foreground text-base font-semibold">
                                     Total
                                 </span>
-                                <span className="text-foreground text-2xl font-bold">
+                                <span className="text-foreground text-2xl font-semibold">
                                     {order.total}
                                 </span>
                             </div>
@@ -246,7 +246,7 @@ export default function StorefrontCheckoutConfirmation({
                             <Button
                                 asChild
                                 size="lg"
-                                className="mt-5 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
+                                className="mt-5 h-12 w-full text-sm font-semibold"
                             >
                                 <Link href={shop.url()}>Continue shopping</Link>
                             </Button>
@@ -255,7 +255,7 @@ export default function StorefrontCheckoutConfirmation({
                                     asChild
                                     variant="outline"
                                     size="lg"
-                                    className="mt-2 h-12 w-full rounded-none text-sm font-bold tracking-wide uppercase"
+                                    className="mt-2 h-12 w-full text-sm font-semibold"
                                 >
                                     <Link href={order.viewOrderUrl}>
                                         View order

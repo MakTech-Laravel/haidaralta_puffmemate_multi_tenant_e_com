@@ -258,7 +258,7 @@ export function ProductAssignTransactionsPage({
                     <Badge
                         variant="outline"
                         className={cn(
-                            'border-transparent bg-sky-500/10 font-medium text-sky-700 dark:bg-sky-500/15 dark:text-sky-400',
+                            'border-transparent bg-secondary font-medium text-foreground',
                         )}
                     >
                         {row.original.type_label}
@@ -280,7 +280,7 @@ export function ProductAssignTransactionsPage({
                 cell: ({ row }) => (
                     <Badge
                         variant="outline"
-                        className="border-transparent bg-emerald-500/10 font-medium text-emerald-700 tabular-nums dark:bg-emerald-500/15 dark:text-emerald-400"
+                        className="border-transparent bg-primary/5 font-medium text-foreground tabular-nums"
                     >
                         {row.original.quantity}
                     </Badge>

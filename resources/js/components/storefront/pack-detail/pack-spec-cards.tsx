@@ -57,19 +57,19 @@ export function PackSpecCards({ pack, className }: PackSpecCardsProps) {
 
     return (
         <section className={className}>
-            <p className="text-primary text-[11px] font-bold tracking-wider uppercase">
+            <p className="text-primary text-[11px] font-semibold tracking-wider uppercase">
                 Pack details
             </p>
-            <h2 className="text-foreground mt-1 text-2xl font-extrabold tracking-tight sm:text-3xl">
+            <h2 className="text-foreground mt-1 text-2xl font-semibold tracking-tight sm:text-3xl">
                 Verified Pack Specifications
             </h2>
             <div className="mt-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
                 {cards.map((card) => (
                     <div key={card.label} className="bg-muted/60 rounded-xl p-4">
-                        <p className="text-muted-foreground text-[10px] font-bold tracking-wider uppercase">
+                        <p className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                             {card.label}
                         </p>
-                        <p className="text-foreground mt-2 text-lg leading-tight font-bold">
+                        <p className="text-foreground mt-2 text-lg leading-tight font-semibold">
                             {card.value}
                         </p>
                         <p className="text-muted-foreground mt-1 text-xs">

@@ -9,18 +9,18 @@ type ProductSpecificationsProps = {
 
 export function ProductSpecifications({ rows }: ProductSpecificationsProps) {
     return (
-        <section className="bg-accent flex flex-col gap-4 p-5">
-            <h2 className="text-foreground text-xl font-bold tracking-tight uppercase">
+        <section className="bg-muted flex flex-col gap-4 rounded-3xl p-5 sm:p-8">
+            <h2 className="text-foreground text-xl font-semibold tracking-tight">
                 Specifications
             </h2>
-            <div className="overflow-hidden">
+            <div className="bg-card overflow-hidden rounded-2xl">
                 <table className="w-full text-left text-sm">
-                    <thead className="bg-primary/15">
+                    <thead className="bg-card">
                         <tr>
-                            <th className="text-primary font-inter px-4 py-3 font-bold">
+                            <th className="text-muted-foreground font-inter px-4 py-3 text-xs font-semibold tracking-wide uppercase">
                                 Specification
                             </th>
-                            <th className="text-primary font-inter px-4 py-3 font-bold">
+                            <th className="text-muted-foreground font-inter px-4 py-3 text-xs font-semibold tracking-wide uppercase">
                                 Details
                             </th>
                         </tr>

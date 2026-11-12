@@ -24,7 +24,7 @@ export function AboutDelivery({ data, className }: AboutDeliveryProps) {
                     <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
                         {data.eyebrow}
                     </p>
-                    <h2 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+                    <h2 className="text-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
                         {data.heading}
                     </h2>
                     <div className="text-muted-foreground font-inter mt-4 max-w-xl space-y-3 text-sm leading-relaxed font-normal sm:text-lg">
@@ -37,7 +37,7 @@ export function AboutDelivery({ data, className }: AboutDeliveryProps) {
                 <div className="border-border bg-background rounded-2xl border p-5 shadow-sm sm:p-6">
                     <div className="flex items-center justify-between">
                         <div className="">
-                            <p className="text-muted-foreground font-inter text-sm font-bold">
+                            <p className="text-muted-foreground font-inter text-sm font-semibold">
                                 Order status
                             </p>
                             <p className="text-foreground font-inter text-lg leading-relaxed font-semibold tracking-[0.10em] uppercase">
@@ -45,7 +45,7 @@ export function AboutDelivery({ data, className }: AboutDeliveryProps) {
                             </p>
                         </div>
                         <div className="">
-                            <button className="text-primary bg-primary/10 font-inter rounded-md px-4 py-2 text-sm font-semibold">
+                            <button className="text-primary bg-primary/10 font-inter rounded-full px-4 py-2 text-sm font-semibold">
                                 Live
                             </button>
                         </div>
@@ -76,7 +76,7 @@ export function AboutDelivery({ data, className }: AboutDeliveryProps) {
                                             status.state === 'active' &&
                                                 'border-primary bg-primary text-primary-foreground',
                                             status.state === 'done' &&
-                                                'border-foreground bg-foreground text-background',
+                                                'border-primary bg-primary text-primary-foreground',
                                             status.state === 'pending' &&
                                                 'border-border bg-background text-muted-foreground',
                                         )}

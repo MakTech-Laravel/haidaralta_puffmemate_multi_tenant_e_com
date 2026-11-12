@@ -10,7 +10,7 @@ export default function StorefrontCart(cart: StorefrontCart) {
         <>
             <Head title="Cart" />
 
-            <div className="bg-muted/50 flex-1">
+            <div className="bg-muted flex-1">
                 <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                     <Link
                         href={shop.url()}
@@ -23,7 +23,7 @@ export default function StorefrontCart(cart: StorefrontCart) {
 
                     <div className="mt-4 mb-8">
                         <div className="flex flex-wrap items-baseline gap-3">
-                            <h1 className="text-foreground text-4xl font-extrabold tracking-tight">
+                            <h1 className="text-foreground text-4xl font-semibold tracking-tight">
                                 Your cart
                             </h1>
                             <span className="text-muted-foreground text-lg font-medium">

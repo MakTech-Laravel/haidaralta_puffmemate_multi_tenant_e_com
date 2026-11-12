@@ -36,27 +36,27 @@ export function AgeGateDialog() {
     return (
         <Dialog open={open}>
             <DialogContent
-                className="max-h-[min(90vh,40rem)] gap-0 overflow-y-auto rounded-2xl border-none p-6 text-center shadow-xl sm:max-w-md sm:p-8 [&>button]:hidden"
+                className="max-h-[min(90vh,40rem)] gap-0 overflow-y-auto rounded-3xl border-none p-6 text-center shadow-xl sm:max-w-md sm:p-8 [&>button]:hidden"
                 onInteractOutside={(event) => event.preventDefault()}
                 onEscapeKeyDown={(event) => event.preventDefault()}
             >
-                <div className="border-primary text-primary mx-auto flex size-16 items-center justify-center rounded-xl border-2">
-                    <span className="text-2xl font-extrabold tracking-tight">
+                <div className="border-primary text-primary mx-auto flex size-16 items-center justify-center rounded-2xl border-2">
+                    <span className="text-2xl font-semibold tracking-tight">
                         18+
                     </span>
                 </div>
 
-                <div className="bg-primary/5 text-foreground mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1">
+                <div className="bg-muted text-foreground mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full px-3 py-1">
                     <ShieldCheck
                         className="text-primary size-3.5 shrink-0"
                         aria-hidden
                     />
-                    <span className="text-[0.65rem] font-extrabold tracking-wider uppercase">
+                    <span className="text-[0.65rem] font-semibold tracking-wider uppercase">
                         Statutory compliance
                     </span>
                 </div>
 
-                <DialogTitle className="text-foreground mt-5 text-center text-xl font-bold tracking-tight sm:text-2xl">
+                <DialogTitle className="text-foreground mt-5 text-center text-xl font-semibold tracking-tight sm:text-2xl">
                     Are you 18 years or older?
                 </DialogTitle>
 
@@ -71,7 +71,7 @@ export function AgeGateDialog() {
                     <Button
                         type="button"
                         size="lg"
-                        className="h-12 w-full rounded-xl text-sm font-bold"
+                        className="h-12 w-full text-sm font-semibold"
                         onClick={acknowledge}
                     >
                         <span className="bg-primary-foreground/20 flex size-5 items-center justify-center rounded-full">
@@ -83,7 +83,7 @@ export function AgeGateDialog() {
                         type="button"
                         variant="outline"
                         size="lg"
-                        className="h-12 w-full rounded-xl text-sm font-bold"
+                        className="h-12 w-full text-sm font-semibold"
                         onClick={acknowledge}
                     >
                         No, I am under 18

@@ -32,7 +32,7 @@ export function FeaturedPack({ pack, className }: FeaturedPackProps) {
                 className,
             )}
         >
-            <span className="bg-primary text-primary-foreground absolute -top-3 right-4 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-bold tracking-wider uppercase shadow-sm sm:right-6">
+            <span className="bg-primary text-primary-foreground absolute -top-3 right-4 inline-flex items-center gap-1 rounded-full px-3 py-1 text-[10px] font-semibold tracking-wider uppercase shadow-sm sm:right-6">
                 <Star className="size-3 fill-current" />
                 Weekly flagship saver
             </span>
@@ -57,7 +57,7 @@ export function FeaturedPack({ pack, className }: FeaturedPackProps) {
                 <div className="flex min-w-0 flex-col">
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                         {pack.discountPercent > 0 ? (
-                            <span className="bg-primary text-primary-foreground rounded-md px-2 py-0.5 font-bold tracking-wide uppercase">
+                            <span className="bg-primary text-primary-foreground rounded-full px-2.5 py-0.5 font-semibold tracking-wide uppercase">
                                 {pack.discountPercent}% instant discount
                             </span>
                         ) : null}
@@ -68,7 +68,7 @@ export function FeaturedPack({ pack, className }: FeaturedPackProps) {
                         ) : null}
                     </div>
 
-                    <h2 className="text-foreground mt-3 text-2xl leading-tight font-extrabold tracking-tight sm:text-3xl">
+                    <h2 className="text-foreground mt-3 text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
                         <Link href={detailHref} className="hover:underline">
                             {pack.name}
                         </Link>
@@ -95,11 +95,11 @@ export function FeaturedPack({ pack, className }: FeaturedPackProps) {
                             </p>
                         ) : null}
                         <div className="mt-1 flex flex-wrap items-center gap-3">
-                            <p className="text-foreground text-3xl font-extrabold tabular-nums">
+                            <p className="text-foreground text-3xl font-semibold tabular-nums">
                                 {formatStorefrontAud(pack.price)}
                             </p>
                             {pack.savings ? (
-                                <span className="bg-primary/10 text-foreground rounded-md px-2 py-0.5 text-xs font-bold uppercase">
+                                <span className="bg-primary/10 text-foreground rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase">
                                     Save {formatStorefrontAud(pack.savings)}
                                 </span>
                             ) : null}

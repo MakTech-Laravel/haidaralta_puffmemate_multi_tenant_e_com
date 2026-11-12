@@ -63,6 +63,19 @@ class StoreProductRequest extends FormRequest
         return $rules;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'packages.*.label.required' => 'Enter a package label, or remove this row.',
+            'packages.*.quantity.required' => 'Enter a package quantity, or remove this row.',
+            'packages.*.quantity.min' => 'Package quantity must be at least 1, or remove this row.',
+            'packages.*.price.required' => 'Enter a package price, or remove this row.',
+        ];
+    }
+
     private function prepareProductPackagesInput(): void
     {
         if (! (bool) config('catalog.show_product_packages')) {

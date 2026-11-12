@@ -23,7 +23,19 @@ class UpdateProductPackageRequest extends FormRequest
             'quantity' => ['required', 'integer', 'min:1', 'max:99999'],
             'price' => ['required', 'numeric', 'min:0'],
             'status' => ['sometimes', 'boolean'],
-            'sort_order' => ['sometimes', 'integer', 'min:0', 'max:99999'],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return [
+            'label.required' => 'Enter a package label.',
+            'quantity.required' => 'Enter a package quantity.',
+            'quantity.min' => 'Package quantity must be at least 1.',
+            'price.required' => 'Enter a package price.',
         ];
     }
 }

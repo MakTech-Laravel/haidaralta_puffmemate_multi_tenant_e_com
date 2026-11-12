@@ -26,7 +26,7 @@ export function AboutHowItWorks({ data, className }: AboutHowItWorksProps) {
                     <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
                         {data.eyebrow}
                     </p>
-                    <h2 className="text-foreground mt-3 text-3xl font-bold tracking-tight sm:text-5xl">
+                    <h2 className="text-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
                         {data.heading}
                     </h2>
                     <p className="text-muted-foreground font-inter mt-4 text-sm leading-relaxed font-normal sm:text-lg">
@@ -48,13 +48,13 @@ export function AboutHowItWorks({ data, className }: AboutHowItWorksProps) {
                                         <Icon className="size-6" aria-hidden />
                                     </span>
                                     <span
-                                        className="text-muted-foreground/25 text-3xl font-extrabold tabular-nums"
+                                        className="text-muted-foreground/25 text-3xl font-semibold tabular-nums"
                                         aria-hidden
                                     >
                                         {step.number}
                                     </span>
                                 </div>
-                                <h3 className="text-foreground font-inter mt-4 text-lg font-bold">
+                                <h3 className="text-foreground font-inter mt-4 text-lg font-semibold">
                                     {step.title}
                                 </h3>
                                 <p className="text-muted-foreground font-inter mt-2 text-sm leading-relaxed font-normal">

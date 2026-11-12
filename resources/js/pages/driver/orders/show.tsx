@@ -385,7 +385,7 @@ export default function DriverOrderShow({ order }: DriverOrderShowProps) {
                                         ? `Discount (${order.couponCode})`
                                         : 'Discount'}
                                 </span>
-                                <span className="font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                                <span className="font-medium tabular-nums text-foreground">
                                     −{order.discountLabel}
                                 </span>
                             </div>

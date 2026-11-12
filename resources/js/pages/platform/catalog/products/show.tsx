@@ -117,6 +117,8 @@ type Product = {
     }[];
     status: boolean;
     packages_enabled?: boolean;
+    selling_price?: string | number | null;
+    regular_price?: string | number | null;
     variants: ProductVariant[];
     packages: CatalogProductPackage[];
     created_at: string | null;
@@ -933,6 +935,8 @@ export default function PlatformProductsShow({
                     productName={product.name}
                     packagesEnabled={product.packages_enabled ?? true}
                     packages={product.packages ?? []}
+                    sellingPrice={product.selling_price}
+                    regularPrice={product.regular_price}
                 />
             </div>
 

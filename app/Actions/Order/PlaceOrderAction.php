@@ -26,8 +26,10 @@ use App\Services\Inventory\InventoryReservationService;
 use App\Services\Notifications\NotificationService;
 use App\Services\Order\Allocation\AreaCheckoutAllocator;
 use App\Services\Order\AllocationDecisionRecorder;
+use App\Services\Order\DriverAutoAssignService;
 use App\Services\Order\OrderPlacementNotifier;
 use App\Services\Order\StockTransferService;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\MediaUrl;
 use App\Support\Order\OrderNumber;
 use App\Support\ProductPackagePricing;
@@ -127,7 +129,22 @@ class PlaceOrderAction
                 $cart->items,
                 $acceptLate,
                 true,
+                $data['delivery_method'] ?? null,
             );
+
+            if (($data['delivery_method'] ?? null) === DeliveryShiftAvailability::METHOD_SAME_DAY
+                && ! $plan['same_day_in_radius']) {
+                throw ValidationException::withMessages([
+                    'delivery_method' => DeliveryShiftAvailability::sameDayOutOfRadiusMessage(),
+                ]);
+            }
+
+            if ($plan['requires_late_delivery']
+                && ($data['delivery_method'] ?? null) === DeliveryShiftAvailability::METHOD_SAME_DAY) {
+                throw ValidationException::withMessages([
+                    'delivery_method' => DeliveryShiftAvailability::SAME_DAY_LATE_ITEMS_MESSAGE,
+                ]);
+            }
 
             $inventoryMap = $this->loadInventoryMap($plan);
             $locked = $this->lockPlan($plan, $inventoryMap);
@@ -266,7 +283,13 @@ class PlaceOrderAction
 
         if ($placed) {
             $this->placements->issue($order);
+
+            // Repeat customers open as Placed; new customers get a driver when staff confirm.
+            rescue(fn () => app(DriverAutoAssignService::class)->reserve($order->fulfillment));
         }
+
+        // Non-critical: an SMS failure must never fail an order that is already placed.
+        rescue(fn () => $this->placements->sendViewLink($order));
 
         $this->notifications->send(
             [$user->id],

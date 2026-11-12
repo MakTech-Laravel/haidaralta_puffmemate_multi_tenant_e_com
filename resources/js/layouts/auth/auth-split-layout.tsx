@@ -12,18 +12,18 @@ export default function AuthSplitLayout({
 
     return (
         <div className="bg-background grid min-h-dvh lg:grid-cols-2">
-            <aside className="relative isolate overflow-x-hidden bg-black px-5 py-4 text-white sm:px-8 sm:py-5 lg:flex lg:min-h-dvh lg:flex-col lg:justify-between lg:overflow-hidden lg:px-12 lg:py-14">
+            <aside className="bg-ink-surface text-ink-surface-foreground relative isolate overflow-x-hidden px-5 py-4 sm:px-8 sm:py-5 lg:flex lg:min-h-dvh lg:flex-col lg:justify-between lg:overflow-hidden lg:px-12 lg:py-14">
                 <div
                     className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,color-mix(in_oklab,var(--primary)_38%,transparent),transparent_55%),linear-gradient(145deg,transparent_40%,color-mix(in_oklab,var(--primary)_18%,transparent))] opacity-90 motion-safe:animate-in motion-safe:fade-in motion-safe:duration-700"
                     aria-hidden
                 />
                 <div
-                    className="bg-primary pointer-events-none absolute -right-16 -bottom-20 hidden size-56 rotate-12 rounded-3xl opacity-90 motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 lg:block lg:size-72"
+                    className="bg-primary/25 pointer-events-none absolute -right-16 -bottom-20 hidden size-56 rotate-12 rounded-3xl motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-bottom-4 motion-safe:duration-700 lg:block lg:size-72"
                     aria-hidden
                 />
 
                 <div className="relative z-10 flex flex-col gap-3 lg:flex-1 lg:justify-center lg:gap-8 lg:py-4">
-                    <p className="text-primary hidden text-xs font-semibold tracking-[0.16em] uppercase sm:text-sm lg:block">
+                    <p className="text-ink-surface-foreground/60 hidden text-xs font-semibold tracking-[0.16em] uppercase sm:text-sm lg:block">
                         Australia · Multi-branch
                     </p>
 
@@ -45,13 +45,13 @@ export default function AuthSplitLayout({
 
                     <div className="bg-primary h-0.5 w-10 lg:h-1 lg:w-14" aria-hidden />
 
-                    <p className="font-dm-sans hidden max-w-sm text-sm leading-relaxed text-white/85 sm:text-base lg:block">
+                    <p className="font-dm-sans text-ink-surface-foreground/80 hidden max-w-sm text-sm leading-relaxed sm:text-base lg:block">
                         Sign in to order, deliver, or run the desk — one account
                         entry for every portal.
                     </p>
                 </div>
 
-                <p className="text-primary relative z-10 mt-8 hidden text-xs font-semibold tracking-[0.14em] uppercase lg:block">
+                <p className="text-ink-surface-foreground/60 relative z-10 mt-8 hidden text-xs font-semibold tracking-[0.14em] uppercase lg:block">
                     Shop · Deliver · Operate
                 </p>
             </aside>

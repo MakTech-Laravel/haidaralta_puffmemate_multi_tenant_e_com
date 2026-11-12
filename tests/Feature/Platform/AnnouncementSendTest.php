@@ -312,7 +312,7 @@ test('announcement mail template includes the title and link', function () {
         ->assertSeeInHtml('Alex')
         ->assertSeeInHtml('https://example.com/shop')
         ->assertSeeInHtml('Shop now')
-        ->assertSeeInHtml('#C4472F')
+        ->assertSeeInHtml('#1D1D1F')
         ->assertSeeInText('Sale')
         ->assertSeeInText('https://example.com/shop');
 });

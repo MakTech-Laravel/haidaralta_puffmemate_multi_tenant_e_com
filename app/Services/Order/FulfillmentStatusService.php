@@ -50,7 +50,14 @@ class FulfillmentStatusService
             return $this->cancel($fulfillment, $actor, $comment ?? 'Order cancelled');
         }
 
-        return $this->apply($fulfillment, $status, $actor, $comment ?? 'Status updated');
+        $updated = $this->apply($fulfillment, $status, $actor, $comment ?? 'Status updated');
+
+        if ($status === FulfillmentStatus::Ready) {
+            // Resolved lazily: DriverAssignmentService depends on this service.
+            app(DriverAutoAssignService::class)->promoteAtReady($updated, $actor);
+        }
+
+        return $updated;
     }
 
     public function cancel(OrderFulfillment $fulfillment, ?User $actor = null, string $comment = 'Order cancelled', bool $force = false): OrderFulfillment
@@ -100,8 +107,8 @@ class FulfillmentStatusService
                 $this->payments->cancel($order);
             }
 
-            if ($fulfillment->driver_id !== null) {
-                $fulfillment->forceFill(['driver_id' => null])->save();
+            if ($fulfillment->driver_id !== null || $fulfillment->reserved_driver_id !== null) {
+                $fulfillment->forceFill(['driver_id' => null, 'reserved_driver_id' => null])->save();
             }
 
             $this->apply($fulfillment->refresh(), FulfillmentStatus::Cancelled, $actor, $comment);
@@ -169,6 +176,9 @@ class FulfillmentStatusService
 
             if ($status === FulfillmentStatus::Placed && $old !== FulfillmentStatus::Placed) {
                 $placed = $order->refresh();
+                DB::afterCommit(function () use ($fulfillment): void {
+                    rescue(fn () => app(DriverAutoAssignService::class)->reserve($fulfillment));
+                });
                 DB::afterCommit(function () use ($placed): void {
                     $this->placements->issue($placed);
                 });

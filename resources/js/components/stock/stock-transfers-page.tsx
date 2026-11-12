@@ -40,20 +40,13 @@ export type StockTransferRow = {
 type StockTransferAction = 'approve' | 'pick' | 'dispatch' | 'receive';
 
 const statusBadgeClass: Record<string, string> = {
-    requested:
-        'border-transparent bg-amber-500/15 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300',
-    approved:
-        'border-transparent bg-sky-500/15 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300',
-    picking:
-        'border-transparent bg-indigo-500/15 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300',
-    dispatched:
-        'border-transparent bg-blue-500/15 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300',
-    in_transit:
-        'border-transparent bg-violet-500/15 text-violet-800 dark:bg-violet-500/20 dark:text-violet-300',
-    received:
-        'border-transparent bg-emerald-500/15 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300',
-    cancelled:
-        'border-transparent bg-zinc-500/15 text-zinc-700 dark:bg-zinc-500/20 dark:text-zinc-300',
+    requested: 'border-transparent bg-secondary text-foreground',
+    approved: 'border-transparent bg-primary/15 text-foreground',
+    picking: 'border-transparent bg-primary/15 text-foreground',
+    dispatched: 'border-transparent bg-primary/15 text-foreground',
+    in_transit: 'border-transparent bg-primary/15 text-foreground',
+    received: 'border-primary bg-secondary text-foreground',
+    cancelled: 'border-transparent bg-muted text-muted-foreground',
 };
 
 export function StockTransfersPage({

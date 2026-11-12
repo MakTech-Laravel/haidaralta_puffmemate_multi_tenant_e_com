@@ -90,7 +90,7 @@ function VerifiedMark({ ok }: { ok: boolean }) {
             className={cn(
                 'inline-flex items-center gap-1 text-xs font-medium',
                 ok
-                    ? 'text-emerald-600 dark:text-emerald-400'
+                    ? 'text-foreground'
                     : 'text-muted-foreground',
             )}
         >

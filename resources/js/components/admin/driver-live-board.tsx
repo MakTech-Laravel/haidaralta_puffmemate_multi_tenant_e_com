@@ -347,8 +347,8 @@ export function DriverLiveBoard({
                                     className={cn(
                                         'mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white',
                                         driver.signal === 'live'
-                                            ? 'bg-blue-600'
-                                            : 'bg-gray-400',
+                                            ? 'bg-primary'
+                                            : 'bg-muted-foreground',
                                     )}
                                 >
                                     {initials(driver.name)}
@@ -377,7 +377,7 @@ export function DriverLiveBoard({
                                 {driver.signal ===
                                 'live' ? null : driver.signal === 'stale' ? (
                                     <SignalLow
-                                        className="text-amber-500 size-4 shrink-0"
+                                        className="text-primary size-4 shrink-0"
                                         aria-label="Signal is old"
                                     />
                                 ) : (

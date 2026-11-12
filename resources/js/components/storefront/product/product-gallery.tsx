@@ -32,7 +32,7 @@ export function ProductGallery({
         <div className={cn('flex flex-col gap-3', className)}>
             <div
                 className={cn(
-                    'bg-muted relative aspect-square overflow-hidden',
+                    'bg-muted relative aspect-square overflow-hidden rounded-3xl',
                     mainClassName,
                 )}
             >
@@ -58,7 +58,7 @@ export function ProductGallery({
                                 type="button"
                                 onClick={() => setActiveIndex(index)}
                                 className={cn(
-                                    'bg-muted relative size-16 overflow-hidden rounded-md border-2 transition sm:size-20',
+                                    'bg-muted relative size-16 overflow-hidden rounded-xl border-2 transition sm:size-20',
                                     index === activeIndex
                                         ? 'border-primary'
                                         : 'hover:border-border border-transparent',

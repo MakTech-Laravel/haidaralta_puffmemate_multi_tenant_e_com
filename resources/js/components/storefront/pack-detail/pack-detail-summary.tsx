@@ -30,7 +30,7 @@ export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
             )}
         >
             <div>
-                <h1 className="text-foreground text-2xl leading-tight font-extrabold tracking-tight sm:text-3xl">
+                <h1 className="text-foreground text-2xl leading-tight font-semibold tracking-tight sm:text-3xl">
                     {pack.name}
                 </h1>
                 {subtitle ? (
@@ -51,7 +51,7 @@ export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
             />
 
             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-                <p className="text-primary text-3xl font-extrabold tabular-nums">
+                <p className="text-primary text-3xl font-semibold tabular-nums">
                     {formatStorefrontAud(pack.price)}
                 </p>
                 {pack.savings ? (
@@ -95,7 +95,7 @@ export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
                     {PAYMENT_OPTIONS.map((option) => (
                         <span
                             key={option}
-                            className="border-border bg-card text-foreground rounded-md border px-2.5 py-1 text-xs font-semibold"
+                            className="border-border bg-card text-foreground rounded-full border px-2.5 py-1 text-xs font-semibold"
                         >
                             {option}
                         </span>

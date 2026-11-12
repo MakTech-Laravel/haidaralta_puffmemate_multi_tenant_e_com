@@ -65,7 +65,7 @@ class AnnouncementMail extends Mailable
 
         $themeColor = filled($brand['themeColor'] ?? null)
             ? (string) $brand['themeColor']
-            : '#C4472F';
+            : '#1D1D1F';
 
         return [
             'title' => $this->title,

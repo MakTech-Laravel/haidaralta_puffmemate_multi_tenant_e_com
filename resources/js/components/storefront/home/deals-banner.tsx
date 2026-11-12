@@ -15,20 +15,20 @@ export function HomeDealsBanner({ className }: HomeDealsBannerProps) {
         <div
             id="home-deals"
             className={cn(
-                'flex scroll-mt-24 flex-col items-center gap-10 overflow-hidden rounded-4xl bg-black px-8 py-10 sm:scroll-mt-28 sm:px-12 sm:py-12 md:flex-row md:items-center md:justify-between md:gap-12 md:px-14 md:py-14',
+                'bg-ink-surface flex scroll-mt-24 flex-col items-center gap-10 overflow-hidden rounded-4xl px-8 py-10 sm:scroll-mt-28 sm:px-12 sm:py-12 md:flex-row md:items-center md:justify-between md:gap-12 md:px-14 md:py-14',
                 className,
             )}
         >
             <div className="max-w-xl flex-1 text-center md:text-left">
-                <p className="text-primary font-inter text-xs font-semibold tracking-[0.16em] uppercase sm:text-sm">
+                <p className="text-ink-surface-foreground/70 font-inter text-xs font-semibold tracking-[0.16em] uppercase sm:text-sm">
                     {brand.shortName} Deals
                 </p>
-                <h2 className="mt-3 text-3xl font-bold tracking-tight text-white sm:text-4xl md:text-5xl">
+                <h2 className="text-ink-surface-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
                     Bigger brands.
                     <br />
                     Better deals.
                 </h2>
-                <p className="font-inter mt-4 text-sm leading-relaxed text-white/90 sm:text-base">
+                <p className="text-ink-surface-foreground/80 font-inter mt-4 text-sm leading-relaxed sm:text-base">
                     ASRV-style product discovery meets Apple&apos;s clean visual
                     approach. Find packs, bundles and weekend specials without
                     the clutter.
@@ -36,7 +36,7 @@ export function HomeDealsBanner({ className }: HomeDealsBannerProps) {
                 <Button
                     asChild
                     size="lg"
-                    className="mt-8 h-11 rounded-md px-6 font-semibold shadow-[0_8px_24px_color-mix(in_oklab,var(--primary)_45%,transparent)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
+                    className="mt-8 h-12 px-7 font-semibold transition hover:-translate-y-0.5"
                 >
                     <Link href={shop()} prefetch>
                         Try Combo Pack
@@ -46,10 +46,10 @@ export function HomeDealsBanner({ className }: HomeDealsBannerProps) {
 
             <div className="flex shrink-0 items-center justify-center">
                 <div
-                    className="bg-primary flex size-40 rotate-12 items-center justify-center rounded-3xl text-center transition duration-300 hover:rotate-14 sm:size-48 md:size-52"
+                    className="bg-ink-surface-foreground text-ink-surface flex size-40 rotate-12 items-center justify-center rounded-3xl text-center transition duration-300 hover:rotate-14 sm:size-48 md:size-52"
                     aria-hidden
                 >
-                    <p className="text-2xl leading-tight font-extrabold tracking-tight text-white uppercase sm:text-3xl md:text-4xl">
+                    <p className="text-2xl leading-tight font-semibold tracking-tight uppercase sm:text-3xl md:text-4xl">
                         Save
                         <br />
                         More

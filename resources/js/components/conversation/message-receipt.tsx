@@ -60,7 +60,7 @@ export function MessageReceipt({ state }: { state: ReceiptState }) {
             className={cn(
                 'size-3.5 shrink-0',
                 state === 'failed' && 'text-destructive',
-                state === 'read' && 'text-emerald-600',
+                state === 'read' && 'text-foreground',
                 (state === 'sending' ||
                     state === 'sent' ||
                     state === 'delivered') &&

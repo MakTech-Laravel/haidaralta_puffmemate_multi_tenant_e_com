@@ -1,76 +1,70 @@
+/**
+ * Badge tints. Colours come from the semantic tokens in resources/css/app.css
+ * (success / warning / destructive / primary), so re-theming needs no change here.
+ */
 const tint = {
-    amber: 'border-transparent bg-amber-500/15 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300',
-    sky: 'border-transparent bg-sky-500/15 text-sky-800 dark:bg-sky-500/20 dark:text-sky-300',
-    blue: 'border-transparent bg-blue-500/15 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300',
-    indigo: 'border-transparent bg-indigo-500/15 text-indigo-800 dark:bg-indigo-500/20 dark:text-indigo-300',
-    violet: 'border-transparent bg-violet-500/15 text-violet-800 dark:bg-violet-500/20 dark:text-violet-300',
-    teal: 'border-transparent bg-teal-500/15 text-teal-800 dark:bg-teal-500/20 dark:text-teal-300',
-    cyan: 'border-transparent bg-cyan-500/15 text-cyan-800 dark:bg-cyan-500/20 dark:text-cyan-300',
-    orange: 'border-transparent bg-orange-500/15 text-orange-800 dark:bg-orange-500/20 dark:text-orange-300',
-    emerald:
-        'border-transparent bg-emerald-500/15 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300',
-    rose: 'border-transparent bg-rose-500/15 text-rose-800 dark:bg-rose-500/20 dark:text-rose-300',
-    zinc: 'border-transparent bg-zinc-500/15 text-zinc-700 dark:bg-zinc-500/20 dark:text-zinc-300',
+    muted: 'border-transparent bg-muted text-muted-foreground',
+    soft: 'border-transparent bg-secondary text-foreground',
+    active: 'border-transparent bg-primary/10 text-primary',
+    success: 'border-transparent bg-success-tint text-success',
+    warning: 'border-transparent bg-warning-tint text-warning',
+    danger: 'border-transparent bg-destructive-tint text-destructive',
+    outline: 'border-primary bg-secondary text-foreground',
 } as const;
 
 export function orderStatusBadgeClass(status: string): string {
     switch (status) {
         case 'pending':
         case 'hold':
-            return tint.amber;
+            return tint.warning;
         case 'placed':
-            return tint.teal;
         case 'processing':
-            return tint.sky;
         case 'ready':
-            return tint.cyan;
         case 'assigned':
-            return tint.indigo;
         case 'picked_up':
-            return tint.violet;
         case 'out_for_delivery':
-            return tint.blue;
+            return tint.active;
         case 'arrived':
-            return tint.emerald;
+            return tint.active;
+        case 'delivered':
+            return tint.success;
         case 'delivery_failed':
-            return tint.rose;
+            return tint.danger;
         case 'returning':
         case 'returned':
-            return tint.orange;
-        case 'delivered':
-            return tint.emerald;
+            return tint.warning;
         case 'cancelled':
-            return tint.zinc;
+            return tint.muted;
         default:
-            return tint.zinc;
+            return tint.muted;
     }
 }
 
 export function orderSourceBadgeClass(source: string): string {
     switch (source) {
         case 'customer_checkout':
-            return tint.sky;
+            return tint.active;
         case 'driver_sale':
-            return tint.violet;
+            return tint.soft;
         case 'wholesale':
-            return tint.teal;
+            return tint.outline;
         default:
-            return tint.zinc;
+            return tint.muted;
     }
 }
 
 export function wholesaleInquiryStatusBadgeClass(status: string): string {
     switch (status) {
         case 'new':
-            return tint.amber;
+            return tint.active;
         case 'read':
-            return tint.sky;
+            return tint.soft;
         case 'converted':
-            return tint.emerald;
+            return tint.success;
         case 'rejected':
-            return tint.rose;
+            return tint.danger;
         default:
-            return tint.zinc;
+            return tint.muted;
     }
 }
 
@@ -96,18 +90,18 @@ export function paymentStatusLabel(status: string): string {
 export function paymentStatusBadgeClass(status: string): string {
     switch (status) {
         case 'pending_collection':
-            return tint.amber;
+            return tint.warning;
         case 'collected':
-            return tint.emerald;
+            return tint.active;
         case 'verified':
-            return tint.teal;
+            return tint.success;
         case 'failed':
-            return tint.rose;
+            return tint.danger;
         case 'refunded':
-            return tint.violet;
+            return tint.warning;
         case 'cancelled':
-            return tint.zinc;
+            return tint.muted;
         default:
-            return tint.zinc;
+            return tint.muted;
     }
 }

@@ -1,4 +1,4 @@
-﻿import { router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { useSyncExternalStore } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -238,13 +238,13 @@ const WHEEL_SPOKES = [0, 72, 144, 216, 288];
 function Wheel({ cx }: { cx: number }) {
     return (
         <g className="animate-navigation-wheel">
-            <circle cx={cx} cy={150} r={20} fill="#18181b" />
+            <circle cx={cx} cy={150} r={20} fill="#1d1d1f" />
             <circle
                 cx={cx}
                 cy={150}
                 r={16}
                 fill="none"
-                stroke="#3f3f46"
+                stroke="#6e6e73"
                 strokeWidth={2}
             />
             <circle cx={cx} cy={150} r={11} fill="url(#nav-rim)" />
@@ -255,17 +255,23 @@ function Wheel({ cx }: { cx: number }) {
                     y1={150}
                     x2={cx}
                     y2={140}
-                    stroke="#71717a"
+                    stroke="#8e8e93"
                     strokeWidth={2.5}
                     strokeLinecap="round"
                     transform={`rotate(${angle} ${cx} 150)`}
                 />
             ))}
-            <circle cx={cx} cy={150} r={4} fill="#3f3f46" />
+            <circle cx={cx} cy={150} r={4} fill="#6e6e73" />
         </g>
     );
 }
 
+/**
+ * Loading scene. SVG attributes cannot use Tailwind roles, so the hex values below mirror
+ * the palette in resources/css/app.css (grey / apple grey / ink / blue). Keep in sync
+ * with app.css when the palette changes. The cab and lettering follow the brand via
+ * var(--primary).
+ */
 function DeliveryTruckScene() {
     return (
         <svg viewBox="0 0 400 200" className="h-auto w-full" aria-hidden>
@@ -281,7 +287,7 @@ function DeliveryTruckScene() {
                 </mask>
                 <linearGradient id="nav-cargo" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" stopColor="#ffffff" />
-                    <stop offset="1" stopColor="#e4e4e7" />
+                    <stop offset="1" stopColor="#f5f5f7" />
                 </linearGradient>
                 <linearGradient id="nav-cab" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0" style={{ stopColor: 'var(--primary)' }} />
@@ -289,26 +295,26 @@ function DeliveryTruckScene() {
                         offset="1"
                         style={{
                             stopColor:
-                                'color-mix(in oklab, var(--primary) 72%, black)',
+                                'color-mix(in oklab, var(--primary) 72%, var(--palette-ink))',
                         }}
                     />
                 </linearGradient>
                 <linearGradient id="nav-glass" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0" stopColor="#e0f2fe" />
-                    <stop offset="1" stopColor="#7dd3fc" />
+                    <stop offset="0" stopColor="#f5f5f7" />
+                    <stop offset="1" stopColor="#c7c7cc" />
                 </linearGradient>
                 <radialGradient id="nav-rim">
-                    <stop offset="0" stopColor="#f4f4f5" />
-                    <stop offset="1" stopColor="#a1a1aa" />
+                    <stop offset="0" stopColor="#ffffff" />
+                    <stop offset="1" stopColor="#8e8e93" />
                 </radialGradient>
                 <linearGradient id="nav-beam" x1="0" x2="1">
-                    <stop offset="0" stopColor="#fde68a" stopOpacity="0.75" />
-                    <stop offset="1" stopColor="#fde68a" stopOpacity="0" />
+                    <stop offset="0" stopColor="#ffffff" stopOpacity="0.75" />
+                    <stop offset="1" stopColor="#ffffff" stopOpacity="0" />
                 </linearGradient>
             </defs>
 
             <g mask="url(#nav-edges)">
-                <g className="animate-navigation-skyline" fill="#e4e4e7">
+                <g className="animate-navigation-skyline" fill="#f5f5f7">
                     {[0, 400].map((offset) => (
                         <g key={offset} transform={`translate(${offset} 0)`}>
                             {BUILDINGS.map(([x, width, height]) => (
@@ -328,7 +334,7 @@ function DeliveryTruckScene() {
                                                 y={windowY}
                                                 width={4}
                                                 height={5}
-                                                fill="#fafafa"
+                                                fill="#ffffff"
                                             />
                                         ),
                                     )}
@@ -338,9 +344,9 @@ function DeliveryTruckScene() {
                     ))}
                 </g>
 
-                <rect x="0" y="168" width="400" height="3" fill="#a1a1aa" />
-                <rect x="0" y="171" width="400" height="29" fill="#3f3f46" />
-                <g className="animate-navigation-lane" fill="#fafafa">
+                <rect x="0" y="168" width="400" height="3" fill="#8e8e93" />
+                <rect x="0" y="171" width="400" height="29" fill="#6e6e73" />
+                <g className="animate-navigation-lane" fill="#ffffff">
                     {LANE_DASHES.map((x) => (
                         <rect
                             key={x}
@@ -354,7 +360,7 @@ function DeliveryTruckScene() {
                 </g>
 
                 <g
-                    stroke="#a1a1aa"
+                    stroke="#8e8e93"
                     strokeWidth="3"
                     strokeLinecap="round"
                     className="animate-navigation-speed"
@@ -374,7 +380,7 @@ function DeliveryTruckScene() {
                 opacity="0.18"
             />
 
-            <g fill="#d4d4d8">
+            <g fill="#e5e5ea">
                 {[0, 0.3, 0.6].map((delay) => (
                     <circle
                         key={delay}
@@ -395,7 +401,7 @@ function DeliveryTruckScene() {
                     height="98"
                     rx="8"
                     fill="url(#nav-cargo)"
-                    stroke="#d4d4d8"
+                    stroke="#e5e5ea"
                     strokeWidth="1.5"
                 />
                 <rect
@@ -405,21 +411,21 @@ function DeliveryTruckScene() {
                     height="9"
                     className="fill-primary"
                 />
-                <path d="M44 46 V132" stroke="#d4d4d8" strokeWidth="1.5" />
+                <path d="M44 46 V132" stroke="#e5e5ea" strokeWidth="1.5" />
                 <rect
                     x="31"
                     y="116"
                     width="6"
                     height="14"
                     rx="2"
-                    fill="#ef4444"
+                    fill="#8E8E93"
                 />
 
-                <polygon points="56,68 68,58 102,58 90,68" fill="#e8bb82" />
-                <polygon points="90,68 102,58 102,86 90,96" fill="#b9844d" />
-                <rect x="56" y="68" width="34" height="28" fill="#d6a064" />
-                <polygon points="70,68 82,58 88,58 76,68" fill="#f5deb3" />
-                <rect x="70" y="68" width="6" height="28" fill="#f5deb3" />
+                <polygon points="56,68 68,58 102,58 90,68" fill="#f5f5f7" />
+                <polygon points="90,68 102,58 102,86 90,96" fill="#2b70db" />
+                <rect x="56" y="68" width="34" height="28" fill="#c7c7cc" />
+                <polygon points="70,68 82,58 88,58 76,68" fill="#ffffff" />
+                <rect x="70" y="68" width="6" height="28" fill="#ffffff" />
                 <rect
                     x="59"
                     y="85"
@@ -445,7 +451,7 @@ function DeliveryTruckScene() {
                     fontSize="8"
                     fontWeight="700"
                     letterSpacing="1.6"
-                    fill="#52525b"
+                    fill="#6e6e73"
                 >
                     EXPRESS DELIVERY
                 </text>
@@ -488,7 +494,7 @@ function DeliveryTruckScene() {
                     width="5"
                     height="16"
                     rx="2"
-                    fill="#27272a"
+                    fill="#1d1d1f"
                 />
                 <rect
                     x="316"
@@ -496,7 +502,7 @@ function DeliveryTruckScene() {
                     width="8"
                     height="9"
                     rx="2"
-                    fill="#fde68a"
+                    fill="#ffffff"
                 />
                 <rect
                     x="298"
@@ -504,7 +510,7 @@ function DeliveryTruckScene() {
                     width="30"
                     height="10"
                     rx="3"
-                    fill="#27272a"
+                    fill="#1d1d1f"
                 />
                 <rect
                     x="36"
@@ -512,10 +518,10 @@ function DeliveryTruckScene() {
                     width="264"
                     height="10"
                     rx="2"
-                    fill="#27272a"
+                    fill="#1d1d1f"
                 />
-                <path d="M62 146 A28 28 0 0 1 118 146 Z" fill="#18181b" />
-                <path d="M252 146 A28 28 0 0 1 308 146 Z" fill="#18181b" />
+                <path d="M62 146 A28 28 0 0 1 118 146 Z" fill="#1d1d1f" />
+                <path d="M252 146 A28 28 0 0 1 308 146 Z" fill="#1d1d1f" />
             </g>
 
             <Wheel cx={90} />

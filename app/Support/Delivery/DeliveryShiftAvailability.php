@@ -15,6 +15,23 @@ final class DeliveryShiftAvailability
 
     public const METHOD_LATE = 'express';
 
+    /**
+     * Shown under the delivery method when Same day is picked for an order that has items on late delivery.
+     * Mirrored in resources/js/pages/storefront/checkout.tsx.
+     */
+    public const SAME_DAY_LATE_ITEMS_MESSAGE = "Same day delivery isn't available while some items are on late delivery. Choose Late delivery or remove those items.";
+
+    /**
+     * Shown under the delivery method when Same day is picked for an address outside the same-day radius.
+     * Mirrored in resources/js/pages/storefront/checkout.tsx.
+     */
+    public static function sameDayOutOfRadiusMessage(): string
+    {
+        $radiusKm = rtrim(rtrim(number_format((float) config('catalog.same_day_radius_km'), 1, '.', ''), '0'), '.');
+
+        return "Same day delivery is only available within {$radiusKm} km of our branches. Choose Late delivery or enter a closer address.";
+    }
+
     public function now(): CarbonInterface
     {
         return now(config('app.timezone'));
@@ -22,7 +39,7 @@ final class DeliveryShiftAvailability
 
     public function lateDeliveryMaxDays(): int
     {
-        return max(1, (int) config('catalog.late_delivery_max_days', 14));
+        return max(1, (int) config('catalog.late_delivery_max_days', 7));
     }
 
     /**

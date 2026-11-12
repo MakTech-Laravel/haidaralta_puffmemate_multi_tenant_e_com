@@ -22,7 +22,7 @@ export function RelatedPacks({ packs, className }: RelatedPacksProps) {
     return (
         <section className={className}>
             <div className="mb-5 flex items-end justify-between gap-4">
-                <h2 className="text-foreground text-xl font-extrabold tracking-tight sm:text-2xl">
+                <h2 className="text-foreground text-xl font-semibold tracking-tight sm:text-2xl">
                     Related In-Stock Selections
                 </h2>
                 <Link

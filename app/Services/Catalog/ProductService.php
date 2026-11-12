@@ -30,7 +30,7 @@ class ProductService
      *     packages?: list<array{
      *         label: string,
      *         quantity: int|string,
-     *         price: float|string,
+     *         price: float|string|null,
      *         status?: bool,
      *         sort_order?: int|string
      *     }>,
@@ -45,7 +45,7 @@ class ProductService
         ?User $actor = null,
     ): Product {
         return DB::transaction(function () use ($data, $primaryImage, $galleryImages, $actor): Product {
-            /** @var list<array{label: string, quantity: int|string, price: float|string, status?: bool, sort_order?: int|string}> $packages */
+            /** @var list<array{label: string, quantity: int|string, price: float|string|null, status?: bool, sort_order?: int|string}> $packages */
             $packages = [];
 
             if (array_key_exists('packages', $data) && is_array($data['packages'])) {
@@ -112,6 +112,23 @@ class ProductService
      * }  $data
      * @param  list<UploadedFile>  $galleryImages
      */
+    /**
+     * @param  array{
+     *     category_ids?: list<int>,
+     *     packages_enabled?: bool,
+     *     packages?: list<array{
+     *         id?: int|string|null,
+     *         label: string,
+     *         quantity: int|string,
+     *         price: float|string|null,
+     *         status?: bool,
+     *         sort_order?: int|string
+     *     }>,
+     *     remove_image?: bool,
+     *     remove_gallery_ids?: list<int>
+     * }  $data
+     * @param  list<UploadedFile>  $galleryImages
+     */
     public function update(
         Product $product,
         array $data,
@@ -125,7 +142,16 @@ class ProductService
             $removeGalleryIds = $data['remove_gallery_ids'] ?? [];
             /** @var list<int>|null $categoryIds */
             $categoryIds = $data['category_ids'] ?? null;
-            unset($data['remove_image'], $data['remove_gallery_ids'], $data['category_ids']);
+            /** @var list<array{id?: int|string|null, label: string, quantity: int|string, price: float|string|null, status?: bool, sort_order?: int|string}>|null $packages */
+            $packages = null;
+
+            if (array_key_exists('packages', $data)) {
+                $packages = is_array($data['packages'])
+                    ? array_values($data['packages'])
+                    : [];
+            }
+
+            unset($data['remove_image'], $data['remove_gallery_ids'], $data['category_ids'], $data['packages']);
 
             if (array_key_exists('color_code', $data)) {
                 $data['color_code'] = CatalogBackgroundColor::normalize(
@@ -184,7 +210,14 @@ class ProductService
                 $this->media->syncMany($product, 'gallery', $galleryImages);
             }
 
-            return $product->refresh()->load(['media', 'categories:id,name,slug']);
+            if (
+                $packages !== null
+                && (bool) config('catalog.show_product_packages')
+            ) {
+                $this->packages->syncForProduct($product, $packages);
+            }
+
+            return $product->refresh()->load(['media', 'categories:id,name,slug', 'packages']);
         });
     }
 

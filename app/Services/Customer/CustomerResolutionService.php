@@ -22,6 +22,17 @@ class CustomerResolutionService
     }
 
     /**
+     * The account that owns this phone, whatever its role (customer, driver, branch or platform).
+     * Phones are unique across all users, so this is the only account the number can belong to.
+     */
+    public function findAccountByPhone(string $phone): ?User
+    {
+        return User::query()
+            ->where('phone', Phone::toE164($phone))
+            ->first();
+    }
+
+    /**
      * Soft search customers by name, email, or phone for Place Order lookup.
      *
      * @return Collection<int, User>

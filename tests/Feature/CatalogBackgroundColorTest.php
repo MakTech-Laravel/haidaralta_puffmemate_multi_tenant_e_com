@@ -95,52 +95,52 @@ test('platform can create category and product with solid and gradient color_cod
     ]);
 });
 
-test('platform can persist a solid red catalog background', function () {
+test('platform can persist a solid primary catalog background', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $category = Category::factory()->create();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.products.store'), [
             'category_ids' => [$category->id],
-            'name' => 'Solid Red Kit',
-            'slug' => 'solid-red-kit',
-            'sku' => 'SKU-RED-1',
+            'name' => 'Solid Primary Kit',
+            'slug' => 'solid-primary-kit',
+            'sku' => 'SKU-PRIMARY-1',
             'status' => true,
             'color_code' => json_encode([
                 'mode' => 'solid',
-                'color' => '#EF4444',
+                'color' => '#8E8E93',
             ]),
         ])
-        ->assertRedirect(route('platform.products.show', 'solid-red-kit'));
+        ->assertRedirect(route('platform.products.show', 'solid-primary-kit'));
 
-    $product = Product::query()->where('slug', 'solid-red-kit')->firstOrFail();
+    $product = Product::query()->where('slug', 'solid-primary-kit')->firstOrFail();
 
     expect($product->color_code)->toBe([
         'mode' => 'solid',
-        'color' => '#EF4444',
+        'color' => '#8E8E93',
     ]);
 });
 
-test('platform can persist a solid red category background', function () {
+test('platform can persist a solid primary category background', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
 
     $this->actingAs($admin, 'platform')
         ->post(route('platform.categories.store'), [
-            'name' => 'Solid Red Category',
-            'slug' => 'solid-red-category',
+            'name' => 'Solid Primary Category',
+            'slug' => 'solid-primary-category',
             'status' => true,
             'color_code' => [
                 'mode' => 'solid',
-                'color' => '#EF4444',
+                'color' => '#8E8E93',
             ],
         ])
-        ->assertRedirect(route('platform.categories.show', 'solid-red-category'));
+        ->assertRedirect(route('platform.categories.show', 'solid-primary-category'));
 
-    $category = Category::query()->where('slug', 'solid-red-category')->firstOrFail();
+    $category = Category::query()->where('slug', 'solid-primary-category')->firstOrFail();
 
     expect($category->color_code)->toBe([
         'mode' => 'solid',
-        'color' => '#EF4444',
+        'color' => '#8E8E93',
     ]);
 });
 

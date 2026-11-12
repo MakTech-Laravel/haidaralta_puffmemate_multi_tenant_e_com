@@ -7,9 +7,9 @@ import FileUpload, { type ExistingFile } from '@/components/file-upload';
 import InputError from '@/components/input-error';
 import { ColorPicker } from '@/components/color-picker';
 import {
-    emptyProductPackageDraft,
     ProductPackagesDraftFields,
     type ProductPackageDraft,
+    validateProductPackageDrafts,
 } from '@/components/platform/product-packages-draft-fields';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
@@ -103,6 +103,8 @@ interface ProductFormDefaults {
     wholesale_price?: string | null;
     min_wholesale_qty?: number | null;
     status?: boolean;
+    packages_enabled?: boolean;
+    packages?: ProductPackageDraft[];
 }
 
 function initialSpecifications(
@@ -131,7 +133,7 @@ interface ProductFormProps {
     branchOpsFields?: boolean;
     /** Platform catalog: edit the default wholesale price and minimum quantity. */
     wholesaleFields?: boolean;
-    /** Platform create only: draft packages submitted with the new product. */
+    /** Platform create/edit: draft packages submitted with the product. */
     packageDraftFields?: boolean;
     /** Hide gallery when backend ignores it (branch create). Default true. */
     showGallery?: boolean;
@@ -196,7 +198,7 @@ export function ProductForm({
     const showBranchOps = branchOpsFields && showBranchPricing;
     const showBranchQuantityOnly = branchOpsFields && !showBranchPricing;
     const showPackageDrafts =
-        packageDraftFields && !isEdit && catalog.show_product_packages;
+        packageDraftFields && catalog.show_product_packages;
     const [slugTouched, setSlugTouched] = useState(isEdit);
     const [skuTouched, setSkuTouched] = useState(isEdit);
     const [suggestionQuery, setSuggestionQuery] = useState('');
@@ -246,6 +248,8 @@ export function ProductForm({
         transform,
         validate,
         setValidationTimeout,
+        setError,
+        clearErrors,
         cancel,
     } = useForm(formMethod, action.action, {
         category_ids: defaults?.category_ids ?? ([] as number[]),
@@ -297,8 +301,9 @@ export function ProductForm({
             : {}),
         ...(showPackageDrafts
             ? {
-                  packages_enabled: true,
-                  packages: [emptyProductPackageDraft(0)] as ProductPackageDraft[],
+                  packages_enabled: defaults?.packages_enabled ?? true,
+                  packages: (defaults?.packages ??
+                      []) as ProductPackageDraft[],
               }
             : {}),
         ...(isEdit ? { _method: 'put' } : {}),
@@ -431,6 +436,31 @@ export function ProductForm({
     const submit = (event: FormEvent) => {
         event.preventDefault();
 
+        if (showPackageDrafts) {
+            const packageDrafts = (
+                data as typeof data & {
+                    packages?: ProductPackageDraft[];
+                }
+            ).packages ?? [];
+            const packageFieldKeys = Object.keys(errors).filter((key) =>
+                key === 'packages' || key.startsWith('packages.'),
+            ) as Array<keyof typeof errors>;
+
+            if (packageFieldKeys.length > 0) {
+                clearErrors(...packageFieldKeys);
+            }
+
+            const packageErrors = validateProductPackageDrafts(packageDrafts);
+
+            if (Object.keys(packageErrors).length > 0) {
+                setError(
+                    packageErrors as Parameters<typeof setError>[0],
+                );
+
+                return;
+            }
+        }
+
         transform((form) => {
             const {
                 image,
@@ -467,18 +497,14 @@ export function ProductForm({
                 (row) => row.label.trim() !== '' || row.value.trim() !== '',
             );
 
-            const filteredPackages = (packages ?? [])
-                .filter((row) => row.label.trim() !== '')
-                .map((row, index) => ({
-                    label: row.label.trim(),
-                    quantity: row.quantity,
-                    price: row.price,
-                    status: row.status,
-                    sort_order:
-                        row.sort_order.trim() === ''
-                            ? String(index)
-                            : row.sort_order,
-                }));
+            const filteredPackages = (packages ?? []).map((row, index) => ({
+                ...(row.id ? { id: row.id } : {}),
+                label: row.label.trim(),
+                quantity: row.quantity,
+                price: row.price.trim() === '' ? null : row.price,
+                status: row.status,
+                sort_order: index,
+            }));
 
             return {
                 ...rest,
@@ -803,7 +829,7 @@ export function ProductForm({
                         </div>
 
                         {enableSuggestions && suggestions.length > 0 ? (
-                            <div className="space-y-2 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+                            <div className="space-y-2 rounded-xl border border-primary/30 bg-primary/5 p-3">
                                 <p className="text-sm font-medium">
                                     Similar products already exist
                                 </p>
@@ -1690,8 +1716,16 @@ export function ProductForm({
                             data as typeof data & {
                                 packages?: ProductPackageDraft[];
                             }
-                        ).packages ?? [emptyProductPackageDraft(0)]
+                        ).packages ?? []
                     }
+                    sellingPrice={String(
+                        (data as typeof data & { selling_price?: string })
+                            .selling_price ?? '',
+                    )}
+                    regularPrice={String(
+                        (data as typeof data & { regular_price?: string })
+                            .regular_price ?? '',
+                    )}
                     errors={errors}
                     onPackagesEnabledChange={(value) =>
                         setData('packages_enabled' as never, value as never)

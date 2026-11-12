@@ -274,14 +274,14 @@ export default function Profile({
                                             Your phone number is unverified.{" "}
                                             <Link
                                                 href={notice()}
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
+                                                className="text-foreground underline decoration-border underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current!"
                                             >
                                                 Verify your phone
                                             </Link>
                                         </p>
 
                                         {status && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
+                                            <div className="mt-2 text-sm font-medium text-foreground">
                                                 {status}
                                             </div>
                                         )}

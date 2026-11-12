@@ -20,12 +20,12 @@ export function StorefrontSearchBar({
     return (
         <label
             className={cn(
-                'border-primary bg-background relative flex h-12 min-h-12 w-full items-center rounded-none border',
+                'border-input bg-card focus-within:border-ring focus-within:ring-ring/30 relative flex h-11 min-h-11 w-full items-center rounded-full border transition-[color,box-shadow] focus-within:ring-[3px]',
                 className,
             )}
         >
             <Search
-                className="text-muted-foreground pointer-events-none absolute left-3 size-4"
+                className="text-muted-foreground pointer-events-none absolute left-4 size-4"
                 aria-hidden
             />
             <Input
@@ -39,7 +39,7 @@ export function StorefrontSearchBar({
                     }
                 }}
                 placeholder={placeholder}
-                className="h-full rounded-none border-0 bg-transparent pr-3 pl-10 shadow-none focus-visible:ring-0"
+                className="h-full rounded-full border-0 bg-transparent pr-4 pl-11 shadow-none focus-visible:ring-0"
                 aria-label="Search products"
             />
         </label>

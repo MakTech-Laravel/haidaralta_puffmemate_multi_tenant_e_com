@@ -1,10 +1,15 @@
 import { useEffect } from 'react';
 
-const DEFAULT_THEME_COLOR = '#C4472F';
+/** Keep in sync with --palette-black in resources/css/app.css (browser-bar fallback only). */
+const DEFAULT_THEME_COLOR = '#1D1D1F';
 
 /**
- * Keeps CSS theme tokens in sync with Application Settings after Inertia visits
- * (Blade paints the first load; this covers SPA navigations / settings saves).
+ * Keeps the browser address-bar colour (`meta[name="theme-color"]`) in sync with
+ * Application Settings after Inertia visits (Blade paints the first load; this
+ * covers SPA navigations / settings saves).
+ *
+ * Site colours are NOT set here. They live only in resources/css/app.css
+ * (palette + semantic roles), so editing that file is enough to re-theme.
  *
  * Must receive `themeColor` as a prop — do not call `usePage()` here. This
  * component is mounted from `createInertiaApp({ withApp })` outside the Inertia
@@ -18,13 +23,6 @@ export function ApplicationTheme({
     const color = themeColor || DEFAULT_THEME_COLOR;
 
     useEffect(() => {
-        const root = document.documentElement;
-        root.style.setProperty('--primary', color);
-        root.style.setProperty('--ring', color);
-        root.style.setProperty('--sidebar-primary', color);
-        root.style.setProperty('--sidebar-ring', color);
-        root.style.setProperty('--chart-1', color);
-
         const meta = document.querySelector('meta[name="theme-color"]');
 
         if (meta) {

@@ -86,7 +86,7 @@ export function IconPickerPanel({
             )}
         >
             {hadInvalidDefault ? (
-                <p className="shrink-0 text-xs text-amber-700 dark:text-amber-400">
+                <p className="shrink-0 text-xs text-primary">
                     {labels.invalidValue}
                 </p>
             ) : null}

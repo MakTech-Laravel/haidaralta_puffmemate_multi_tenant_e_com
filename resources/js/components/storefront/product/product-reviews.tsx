@@ -21,10 +21,10 @@ export function ProductReviews({
     reviews,
 }: ProductReviewsProps) {
     return (
-        <section id="reviews" className="bg-accent flex flex-col gap-6 p-5">
+        <section id="reviews" className="bg-muted flex flex-col gap-6 rounded-3xl p-5 sm:p-8">
             <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                    <h2 className="text-foreground font-inter text-2xl font-semibold uppercase">
+                    <h2 className="text-foreground font-inter text-2xl font-semibold tracking-tight">
                         Reviews ({reviewCount})
                     </h2>
                     <p className="text-foreground font-inter text-base font-normal">
@@ -50,7 +50,7 @@ export function ProductReviews({
                         ))}
                     </div>
 
-                    <p className="text-foreground font-inter text-lg font-bold">
+                    <p className="text-foreground font-inter text-lg font-semibold">
                         {rating} out of 5
                     </p>
                 </div>
@@ -62,7 +62,7 @@ export function ProductReviews({
                         <div className="flex flex-wrap items-center justify-between gap-2">
                             <p className="text-foreground font-inter text-sm font-normal">
                                 By{' '}
-                                <span className="text-primary text-base font-bold">
+                                <span className="text-foreground text-base font-semibold">
                                     {' '}
                                     {review.author}
                                 </span>{' '}

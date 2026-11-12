@@ -23,4 +23,4 @@ Do not mix package managers:
 Always run `php artisan wayfinder:generate --with-form` (never bare generate). Without --with-form, .form() helpers disappear and Inertia pages crash with TypeError: *.form is not a function. Keep vite wayfinder({ form: true }) if that option exists.
 
 ## PWA assets generator only, never Workbox
-PWA assets use pnpm add -D @vite-pwa/assets-generator and pnpm generate:pwa-assets. Do not add vite-plugin-pwa, Workbox, or Serwist.
+PWA assets use pnpm add -D @vite-pwa/assets-generator and pnpm generate:pwa-assets (commit output under public/pwa/; Docker does not regenerate). Do not add vite-plugin-pwa, Workbox, or Serwist.

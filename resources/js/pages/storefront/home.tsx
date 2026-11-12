@@ -26,13 +26,6 @@ export default function StorefrontHome({
     bestSellingProducts,
     newArrivalProducts,
 }: HomePageProps) {
-    const topCategories = featuredCategories.filter(
-        (category) => !category.wide,
-    );
-    const wideCategories = featuredCategories.filter(
-        (category) => category.wide,
-    );
-
     return (
         <>
             <Head title="Home" />
@@ -42,10 +35,10 @@ export default function StorefrontHome({
             <section className="container mx-auto px-4 py-14 sm:px-6 sm:py-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
+                        <p className="text-muted-foreground font-inter mb-1 text-xs font-semibold tracking-[0.12em] uppercase">
                             Browse the collection
                         </p>
-                        <h2 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
+                        <h2 className="text-foreground text-2xl font-semibold tracking-tight sm:text-4xl">
                             Shop by category
                         </h2>
                     </div>
@@ -59,29 +52,23 @@ export default function StorefrontHome({
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 lg:grid-cols-3 [&>:last-child:nth-child(odd)]:col-span-2 lg:[&>:last-child:nth-child(odd)]:col-span-1">
-                    {topCategories.map((category) => (
-                        <CategoryCard key={category.id} category={category} />
+                <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3 lg:grid-cols-5 [&>:last-child:nth-child(odd)]:col-span-2 md:[&>:last-child:nth-child(odd)]:col-span-1">
+                    {featuredCategories.map((category) => (
+                        <CategoryCard
+                            key={category.id}
+                            category={category}
+                            className="lg:aspect-7/6"
+                        />
                     ))}
                 </div>
-                {wideCategories.length > 0 ? (
-                    <div className="mt-4 grid grid-cols-2 gap-4">
-                        {wideCategories.map((category) => (
-                            <CategoryCard
-                                key={category.id}
-                                category={category}
-                            />
-                        ))}
-                    </div>
-                ) : null}
             </section>
             <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
+                        <p className="text-muted-foreground font-inter mb-1 text-xs font-semibold tracking-[0.12em] uppercase">
                             Just landed
                         </p>
-                        <h2 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
+                        <h2 className="text-foreground text-2xl font-semibold tracking-tight sm:text-4xl">
                             New arrivals
                         </h2>
                     </div>
@@ -105,10 +92,10 @@ export default function StorefrontHome({
             <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
-                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
+                        <p className="text-muted-foreground font-inter mb-1 text-xs font-semibold tracking-[0.12em] uppercase">
                             Hand-picked for you
                         </p>
-                        <h2 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
+                        <h2 className="text-foreground text-2xl font-semibold tracking-tight sm:text-4xl">
                             Best selling products
                         </h2>
                     </div>

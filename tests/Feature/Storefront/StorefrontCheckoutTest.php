@@ -1,8 +1,10 @@
 <?php
 
+use App\Contracts\SendsSms;
 use App\Enums\CartStatus;
 use App\Enums\CouponType;
 use App\Enums\CustomerRegistrationStatus;
+use App\Enums\DriverAssignmentStatus;
 use App\Enums\FulfillmentStatus;
 use App\Enums\OrderSource;
 use App\Enums\OrderStatus;
@@ -17,6 +19,8 @@ use App\Models\CartItem;
 use App\Models\Coupon;
 use App\Models\CouponRedemption;
 use App\Models\DeliveryShift;
+use App\Models\DriverBranchAssignment;
+use App\Models\DriverProfile;
 use App\Models\Inventory;
 use App\Models\Order;
 use App\Models\Payment;
@@ -26,6 +30,9 @@ use App\Models\User;
 use App\Services\Application\ApplicationSettingsService;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
+use App\Services\Order\OrderPlacementNotifier;
+use App\Services\Sms\FakeSmsSender;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\Geo\Polygon;
 use App\Support\Phone;
 use Database\Seeders\ApplicationSettingsSeeder;
@@ -133,7 +140,9 @@ test('checkout props omit branch keys', function () {
             ->where('deliveryMethods.1.requiresSlot', true)
             ->where('deliveryMethods.1.requiresDate', true)
             ->where('deliveryMethods.1.minDate', '2026-11-10')
-            ->where('deliveryMethods.1.maxDate', '2026-11-23')
+            ->where('deliveryMethods.1.maxDate', '2026-11-16')
+            ->where('deliveryMethods.0.minDate', '2026-11-09')
+            ->where('deliveryMethods.0.maxDate', '2026-11-09')
             ->has('deliveryMethods.0.timeSlots', 2)
             ->has('deliveryMethods.1.timeSlots', 3)
             ->missing('timeSlots')
@@ -148,7 +157,7 @@ test('checkout shares the application settings name', function () {
         'app_short_name' => 'Harbour',
         'date_format' => 'Y-m-d',
         'time_format' => 'H:i',
-        'theme_color' => '#C4472F',
+        'theme_color' => '#174B36',
         'background_color' => '#FFFFFF',
     ]);
 
@@ -169,7 +178,9 @@ test('checkout shares the application settings name', function () {
             ->where('application.name', 'Harbour Smoke'));
 });
 
-test('platform branch and driver staff cannot open storefront checkout', function (string $guard, UserType $type) {
+test('platform branch and driver staff can open storefront checkout', function (string $guard, UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => "staff-open-{$guard}"]);
+
     $user = User::factory()->create([
         'user_type' => $type,
         'branch_id' => $type === UserType::BRANCH
@@ -178,21 +189,26 @@ test('platform branch and driver staff cannot open storefront checkout', functio
     ]);
 
     $this->actingAs($user, $guard)
+        ->post(route('cart.store'), [
+            'product' => $product->slug,
+            'quantity' => 1,
+        ]);
+
+    $this->actingAs($user, $guard)
         ->get(route('checkout'))
-        ->assertRedirect(match ($type) {
-            UserType::PLATFORM => '/platform/dashboard',
-            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
-            UserType::DRIVER => '/driver/dashboard',
-            default => route('login'),
-        });
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout')
+            ->has('items', 1)
+            ->where('savedAddress', null));
 })->with([
     'platform' => ['platform', UserType::PLATFORM],
     'branch' => ['branch', UserType::BRANCH],
     'driver' => ['driver', UserType::DRIVER],
 ]);
 
-test('platform branch and driver staff cannot place a storefront order', function (string $guard, UserType $type) {
-    $product = storefrontCheckoutProduct(['slug' => "staff-blocked-{$guard}"]);
+test('platform branch and driver staff place a storefront order for the customer who owns the phone', function (string $guard, UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => "staff-order-{$guard}"]);
     storefrontCheckoutBranchWithStock($product);
 
     $user = User::factory()->create([
@@ -209,20 +225,86 @@ test('platform branch and driver staff cannot place a storefront order', functio
         ]);
 
     $this->actingAs($user, $guard)
-        ->post(route('checkout.store'), checkoutPayload())
-        ->assertRedirect(match ($type) {
-            UserType::PLATFORM => '/platform/dashboard',
-            UserType::BRANCH => '/branch/'.$user->branch->slug.'/dashboard',
-            UserType::DRIVER => '/driver/dashboard',
-            default => route('login'),
-        });
+        ->post(route('checkout.store'), checkoutPayload(['save_as_default' => true]))
+        ->assertSessionDoesntHaveErrors();
 
-    expect(Order::query()->count())->toBe(0);
+    $order = Order::query()->firstOrFail();
+    $customer = User::query()->findOrFail($order->customer_id);
+
+    expect($customer->id)->not->toBe($user->id)
+        ->and($customer->phone)->toBe(Phone::toE164('0410123456'))
+        ->and($customer->user_type)->toBe(UserType::CUSTOMER)
+        ->and($customer->registration_status)->toBe(CustomerRegistrationStatus::Provisional)
+        ->and(Address::query()->count())->toBe(0);
+
+    $this->actingAs($user, $guard)
+        ->get(route('checkout.confirmation', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout-confirmation')
+            ->where('order.viewOrderUrl', fn ($url): bool => str_contains((string) $url, '/order-status/')));
 })->with([
     'platform' => ['platform', UserType::PLATFORM],
     'branch' => ['branch', UserType::BRANCH],
     'driver' => ['driver', UserType::DRIVER],
 ]);
+
+test('a logged-in staff user ordering with their own phone gets the order on their own account', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'staff-own-phone-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'phone' => Phone::toE164('0410123456'),
+    ]);
+    $usersBefore = User::query()->count();
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($driver, 'driver')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertSessionDoesntHaveErrors();
+
+    expect(Order::query()->firstOrFail()->customer_id)->toBe($driver->id)
+        ->and(User::query()->count())->toBe($usersBefore);
+});
+
+test('checkout rejects a phone that is not an Australian mobile number', function (bool $loggedIn, string $mobile) {
+    $product = storefrontCheckoutProduct(['slug' => 'non-au-phone-item-'.md5($loggedIn.$mobile)]);
+    storefrontCheckoutBranchWithStock($product);
+
+    if ($loggedIn) {
+        $this->actingAs(User::factory()->create(), 'customer');
+    }
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload(['mobile' => $mobile]))
+        ->assertSessionHasErrors(['mobile' => 'Enter a valid Australian mobile number.']);
+
+    expect(Order::query()->count())->toBe(0);
+})->with([
+    'guest, bangladesh mobile' => [false, '+8801712345678'],
+    'guest, us number' => [false, '+12025550123'],
+    'guest, australian landline' => [false, '0291234567'],
+    'customer, bangladesh mobile' => [true, '+8801712345678'],
+    'customer, us number' => [true, '+12025550123'],
+    'customer, australian landline' => [true, '0291234567'],
+    'customer, not a number' => [true, 'call me maybe'],
+]);
+
+test('checkout accepts an Australian mobile number in international format', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'au-e164-phone-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload(['mobile' => '+61410123456']))
+        ->assertSessionDoesntHaveErrors();
+
+    expect(Order::query()->count())->toBe(1);
+});
 
 test('checkout without a delivery shift is rejected', function () {
     $user = User::factory()->create();
@@ -300,7 +382,7 @@ test('same-day checkout rejects a shift that has already started', function () {
             ->where('deliveryMethods.0.timeSlots.0.name', 'Evening Delivery')
             ->where('deliveryMethods.1.requiresDate', true)
             ->where('deliveryMethods.1.minDate', '2026-11-10')
-            ->where('deliveryMethods.1.maxDate', '2026-11-23'));
+            ->where('deliveryMethods.1.maxDate', '2026-11-16'));
 
     $this->actingAs($user, 'customer')
         ->from(route('checkout'))
@@ -338,7 +420,7 @@ test('late delivery requires a future date within fourteen days', function () {
         ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
-            'delivery_date' => '2026-11-24',
+            'delivery_date' => '2026-11-17',
             'time_slot_id' => $shiftId,
         ]))
         ->assertRedirect(route('checkout'))
@@ -347,7 +429,7 @@ test('late delivery requires a future date within fourteen days', function () {
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
-            'delivery_date' => '2026-11-23',
+            'delivery_date' => '2026-11-16',
             'time_slot_id' => $shiftId,
         ]))
         ->assertRedirect();
@@ -355,11 +437,11 @@ test('late delivery requires a future date within fourteen days', function () {
     $order = Order::query()->firstOrFail();
 
     expect($order->delivery_method)->toBe('express')
-        ->and($order->delivery_date?->toDateString())->toBe('2026-11-23')
+        ->and($order->delivery_date?->toDateString())->toBe('2026-11-16')
         ->and($order->delivery_shift_id)->toBe($shiftId);
 });
 
-test('same-day method is omitted when no eligible shifts remain', function () {
+test('same-day method stays listed without shifts when none remain today', function () {
     Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 22:00:00', config('app.timezone')));
 
     $user = User::factory()->create();
@@ -377,8 +459,11 @@ test('same-day method is omitted when no eligible shifts remain', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/checkout')
-            ->has('deliveryMethods', 1)
-            ->where('deliveryMethods.0.id', 'express'));
+            ->has('deliveryMethods', 2)
+            ->where('deliveryMethods.0.id', 'regular')
+            ->has('deliveryMethods.0.timeSlots', 0)
+            ->where('deliveryMethods.1.id', 'express')
+            ->has('deliveryMethods.1.timeSlots', 3));
 });
 
 test('pinning a location quotes the distance-based shipping fee', function () {
@@ -716,7 +801,7 @@ test('a guest can place an order through a provisional customer', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/checkout-confirmation')
-            ->where('order.viewOrderUrl', null));
+            ->where('order.viewOrderUrl', fn ($url): bool => str_contains((string) $url, '/order-status/')));
 });
 
 test('a guest repeat order with the same phone reuses the provisional customer', function () {
@@ -745,13 +830,211 @@ test('a guest confirmation page is hidden from other sessions', function () {
     $this->get(route('checkout.confirmation', $order))->assertNotFound();
 });
 
-test('a guest cannot order with the phone of a registered account', function () {
+test('a guest can order with the phone of a registered account without logging in', function () {
     $product = storefrontCheckoutProduct(['slug' => 'guest-registered-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $registered = User::factory()->create([
+        'name' => 'Registered Owner',
+        'email' => 'owner@example.com',
+        'phone' => Phone::toE164('0410123456'),
+        'registration_status' => CustomerRegistrationStatus::Registered,
+    ]);
+    $usersBefore = User::query()->count();
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload([
+        'name' => 'Someone At The Door',
+        'save_as_default' => true,
+    ]))->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->customer_id)->toBe($registered->id)
+        ->and($order->shipping_address_snapshot['name'])->toBe('Someone At The Door')
+        ->and(User::query()->count())->toBe($usersBefore)
+        ->and($registered->fresh()->name)->toBe('Registered Owner')
+        ->and($registered->fresh()->email)->toBe('owner@example.com')
+        ->and(Address::query()->count())->toBe(0);
+
+    $this->get(route('checkout.confirmation', $order))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/checkout-confirmation')
+            ->where('order.viewOrderUrl', fn ($url): bool => str_contains((string) $url, '/order-status/')));
+
+    $this->flushSession();
+
+    $this->get(route('checkout.confirmation', $order))->assertNotFound();
+});
+
+test('a guest order on a registered number opens pending until the account has a delivered order', function (bool $hasDeliveredOrder, FulfillmentStatus $expected) {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-registered-status-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    $registered = User::factory()->create([
+        'phone' => Phone::toE164('0410123456'),
+        'registration_status' => CustomerRegistrationStatus::Registered,
+    ]);
+
+    if ($hasDeliveredOrder) {
+        Order::factory()->delivered()->create(['customer_id' => $registered->id]);
+    }
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload())->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->where('customer_id', $registered->id)->latest('id')->firstOrFail();
+
+    expect($order->fulfillment->status)->toBe($expected);
+})->with([
+    'no delivered order' => [false, FulfillmentStatus::Pending],
+    'has a delivered order' => [true, FulfillmentStatus::Placed],
+]);
+
+test('placing a guest order texts the public view order link to the order phone', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'sms-link-guest-item']);
+    storefrontCheckoutBranchWithStock($product);
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload())->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->firstOrFail();
+    $messages = collect($sms->messages)->where('to', Phone::toE164('0410123456'));
+
+    // A brand-new customer opens Pending: only the link SMS goes out, no delivery code yet.
+    expect($messages)->toHaveCount(1)
+        ->and($messages->first()['message'])->toContain($order->order_number)
+        ->and($sms->lastCode())->toBeNull();
+
+    preg_match('~https?://\S+~', $messages->first()['message'], $match);
+
+    $this->flushSession();
+    $this->get($match[0])
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/order-tracking')
+            ->where('order.orderNumber', $order->order_number));
+});
+
+test('a logged-in customer also gets the view order link by sms, after the delivery code when trusted', function () {
+    $user = User::factory()->create(['phone' => Phone::toE164('0410123456')]);
+    Order::factory()->delivered()->create(['customer_id' => $user->id]);
+    $product = storefrontCheckoutProduct(['slug' => 'sms-link-trusted-item']);
+    storefrontCheckoutBranchWithStock($product);
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->where('customer_id', $user->id)->latest('id')->firstOrFail();
+    $messages = collect($sms->messages);
+
+    expect($messages)->toHaveCount(2)
+        ->and($messages->first()['message'])->toContain('verification code')
+        ->and($messages->last()['message'])->toContain($order->order_number)
+        ->and($messages->last()['message'])->toContain('/order-status/');
+});
+
+test('a failing sms sender does not stop an order from being placed', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'sms-link-failure-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    app()->instance(SendsSms::class, new class implements SendsSms
+    {
+        public function send(string $toE164, string $message): void
+        {
+            throw new RuntimeException('SMS gateway down');
+        }
+    });
+    app()->forgetInstance(OrderPlacementNotifier::class);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload())->assertSessionDoesntHaveErrors();
+
+    expect(Order::query()->count())->toBe(1);
+});
+
+test('a guest can order with the phone of a platform, branch or driver user without logging in', function (UserType $type) {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-role-phone-item-'.$type->value]);
+    storefrontCheckoutBranchWithStock($product);
+    $sms = app(FakeSmsSender::class);
+    $sms->reset();
+
+    $staff = User::factory()->create([
+        'name' => 'Role Owner',
+        'phone' => Phone::toE164('0410123456'),
+        'user_type' => $type,
+    ]);
+    $usersBefore = User::query()->count();
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->post(route('checkout.store'), checkoutPayload(['name' => 'Someone At The Door']))
+        ->assertSessionDoesntHaveErrors();
+
+    $order = Order::query()->firstOrFail();
+
+    expect($order->customer_id)->toBe($staff->id)
+        ->and($staff->fresh()->user_type)->toBe($type)
+        ->and($staff->fresh()->name)->toBe('Role Owner')
+        ->and(User::query()->count())->toBe($usersBefore)
+        ->and($order->shipping_address_snapshot['name'])->toBe('Someone At The Door');
+
+    $link = collect($sms->messages)
+        ->where('to', Phone::toE164('0410123456'))
+        ->first(fn (array $message): bool => str_contains($message['message'], '/order-status/'));
+
+    expect($link)->not->toBeNull();
+
+    preg_match('~https?://\S+~', $link['message'], $match);
+
+    $this->get($match[0])
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->component('storefront/order-tracking')
+            ->where('order.orderNumber', $order->order_number));
+
+    $this->flushSession();
+    $this->get(route('checkout.confirmation', $order))->assertNotFound();
+})->with([
+    'platform user' => [UserType::PLATFORM],
+    'branch user' => [UserType::BRANCH],
+    'driver user' => [UserType::DRIVER],
+]);
+
+test('a guest cannot order with the phone of an inactive staff user', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-inactive-staff-item']);
+    storefrontCheckoutBranchWithStock($product);
+
+    User::factory()->create([
+        'phone' => Phone::toE164('0410123456'),
+        'user_type' => UserType::DRIVER,
+        'is_active' => false,
+    ]);
+
+    $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->post(route('checkout.store'), checkoutPayload())
+        ->assertSessionHasErrors('mobile');
+
+    expect(Order::query()->count())->toBe(0);
+});
+
+test('a guest cannot order with the phone of an inactive account', function () {
+    $product = storefrontCheckoutProduct(['slug' => 'guest-inactive-phone-item']);
     storefrontCheckoutBranchWithStock($product);
 
     User::factory()->create([
         'phone' => Phone::toE164('0410123456'),
         'registration_status' => CustomerRegistrationStatus::Registered,
+        'is_active' => false,
     ]);
 
     $this->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
@@ -822,6 +1105,8 @@ test('a cart with local shortfall accepts late delivery on one fulfillment witho
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), checkoutPayload([
             'accept_late_delivery' => true,
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
         ]))
         ->assertRedirect();
 
@@ -883,6 +1168,8 @@ test('placing a multi-line area order with a late line issues a flat number of i
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), checkoutPayload([
             'accept_late_delivery' => true,
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
         ]))
         ->assertRedirect();
 
@@ -917,7 +1204,8 @@ test('placing an order writes an area allocation decision log for the matched br
     expect($log->winning_branch_id)->toBe($winner->id)
         ->and($log->considered_branches)->not->toBeEmpty()
         ->and($log->considered_branches[0]['branch_id'])->toBe($winner->id)
-        ->and($log->considered_branches[0]['allocation'] ?? null)->toBe('area_nearest')
+        // The default checkout payload is same-day, so the zone branch inside the radius wins.
+        ->and($log->considered_branches[0]['allocation'] ?? null)->toBe('same_day_area_radius')
         ->and($log->rejected_branches)->toBe([]);
 });
 
@@ -1077,4 +1365,145 @@ test('placing an order without saving as default leaves the saved address untouc
         ->and($saved->refresh()->address)->toBe('9 Saved Lane')
         ->and($order->address_id)->toBeNull()
         ->and($order->shipping_address_snapshot['address'])->toBe('5 One Off Road');
+});
+
+/**
+ * Zone branch sits outside the same-day radius; the other-zone branch is a few km from the pin.
+ *
+ * @return array{zone: Branch, nearby: Branch}
+ */
+function sameDayRadiusBranches(Product $product): array
+{
+    $zone = Branch::factory()->create(['latitude' => -34.5, 'longitude' => 151.2, 'status' => true]);
+    $nearby = Branch::factory()->create(['latitude' => -33.87, 'longitude' => 151.21, 'status' => true]);
+
+    BranchArea::factory()->forBranch($zone)->create([
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
+    ]);
+    BranchArea::factory()->forBranch($nearby)->create([
+        'polygon' => Polygon::squareAround(-30.0, 150.0, 0.05),
+        'is_active' => true,
+    ]);
+
+    foreach ([$zone, $nearby] as $branch) {
+        Inventory::factory()->create([
+            'branch_id' => $branch->id,
+            'product_id' => $product->id,
+            'variant_id' => null,
+            'quantity' => 10,
+            'status' => true,
+        ]);
+    }
+
+    return ['zone' => $zone, 'nearby' => $nearby];
+}
+
+test('same-day checkout uses a nearby branch from another zone when the zone branch is outside the radius', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'same-day-radius-item']);
+    $branches = sameDayRadiusBranches($product);
+
+    $this->actingAs($user, 'customer')->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($user, 'customer')
+        ->postJson(route('checkout.shipping'), [
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
+            'delivery_method' => 'regular',
+        ])
+        ->assertOk()
+        ->assertJsonPath('matchedBranchId', $branches['nearby']->id);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload(['delivery_method' => 'regular']))
+        ->assertRedirect();
+
+    expect(Order::query()->firstOrFail()->fulfillment->branch_id)->toBe($branches['nearby']->id);
+});
+
+test('late delivery checkout keeps the zone branch even when another branch is nearer', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'late-zone-item']);
+    $branches = sameDayRadiusBranches($product);
+
+    $this->actingAs($user, 'customer')->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($user, 'customer')
+        ->postJson(route('checkout.shipping'), [
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
+            'delivery_method' => 'express',
+        ])
+        ->assertOk()
+        ->assertJsonPath('matchedBranchId', $branches['zone']->id);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload([
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
+        ]))
+        ->assertRedirect();
+
+    expect(Order::query()->firstOrFail()->fulfillment->branch_id)->toBe($branches['zone']->id);
+});
+
+test('a repeat customer order is placed straight away and reserves a branch driver without changing status', function () {
+    $user = User::factory()->create();
+    Order::factory()->delivered()->create(['customer_id' => $user->id]);
+    $product = storefrontCheckoutProduct(['slug' => 'repeat-customer-driver-item']);
+    $branch = storefrontCheckoutBranchWithStock($product);
+
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'is_active' => true,
+        'branch_id' => null,
+    ]);
+    DriverProfile::factory()->available()->create(['user_id' => $driver->id]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $driver->id,
+        'branch_id' => $branch->id,
+        'status' => DriverAssignmentStatus::Active,
+    ]);
+    scheduleDriverOnDuty($driver, $branch);
+
+    $this->actingAs($user, 'customer')->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    $fulfillment = Order::query()->latest('id')->firstOrFail()->fulfillment;
+
+    expect($fulfillment->status)->toBe(FulfillmentStatus::Placed)
+        ->and($fulfillment->reserved_driver_id)->toBe($driver->id)
+        ->and($fulfillment->driver_id)->toBeNull();
+});
+
+test('a new customer order stays pending and has no driver reserved until staff confirm it', function () {
+    $user = User::factory()->create();
+    $product = storefrontCheckoutProduct(['slug' => 'new-customer-driver-item']);
+    $branch = storefrontCheckoutBranchWithStock($product);
+
+    $driver = User::factory()->create([
+        'user_type' => UserType::DRIVER,
+        'is_active' => true,
+        'branch_id' => null,
+    ]);
+    DriverProfile::factory()->available()->create(['user_id' => $driver->id]);
+    DriverBranchAssignment::factory()->create([
+        'driver_id' => $driver->id,
+        'branch_id' => $branch->id,
+        'status' => DriverAssignmentStatus::Active,
+    ]);
+    scheduleDriverOnDuty($driver, $branch);
+
+    $this->actingAs($user, 'customer')->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+    $this->actingAs($user, 'customer')
+        ->post(route('checkout.store'), checkoutPayload())
+        ->assertRedirect();
+
+    $fulfillment = Order::query()->latest('id')->firstOrFail()->fulfillment;
+
+    expect($fulfillment->status)->toBe(FulfillmentStatus::Pending)
+        ->and($fulfillment->reserved_driver_id)->toBeNull();
 });

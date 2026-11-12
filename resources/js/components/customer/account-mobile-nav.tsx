@@ -14,7 +14,7 @@ export function AccountMobileNav({ className }: AccountMobileNavProps) {
     return (
         <nav
             className={cn(
-                'border-border bg-background fixed inset-x-0 bottom-0 z-40 border-t lg:hidden',
+                'border-border bg-background/85 supports-[backdrop-filter]:bg-background/75 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden',
                 className,
             )}
             aria-label="Account"

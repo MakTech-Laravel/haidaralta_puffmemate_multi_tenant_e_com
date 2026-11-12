@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Platform;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Platform\MoveProductPackageRequest;
 use App\Http\Requests\Platform\StoreProductPackageRequest;
 use App\Http\Requests\Platform\UpdateProductPackageRequest;
 use App\Http\Requests\Platform\UpdateProductPackagesEnabledRequest;
@@ -75,6 +76,18 @@ class ProductPackageController extends Controller
         $this->packages->delete($package);
 
         Toast::success('Package deleted.');
+
+        return back();
+    }
+
+    public function move(
+        MoveProductPackageRequest $request,
+        Product $product,
+        ProductPackage $package,
+    ): RedirectResponse {
+        abort_unless($package->product_id === $product->id, 404);
+
+        $this->packages->move($package, $request->string('direction')->toString());
 
         return back();
     }

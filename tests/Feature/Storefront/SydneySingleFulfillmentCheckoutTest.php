@@ -19,10 +19,10 @@ use App\Models\StockTransfer;
 use App\Models\User;
 use App\Services\Application\PaymentGatewaySettingsService;
 use App\Services\Catalog\DeliverySettingsService;
-use App\Services\Order\DriverAssignmentService;
 use App\Services\Order\DriverDeliveryService;
 use App\Services\Order\FulfillmentStatusService;
 use App\Services\Sms\FakeSmsSender;
+use App\Support\Delivery\DeliveryShiftAvailability;
 use App\Support\Geo\Polygon;
 use Database\Seeders\ApplicationSettingsSeeder;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -87,7 +87,8 @@ test('a sydney customer with a late line gets one area fulfillment without a sto
             'postal_code' => '2000',
             'latitude' => -33.8688,
             'longitude' => 151.2093,
-            'delivery_method' => 'regular',
+            'delivery_method' => 'express',
+            'delivery_date' => app(DeliveryShiftAvailability::class)->lateMinDate(),
             'time_slot_id' => checkoutDeliveryShiftId(),
             'payment_method' => PaymentGatewaySetting::KEY_COD,
             'accept_late_delivery' => true,
@@ -134,14 +135,18 @@ test('a sydney customer with a late line gets one area fulfillment without a sto
         'branch_id' => $sydney->id,
         'status' => DriverAssignmentStatus::Active,
     ]);
-    scheduleDriverOnDuty($driver, $sydney);
+    // The order is a late delivery for tomorrow, so the driver must be rostered for that day.
+    scheduleDriverOnDuty($driver, $sydney, app(DeliveryShiftAvailability::class)->lateMinDate());
 
     $fulfillment = $order->fulfillment->refresh();
     $statuses = app(FulfillmentStatusService::class);
     $statuses->transition($fulfillment, FulfillmentStatus::Placed, $sydneyStaff);
     $statuses->transition($fulfillment->refresh(), FulfillmentStatus::Processing, $sydneyStaff);
     $statuses->transition($fulfillment->refresh(), FulfillmentStatus::Ready, $sydneyStaff);
-    app(DriverAssignmentService::class)->assign($fulfillment->refresh(), $driver, $sydneyStaff);
+
+    // Marking Ready promotes the auto-picked driver, so no manual assign is needed.
+    expect($fulfillment->refresh()->driver_id)->toBe($driver->id)
+        ->and($fulfillment->status)->toBe(FulfillmentStatus::Assigned);
 
     Inventory::factory()->create([
         'branch_id' => $sydney->id,

@@ -143,12 +143,12 @@ export function ShiftAssignGuideSheet({
                                     detail="Already saved on that day."
                                 />
                                 <Swatch
-                                    className="border-amber-600 bg-amber-100"
+                                    className="border-primary/40 bg-primary/5"
                                     label="Amber · New / Unsaved"
                                     detail="Empty days you selected to assign. Not saved yet."
                                 />
                                 <Swatch
-                                    className="border-sky-700 bg-sky-100"
+                                    className="border-primary/50 bg-secondary"
                                     label="Sky · Changing / Unsaved"
                                     detail="Assigned days marked to switch to another shift."
                                 />

@@ -6,8 +6,9 @@
     <meta name="color-scheme" content="light">
     <title>{{ $title }}</title>
 </head>
-<body style="margin:0;padding:0;background-color:#F7F4F0;">
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F7F4F0;padding:32px 16px;">
+{{-- Email clients cannot use CSS variables. Hex values mirror the palette in resources/css/app.css: canvas #F5F5F7, ink #1D1D1F, muted #6E6E73, line #E5E5EA, brand = $themeColor. --}}
+<body style="margin:0;padding:0;background-color:#F5F5F7;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F5F5F7;padding:32px 16px;">
         <tr>
             <td align="center">
                 <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
@@ -23,7 +24,7 @@
                                         </td>
                                     @endif
                                     <td style="vertical-align:middle;">
-                                        <a href="{{ $homeUrl }}" style="color:#ffffff;font-family:Inter,Helvetica,Arial,sans-serif;font-size:18px;font-weight:700;text-decoration:none;">
+                                        <a href="{{ $homeUrl }}" style="color:#FFFFFF;font-family:Inter,Helvetica,Arial,sans-serif;font-size:18px;font-weight:700;text-decoration:none;">
                                             {{ $appName }}
                                         </a>
                                     </td>
@@ -32,33 +33,33 @@
                         </td>
                     </tr>
                     <tr>
-                        <td style="background-color:#ffffff;border:1px solid #E5E0D8;border-top:0;padding:32px 28px;border-radius:0 0 12px 12px;font-family:Inter,Helvetica,Arial,sans-serif;">
-                            <p style="margin:0 0 10px;color:#8A8478;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">
+                        <td style="background-color:#ffffff;border:1px solid #E5E5EA;border-top:0;padding:32px 28px;border-radius:0 0 12px 12px;font-family:Inter,Helvetica,Arial,sans-serif;">
+                            <p style="margin:0 0 10px;color:#6E6E73;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;">
                                 Announcement
                             </p>
-                            <h1 style="margin:0 0 16px;color:#292929;font-size:22px;line-height:1.3;font-weight:700;">
+                            <h1 style="margin:0 0 16px;color:#1D1D1F;font-size:22px;line-height:1.3;font-weight:700;">
                                 {{ $title }}
                             </h1>
-                            <p style="margin:0 0 16px;color:#444444;font-size:16px;line-height:1.5;">
+                            <p style="margin:0 0 16px;color:#1D1D1F;font-size:16px;line-height:1.5;">
                                 Hello {{ $recipientName }},
                             </p>
-                            <p style="margin:0 0 24px;color:#444444;font-size:16px;line-height:1.65;">
+                            <p style="margin:0 0 24px;color:#1D1D1F;font-size:16px;line-height:1.65;">
                                 {!! nl2br(e($body)) !!}
                             </p>
                             @if (filled($linkUrl))
-                                <a href="{{ $linkUrl }}" style="display:inline-block;background-color:{{ $themeColor }};color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:600;">
+                                <a href="{{ $linkUrl }}" style="display:inline-block;background-color:{{ $themeColor }};color:#FFFFFF;text-decoration:none;padding:12px 22px;border-radius:8px;font-size:15px;font-weight:600;">
                                     {{ filled($linkLabel) ? $linkLabel : 'Open' }}
                                 </a>
                             @endif
                         </td>
                     </tr>
                     <tr>
-                        <td style="padding:20px 8px;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif;color:#8A8478;font-size:12px;line-height:1.6;">
+                        <td style="padding:20px 8px;text-align:center;font-family:Inter,Helvetica,Arial,sans-serif;color:#6E6E73;font-size:12px;line-height:1.6;">
                             &copy; {{ date('Y') }} {{ $appName }}
                             @if (filled($contactEmail) || filled($contactPhone))
                                 <br>
                                 @if (filled($contactEmail))
-                                    <a href="mailto:{{ $contactEmail }}" style="color:#8A8478;text-decoration:none;">{{ $contactEmail }}</a>
+                                    <a href="mailto:{{ $contactEmail }}" style="color:#6E6E73;text-decoration:none;">{{ $contactEmail }}</a>
                                 @endif
                                 @if (filled($contactEmail) && filled($contactPhone))
                                     &nbsp;&middot;&nbsp;

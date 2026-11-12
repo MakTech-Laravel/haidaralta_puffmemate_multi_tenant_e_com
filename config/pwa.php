@@ -18,7 +18,9 @@ return [
 
     'lang' => 'en-AU',
 
-    'theme_color' => '#C4472F',
+    // Browser bar / installed-app colour only. Site colours live in resources/css/app.css.
+    // Keep in sync with --palette-black (the dark announcement bar / ink surface) there.
+    'theme_color' => '#1D1D1F',
 
     'background_color' => '#FFFFFF',
 

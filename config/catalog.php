@@ -239,8 +239,16 @@ return [
 
     /*
     | Late delivery (express) selectable calendar days starting from tomorrow.
-    | Max date = today + this value (14 days from tomorrow inclusive).
+    | Max date = today + this value (7 = tomorrow through the next 7 days; with today
+    | for Same day the checkout Day picker covers today plus the next 7 days).
     */
-    'late_delivery_max_days' => (int) env('LATE_DELIVERY_MAX_DAYS', 14),
+    'late_delivery_max_days' => (int) env('LATE_DELIVERY_MAX_DAYS', 7),
+
+    /*
+    | Same-day delivery branch radius (straight-line km). Same-day checkout prefers
+    | the nearest branch inside this radius (same zone first, then any zone) before
+    | falling back to the normal zone pick. See AreaBranchResolver::resolveForSameDay.
+    */
+    'same_day_radius_km' => (float) env('SAME_DAY_RADIUS_KM', 15),
 
 ];

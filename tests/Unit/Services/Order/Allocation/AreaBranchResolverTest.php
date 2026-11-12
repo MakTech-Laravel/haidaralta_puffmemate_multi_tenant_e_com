@@ -121,3 +121,57 @@ test('resolveForCheckout prefers area-linked nearest when the pin is inside an a
         ->and($match['allocation'])->toBe('area_nearest')
         ->and($match['branch']->id)->not->toBe($closerWithoutArea->id);
 });
+
+test('resolveForSameDay prefers a zone branch inside the radius over a closer branch from another zone', function () {
+    $zoneBranch = Branch::factory()->create(['latitude' => -33.9, 'longitude' => 151.25, 'status' => true]);
+    $otherZoneBranch = Branch::factory()->create(['latitude' => -33.87, 'longitude' => 151.21, 'status' => true]);
+    BranchArea::factory()->forBranch($zoneBranch)->create([
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
+    ]);
+    BranchArea::factory()->forBranch($otherZoneBranch)->create([
+        'polygon' => Polygon::squareAround(-30.0, 150.0, 0.05),
+        'is_active' => true,
+    ]);
+
+    $match = app(AreaBranchResolver::class)->resolveForSameDay(-33.8688, 151.2093, 15);
+
+    expect($match['branch']->id)->toBe($zoneBranch->id)
+        ->and($match['allocation'])->toBe('same_day_area_radius');
+});
+
+test('resolveForSameDay uses the nearest branch from any zone when the zone branch is outside the radius', function () {
+    $farZoneBranch = Branch::factory()->create(['latitude' => -34.5, 'longitude' => 151.2, 'status' => true]);
+    $nearOtherZoneBranch = Branch::factory()->create(['latitude' => -33.87, 'longitude' => 151.21, 'status' => true]);
+    BranchArea::factory()->forBranch($farZoneBranch)->create([
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
+    ]);
+    BranchArea::factory()->forBranch($nearOtherZoneBranch)->create([
+        'polygon' => Polygon::squareAround(-30.0, 150.0, 0.05),
+        'is_active' => true,
+    ]);
+
+    $match = app(AreaBranchResolver::class)->resolveForSameDay(-33.8688, 151.2093, 15);
+
+    expect($match['branch']->id)->toBe($nearOtherZoneBranch->id)
+        ->and($match['allocation'])->toBe('same_day_radius');
+});
+
+test('resolveForSameDay falls back to the normal zone pick when no branch is inside the radius', function () {
+    $farZoneBranch = Branch::factory()->create(['latitude' => -34.5, 'longitude' => 151.2, 'status' => true]);
+    Branch::factory()->create(['latitude' => -35.5, 'longitude' => 150.0, 'status' => true]);
+    BranchArea::factory()->forBranch($farZoneBranch)->create([
+        'polygon' => Polygon::squareAround(-33.8688, 151.2093, 0.05),
+        'is_active' => true,
+    ]);
+
+    $match = app(AreaBranchResolver::class)->resolveForSameDay(-33.8688, 151.2093, 15);
+
+    expect($match['branch']->id)->toBe($farZoneBranch->id)
+        ->and($match['allocation'])->toBe('area_nearest');
+});
+
+test('resolveForSameDay returns null when there is no active branch at all', function () {
+    expect(app(AreaBranchResolver::class)->resolveForSameDay(-33.8688, 151.2093, 15))->toBeNull();
+});

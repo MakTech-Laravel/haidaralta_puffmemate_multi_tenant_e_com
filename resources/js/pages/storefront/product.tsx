@@ -149,7 +149,7 @@ export default function StorefrontProduct({
 
                 {similarProducts.length > 0 ? (
                     <section className="mt-14">
-                        <h2 className="text-foreground mb-6 text-2xl font-bold tracking-tight">
+                        <h2 className="text-foreground mb-6 text-2xl font-semibold tracking-tight">
                             Similar Products
                         </h2>
                         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">

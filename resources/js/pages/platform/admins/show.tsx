@@ -94,7 +94,7 @@ function VerifiedMark({ ok }: { ok: boolean }) {
             className={cn(
                 'inline-flex items-center gap-1 text-xs font-medium',
                 ok
-                    ? 'text-emerald-600 dark:text-emerald-400'
+                    ? 'text-foreground'
                     : 'text-muted-foreground',
             )}
         >
@@ -313,7 +313,7 @@ export default function PlatformAdminsShow({ admin }: { admin: Admin }) {
                                                             {permission.label}
                                                         </span>
                                                         {permission.granted ? (
-                                                            <Check className="size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                                                            <Check className="size-4 shrink-0 text-foreground" />
                                                         ) : (
                                                             <XIcon className="text-muted-foreground/50 size-4 shrink-0" />
                                                         )}

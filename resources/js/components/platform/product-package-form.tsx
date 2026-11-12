@@ -2,6 +2,10 @@ import { useForm } from '@inertiajs/react';
 import type { FormEvent } from 'react';
 import { useEffect } from 'react';
 import InputError from '@/components/input-error';
+import {
+    calculatedPackagePrice,
+    packageUnitPrice,
+} from '@/components/platform/product-packages-draft-fields';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
@@ -18,12 +22,15 @@ interface ProductPackageFormDefaults {
     quantity?: number;
     price?: string | number | null;
     status?: boolean;
-    sort_order?: number;
 }
 
 interface ProductPackageFormProps {
     action: FormAction;
     defaults?: ProductPackageFormDefaults;
+    /** Product selling price used to auto-fill price from quantity. */
+    sellingPrice?: string | number | null;
+    /** Fallback when selling price is empty or 0. */
+    regularPrice?: string | number | null;
     isEdit?: boolean;
     onCancel: () => void;
     onSuccess?: () => void;
@@ -33,6 +40,8 @@ interface ProductPackageFormProps {
 export function ProductPackageForm({
     action,
     defaults,
+    sellingPrice = '',
+    regularPrice = '',
     isEdit = false,
     onCancel,
     onSuccess,
@@ -45,6 +54,16 @@ export function ProductPackageForm({
         | 'patch'
         | 'delete';
 
+    const unitPrice = packageUnitPrice(sellingPrice, regularPrice);
+    const initialQuantity =
+        defaults?.quantity !== undefined && defaults?.quantity !== null
+            ? String(defaults.quantity)
+            : '1';
+    const initialPrice =
+        defaults?.price !== undefined && defaults?.price !== null
+            ? String(defaults.price)
+            : calculatedPackagePrice(unitPrice, initialQuantity);
+
     const {
         data,
         setData,
@@ -52,21 +71,13 @@ export function ProductPackageForm({
         processing,
         errors,
         setValidationTimeout,
+        setError,
+        clearErrors,
     } = useForm(formMethod, action.action, {
         label: defaults?.label ?? '',
-        quantity:
-            defaults?.quantity !== undefined && defaults?.quantity !== null
-                ? String(defaults.quantity)
-                : '1',
-        price:
-            defaults?.price !== undefined && defaults?.price !== null
-                ? String(defaults.price)
-                : '',
+        quantity: initialQuantity,
+        price: initialPrice,
         status: defaults?.status ?? true,
-        sort_order:
-            defaults?.sort_order !== undefined && defaults?.sort_order !== null
-                ? String(defaults.sort_order)
-                : '0',
         ...(isEdit ? { _method: 'put' } : {}),
     });
 
@@ -76,6 +87,42 @@ export function ProductPackageForm({
 
     const submit = (event: FormEvent) => {
         event.preventDefault();
+
+        clearErrors('label', 'quantity', 'price');
+
+        const nextErrors: Partial<Record<'label' | 'quantity' | 'price', string>> =
+            {};
+
+        if (data.label.trim() === '') {
+            nextErrors.label = 'Enter a package label.';
+        }
+
+        const quantity = Number(data.quantity);
+
+        if (
+            String(data.quantity).trim() === '' ||
+            !Number.isFinite(quantity) ||
+            !Number.isInteger(quantity) ||
+            quantity < 1
+        ) {
+            nextErrors.quantity = 'Enter a quantity of at least 1.';
+        }
+
+        const price = Number(data.price);
+
+        if (
+            String(data.price).trim() === '' ||
+            !Number.isFinite(price) ||
+            price < 0
+        ) {
+            nextErrors.price = 'Enter a package price.';
+        }
+
+        if (Object.keys(nextErrors).length > 0) {
+            setError(nextErrors);
+
+            return;
+        }
 
         post(action.action, {
             preserveScroll: true,
@@ -106,9 +153,19 @@ export function ProductPackageForm({
                         min={1}
                         step={1}
                         value={data.quantity}
-                        onChange={(event) =>
-                            setData('quantity', event.target.value)
-                        }
+                        onChange={(event) => {
+                            const quantity = event.target.value;
+                            const calculated = calculatedPackagePrice(
+                                unitPrice,
+                                quantity,
+                            );
+
+                            setData('quantity', quantity);
+
+                            if (calculated !== '') {
+                                setData('price', calculated);
+                            }
+                        }}
                         required
                     />
                     <InputError message={errors.quantity} />
@@ -128,23 +185,12 @@ export function ProductPackageForm({
                         required
                         placeholder="0.00"
                     />
+                    <p className="text-muted-foreground text-xs">
+                        Auto-fills as unit price × quantity (selling, or regular
+                        when selling is empty/0). You can still edit it.
+                    </p>
                     <InputError message={errors.price} />
                 </div>
-            </div>
-
-            <div className="flex flex-col gap-2">
-                <Label htmlFor="package-sort-order">Sort order</Label>
-                <Input
-                    id="package-sort-order"
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={data.sort_order}
-                    onChange={(event) =>
-                        setData('sort_order', event.target.value)
-                    }
-                />
-                <InputError message={errors.sort_order} />
             </div>
 
             <div className="flex items-center gap-2">

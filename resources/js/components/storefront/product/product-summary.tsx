@@ -73,7 +73,7 @@ export function ProductSummary({
                 {badges.map((badge) => (
                     <span
                         key={badge}
-                        className="bg-foreground text-background font-inter rounded-md px-3 py-2 text-xs font-semibold"
+                        className="bg-secondary text-secondary-foreground font-inter rounded-full px-3 py-1.5 text-xs font-semibold"
                     >
                         {badge}
                     </span>
@@ -81,7 +81,7 @@ export function ProductSummary({
             </div>
 
             <div className="mt-5 min-w-0">
-                <h1 className="text-foreground font-inter text-3xl font-semibold break-words sm:text-5xl">
+                <h1 className="text-foreground font-inter text-3xl leading-tight font-semibold tracking-tight break-words sm:text-5xl">
                     {name}
                 </h1>
                 <p className="text-muted-foreground font-inter mt-2 text-base font-normal break-words">
@@ -112,7 +112,7 @@ export function ProductSummary({
             </div>
 
             <div className="flex min-w-0 flex-wrap items-center gap-3">
-                <span className="text-primary text-3xl font-bold">
+                <span className="text-foreground text-3xl font-semibold tracking-tight">
                     {displayPrice}
                 </span>
                 {displayCompareAt ? (
@@ -124,41 +124,51 @@ export function ProductSummary({
 
             {hasPackages ? (
                 <div className="min-w-0 space-y-3">
-                    <h2 className="text-foreground font-inter text-base font-bold">
+                    <h2 className="text-foreground font-inter text-base font-semibold">
                         Choose a package
                     </h2>
-                    <ul className="flex flex-col gap-2">
+                    <ul className="flex flex-wrap gap-3">
                         {packages.map((pkg) => {
                             const selected = selectedPackage?.id === pkg.id;
+                            const quantityLabel = `${pkg.quantity} ${
+                                pkg.quantity === 1 ? 'Item' : 'Items'
+                            }`;
+                            // Bare numeric labels read like list numbering (e.g. "1").
+                            const showPackageLabel = !/^\d+$/.test(
+                                pkg.label.trim(),
+                            );
 
                             return (
-                                <li key={pkg.id}>
+                                <li key={pkg.id} className="w-36 max-w-full">
                                     <button
                                         type="button"
                                         onClick={() =>
                                             setSelectedPackageId(pkg.id)
                                         }
                                         className={cn(
-                                            'border-border flex w-full min-w-0 items-center justify-between gap-3 border px-4 py-3 text-left transition',
+                                            'bg-background flex h-full w-full flex-col items-start rounded-2xl border-2 px-4 py-3.5 text-left transition',
                                             selected
-                                                ? 'border-primary bg-primary/5 ring-primary ring-1'
-                                                : 'hover:border-primary/40',
+                                                ? 'border-primary'
+                                                : 'border-border hover:border-foreground/25',
                                         )}
                                         aria-pressed={selected}
                                     >
-                                        <div className="min-w-0">
+                                        {showPackageLabel ? (
+                                            <>
+                                                <p className="text-foreground font-inter text-sm font-semibold break-words">
+                                                    {pkg.label}
+                                                </p>
+                                                <p className="text-muted-foreground font-inter text-xs">
+                                                    {quantityLabel}
+                                                </p>
+                                            </>
+                                        ) : (
                                             <p className="text-foreground font-inter text-sm font-semibold">
-                                                {pkg.label}
+                                                {quantityLabel}
                                             </p>
-                                            <p className="text-muted-foreground font-inter text-xs">
-                                                {pkg.quantity}{' '}
-                                                {pkg.quantity === 1
-                                                    ? 'Item'
-                                                    : 'Items'}
-                                            </p>
-                                        </div>
-                                        <div className="flex shrink-0 items-center gap-2">
-                                            <span className="text-primary text-sm font-bold">
+                                        )}
+                                        <div className="mt-2 flex flex-col gap-0.5">
+                                            <span className="text-foreground text-base font-semibold">
                                                 {pkg.formattedPrice}
                                             </span>
                                             {pkg.formattedUnitTotal ? (
@@ -176,7 +186,7 @@ export function ProductSummary({
             ) : null}
 
             <div className="min-w-0">
-                <h2 className="text-foreground font-inter mt-10 text-base font-bold">
+                <h2 className="text-foreground font-inter mt-10 text-base font-semibold">
                     About this product
                 </h2>
                 <p className="text-muted-foreground font-inter mt-2 text-sm leading-relaxed font-normal break-words">
@@ -185,7 +195,7 @@ export function ProductSummary({
             </div>
 
             <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="border-border flex h-12 w-full max-w-full min-w-0 items-center rounded-none border sm:w-auto sm:max-w-none">
+                <div className="bg-muted flex h-12 w-full max-w-full min-w-0 items-center rounded-full sm:w-auto sm:max-w-none">
                     <button
                         type="button"
                         className="text-foreground flex size-12 shrink-0 items-center justify-center"
@@ -211,7 +221,7 @@ export function ProductSummary({
                 <Button
                     type="button"
                     size="lg"
-                    className="h-12 w-full max-w-full min-w-0 shrink rounded-none text-sm font-bold tracking-wide uppercase sm:flex-1"
+                    className="h-12 w-full max-w-full min-w-0 shrink text-sm font-semibold sm:flex-1"
                     onClick={() =>
                         addToCart(slug, quantity, undefined, {
                             productPackageId: selectedPackage?.id,
@@ -223,11 +233,11 @@ export function ProductSummary({
                 </Button>
             </div>
 
-            <div className="mt-5 flex min-w-0 flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-x-10">
+            <div className="bg-muted mt-5 flex min-w-0 flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:flex-wrap sm:gap-x-10">
                 <div className="flex min-w-0 items-start gap-2.5">
                     <Clock className="text-primary mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0">
-                        <p className="text-foreground font-inter text-base leading-snug font-bold break-words">
+                        <p className="text-foreground font-inter text-base leading-snug font-semibold break-words">
                             Fast delivery from West Village
                         </p>
                         <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">
@@ -238,7 +248,7 @@ export function ProductSummary({
                 <div className="flex min-w-0 items-start gap-2.5">
                     <Check className="text-primary mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0">
-                        <p className="text-foreground font-inter text-base leading-snug font-bold break-words">
+                        <p className="text-foreground font-inter text-base leading-snug font-semibold break-words">
                             Catalog pricing
                         </p>
                         <p className="text-muted-foreground font-inter mt-0.5 text-xs font-normal">

@@ -102,10 +102,10 @@ function NavLabel({
             prefetch
             onClick={onNavigate}
             className={cn(
-                'relative inline-flex py-1 text-base font-medium transition-colors',
+                'relative inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors',
                 active
-                    ? 'text-primary after:bg-primary after:absolute after:inset-x-0 after:-bottom-0.5 after:h-0.5'
-                    : 'text-foreground/80',
+                    ? 'bg-muted text-foreground'
+                    : 'text-foreground/70 hover:bg-muted/70 hover:text-foreground',
                 className,
             )}
         >
@@ -174,14 +174,14 @@ export function StorefrontHeader() {
 
     return (
         <div className="sticky top-0 z-40">
-            <div className="bg-foreground text-primary-foreground">
-                <p className="px-4 py-2 text-center text-sm font-normal uppercase">
+            <div className="bg-ink-surface text-ink-surface-foreground">
+                <p className="px-4 py-2 text-center text-[11px] leading-snug font-medium tracking-wide uppercase sm:text-xs">
                     {storefrontAnnouncement}
                 </p>
             </div>
 
-            <header className="border-border bg-background border-b">
-                <div className="container mx-auto flex h-16 items-center gap-4 px-4 sm:h-[4.5rem] sm:px-6">
+            <header className="border-border/60 bg-background/85 supports-[backdrop-filter]:bg-background/75 border-b backdrop-blur-xl">
+                <div className="container mx-auto flex h-14 items-center gap-4 px-4 sm:h-16 sm:px-6">
                     <Link
                         href={home()}
                         prefetch
@@ -190,11 +190,11 @@ export function StorefrontHeader() {
                         <img
                             src={brand.logoUrl}
                             alt={name}
-                            className="h-9 w-auto object-contain sm:h-11"
+                            className="h-8 w-auto object-contain sm:h-10"
                         />
                     </Link>
 
-                    <nav className="ml-4 hidden flex-1 items-center justify-center gap-5 lg:flex xl:gap-7">
+                    <nav className="ml-4 hidden flex-1 items-center justify-center gap-1 lg:flex xl:gap-2">
                         {items.map((item) => (
                             <NavLabel
                                 key={`${item.label}-${item.categorySlug ?? item.route}`}
@@ -231,10 +231,10 @@ export function StorefrontHeader() {
                             href={accountHref}
                             prefetch
                             className={cn(
-                                'relative inline-flex size-10 items-center justify-center rounded-md transition-colors',
+                                'relative inline-flex size-10 items-center justify-center rounded-full transition-colors',
                                 accountActive
-                                    ? 'text-primary after:bg-primary after:absolute after:inset-x-2 after:bottom-0.5 after:h-0.5'
-                                    : 'text-foreground',
+                                    ? 'bg-muted text-foreground'
+                                    : 'text-foreground hover:bg-muted/70',
                             )}
                             aria-label="Account"
                             aria-current={accountActive ? 'page' : undefined}
@@ -247,7 +247,7 @@ export function StorefrontHeader() {
                                 />
                             ) : (
                                 <User
-                                    className="size-6 md:size-8"
+                                    className="size-5 md:size-[22px]"
                                     strokeWidth={1.75}
                                 />
                             )}
@@ -271,20 +271,20 @@ export function StorefrontHeader() {
                                 <SheetHeader>
                                     <SheetTitle>Menu</SheetTitle>
                                 </SheetHeader>
-                                <nav className="mt-6 flex flex-col gap-4 px-5">
+                                <nav className="mt-4 flex flex-col gap-1 px-3">
                                     {items.map((item) => (
                                         <NavLabel
                                             key={`${item.label}-${item.categorySlug ?? item.route}`}
                                             item={item}
                                             url={url}
-                                            className="text-base"
+                                            className="w-full rounded-xl px-3 py-2.5 text-base"
                                             onNavigate={() =>
                                                 setMobileOpen(false)
                                             }
                                         />
                                     ))}
                                     <PwaInstallMenuItem
-                                        className="text-foreground/80 py-1 text-base font-medium"
+                                        className="text-foreground/70 rounded-xl px-3 py-2.5 text-base font-medium"
                                         onInstalledNavigate={() =>
                                             setMobileOpen(false)
                                         }
