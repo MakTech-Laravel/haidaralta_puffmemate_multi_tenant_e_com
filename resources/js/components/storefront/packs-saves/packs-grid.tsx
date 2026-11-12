@@ -48,7 +48,7 @@ export function PacksGrid({
                         soon or browse the full shop.
                     </p>
                 ) : (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+                    <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5 xl:gap-6">
                         {products.map((product) => (
                             <PackageProductCard
                                 key={product.id}

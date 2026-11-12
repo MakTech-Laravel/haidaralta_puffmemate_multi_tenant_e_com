@@ -1,7 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { ArrowRight } from 'lucide-react';
-import { CategoryCard } from '@/components/storefront/category-card';
 import { FeaturesBar } from '@/components/storefront/features-bar';
+import { CategoryCarousel } from '@/components/storefront/home/category-carousel';
 import { HomeDealsBanner } from '@/components/storefront/home/deals-banner';
 import { HomeHeroSlider } from '@/components/storefront/home/hero-slider';
 import { ProductCarousel } from '@/components/storefront/home/product-carousel';
@@ -52,15 +52,7 @@ export default function StorefrontHome({
                     </Link>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3.5 md:grid-cols-3 lg:grid-cols-5 [&>:last-child:nth-child(odd)]:col-span-2 md:[&>:last-child:nth-child(odd)]:col-span-1">
-                    {featuredCategories.map((category) => (
-                        <CategoryCard
-                            key={category.id}
-                            category={category}
-                            className="lg:aspect-7/6"
-                        />
-                    ))}
-                </div>
+                <CategoryCarousel categories={featuredCategories} />
             </section>
             <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">

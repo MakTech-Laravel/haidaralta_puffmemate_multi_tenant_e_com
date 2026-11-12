@@ -12,7 +12,7 @@ return [
     |
     */
 
-    'featured_categories_max' => env('FEATURED_CATEGORIES_MAX', 5),
+    'featured_categories_max' => env('FEATURED_CATEGORIES_MAX', 6),
 
     /*
     |--------------------------------------------------------------------------

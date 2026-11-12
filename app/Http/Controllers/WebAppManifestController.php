@@ -29,6 +29,7 @@ class WebAppManifestController extends Controller
             'scope' => (string) config('pwa.scope', '/'),
             'display' => (string) config('pwa.display', 'standalone'),
             'display_override' => ['standalone', 'browser'],
+            'handle_links' => (string) config('pwa.handle_links', 'not-preferred'),
             'launch_handler' => [
                 'client_mode' => 'navigate-existing',
             ],

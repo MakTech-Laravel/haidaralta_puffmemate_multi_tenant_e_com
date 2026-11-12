@@ -26,6 +26,7 @@ test('guest manifest uses origin start url and required chrome fields', function
         ->display_override->toBe(['standalone', 'browser'])
         ->orientation->toBe('any')
         ->prefer_related_applications->toBeFalse()
+        ->and($manifest['handle_links'])->toBe('not-preferred')
         ->and($manifest['launch_handler']['client_mode'])->toBe('navigate-existing')
         ->and($manifest['name'])->not->toContain('Staging')
         ->and($manifest['name'])->not->toContain('Local')
