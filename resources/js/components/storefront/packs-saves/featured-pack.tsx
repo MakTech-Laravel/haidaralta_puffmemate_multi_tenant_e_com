@@ -57,7 +57,7 @@ export function FeaturedPack({ pack, className }: FeaturedPackProps) {
                 <div className="flex min-w-0 flex-col">
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                         {pack.discountPercent > 0 ? (
-                            <span className="bg-primary text-primary-foreground rounded-md px-2 py-0.5 font-semibold tracking-wide uppercase">
+                            <span className="bg-primary text-primary-foreground rounded-full px-2.5 py-0.5 font-semibold tracking-wide uppercase">
                                 {pack.discountPercent}% instant discount
                             </span>
                         ) : null}
@@ -99,7 +99,7 @@ export function FeaturedPack({ pack, className }: FeaturedPackProps) {
                                 {formatStorefrontAud(pack.price)}
                             </p>
                             {pack.savings ? (
-                                <span className="bg-primary/10 text-foreground rounded-md px-2 py-0.5 text-xs font-semibold uppercase">
+                                <span className="bg-primary/10 text-foreground rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase">
                                     Save {formatStorefrontAud(pack.savings)}
                                 </span>
                             ) : null}

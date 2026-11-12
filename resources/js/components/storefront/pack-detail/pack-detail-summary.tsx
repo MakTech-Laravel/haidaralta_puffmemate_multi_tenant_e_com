@@ -95,7 +95,7 @@ export function PackDetailSummary({ pack, className }: PackDetailSummaryProps) {
                     {PAYMENT_OPTIONS.map((option) => (
                         <span
                             key={option}
-                            className="border-border bg-card text-foreground rounded-md border px-2.5 py-1 text-xs font-semibold"
+                            className="border-border bg-card text-foreground rounded-full border px-2.5 py-1 text-xs font-semibold"
                         >
                             {option}
                         </span>

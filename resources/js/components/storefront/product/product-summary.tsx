@@ -73,7 +73,7 @@ export function ProductSummary({
                 {badges.map((badge) => (
                     <span
                         key={badge}
-                        className="bg-secondary text-secondary-foreground font-inter rounded-md px-3 py-2 text-xs font-semibold"
+                        className="bg-secondary text-secondary-foreground font-inter rounded-full px-3 py-1.5 text-xs font-semibold"
                     >
                         {badge}
                     </span>
@@ -81,7 +81,7 @@ export function ProductSummary({
             </div>
 
             <div className="mt-5 min-w-0">
-                <h1 className="text-foreground font-inter text-3xl font-semibold break-words sm:text-5xl">
+                <h1 className="text-foreground font-inter text-3xl leading-tight font-semibold tracking-tight break-words sm:text-5xl">
                     {name}
                 </h1>
                 <p className="text-muted-foreground font-inter mt-2 text-base font-normal break-words">
@@ -112,7 +112,7 @@ export function ProductSummary({
             </div>
 
             <div className="flex min-w-0 flex-wrap items-center gap-3">
-                <span className="text-primary text-3xl font-semibold">
+                <span className="text-foreground text-3xl font-semibold tracking-tight">
                     {displayPrice}
                 </span>
                 {displayCompareAt ? (
@@ -139,10 +139,10 @@ export function ProductSummary({
                                             setSelectedPackageId(pkg.id)
                                         }
                                         className={cn(
-                                            'border-border flex w-full min-w-0 items-center justify-between gap-3 border px-4 py-3 text-left transition',
+                                            'border-border flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border px-4 py-3.5 text-left transition',
                                             selected
-                                                ? 'border-primary bg-primary/5 ring-primary ring-1'
-                                                : 'hover:border-primary/40',
+                                                ? 'border-primary bg-primary-tint ring-primary ring-1'
+                                                : 'hover:border-foreground/30',
                                         )}
                                         aria-pressed={selected}
                                     >
@@ -158,7 +158,7 @@ export function ProductSummary({
                                             </p>
                                         </div>
                                         <div className="flex shrink-0 items-center gap-2">
-                                            <span className="text-primary text-sm font-semibold">
+                                            <span className="text-foreground text-sm font-semibold">
                                                 {pkg.formattedPrice}
                                             </span>
                                             {pkg.formattedUnitTotal ? (
@@ -185,7 +185,7 @@ export function ProductSummary({
             </div>
 
             <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="border-border flex h-12 w-full max-w-full min-w-0 items-center rounded-none border sm:w-auto sm:max-w-none">
+                <div className="bg-muted flex h-12 w-full max-w-full min-w-0 items-center rounded-full sm:w-auto sm:max-w-none">
                     <button
                         type="button"
                         className="text-foreground flex size-12 shrink-0 items-center justify-center"
@@ -211,7 +211,7 @@ export function ProductSummary({
                 <Button
                     type="button"
                     size="lg"
-                    className="h-12 w-full max-w-full min-w-0 shrink rounded-none text-sm font-semibold tracking-wide uppercase sm:flex-1"
+                    className="h-12 w-full max-w-full min-w-0 shrink text-sm font-semibold sm:flex-1"
                     onClick={() =>
                         addToCart(slug, quantity, undefined, {
                             productPackageId: selectedPackage?.id,
@@ -223,7 +223,7 @@ export function ProductSummary({
                 </Button>
             </div>
 
-            <div className="mt-5 flex min-w-0 flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-x-10">
+            <div className="bg-muted mt-5 flex min-w-0 flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:flex-wrap sm:gap-x-10">
                 <div className="flex min-w-0 items-start gap-2.5">
                     <Clock className="text-primary mt-0.5 size-4 shrink-0" />
                     <div className="min-w-0">

@@ -42,7 +42,7 @@ export function StorefrontSortSelect({
                 onValueChange={(next) => onChange(next || null)}
             >
                 <SelectTrigger
-                    className="border-primary bg-background h-10 min-h-10 w-full rounded-none py-0 shadow-none data-[size=default]:h-10"
+                    className="bg-card h-11 min-h-11 w-full rounded-full py-0 data-[size=default]:h-11"
                     aria-label="Sort order"
                 >
                     <SelectValue placeholder={placeholder} />

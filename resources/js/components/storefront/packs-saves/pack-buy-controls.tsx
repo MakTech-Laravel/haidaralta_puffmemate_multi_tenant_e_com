@@ -27,12 +27,12 @@ export function PackBuyControls({
 
     return (
         <div className={cn('flex items-center gap-3', className)}>
-            <div className="border-border flex h-11 shrink-0 items-center rounded-md border">
+            <div className="bg-muted flex h-11 shrink-0 items-center rounded-full">
                 <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-11 rounded-none"
+                    className="size-11"
                     onClick={() => changeQuantity(quantity - 1)}
                     disabled={processing || quantity <= 1}
                     aria-label="Decrease quantity"
@@ -46,7 +46,7 @@ export function PackBuyControls({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="size-11 rounded-none"
+                    className="size-11"
                     onClick={() => changeQuantity(quantity + 1)}
                     disabled={processing || quantity >= maxQuantity}
                     aria-label="Increase quantity"
@@ -56,7 +56,7 @@ export function PackBuyControls({
             </div>
             <Button
                 type="button"
-                className="h-11 flex-1 rounded-md text-sm font-semibold tracking-wide uppercase"
+                className="h-11 flex-1 text-sm font-semibold"
                 disabled={processing || (stockLeft !== null && stockLeft !== undefined && stockLeft < 1)}
                 onClick={() => onBuyNow?.(quantity)}
             >

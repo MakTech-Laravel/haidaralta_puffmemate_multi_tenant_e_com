@@ -14,10 +14,10 @@ const authLabelClass =
     'text-muted-foreground text-xs font-semibold tracking-[0.12em] uppercase';
 
 const authInputClass =
-    'border-border h-11 rounded-none border-0 border-b bg-transparent px-0 shadow-none focus-visible:border-foreground focus-visible:ring-0';
+    'h-11 rounded-xl';
 
 const authButtonClass =
-    'h-12 w-full rounded-md text-sm font-semibold tracking-wide uppercase shadow-[0_8px_24px_color-mix(in_oklab,var(--primary)_45%,transparent)] transition hover:-translate-y-0.5 hover:shadow-[0_12px_28px_color-mix(in_oklab,var(--primary)_55%,transparent)]';
+    'h-12 w-full text-sm font-semibold';
 
 const authLinkClass =
     'text-foreground font-medium underline-offset-4 hover:text-primary hover:underline';

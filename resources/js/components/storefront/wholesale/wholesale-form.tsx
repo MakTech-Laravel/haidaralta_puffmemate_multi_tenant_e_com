@@ -25,7 +25,7 @@ type WholesaleFormProps = {
 };
 
 const boxedFieldClass =
-    'border-border h-10  rounded-none bg-transparent shadow-none';
+    'h-11 rounded-xl';
 
 function RequiredMark() {
     return <span className="text-primary">*</span>;
@@ -249,7 +249,7 @@ export function WholesaleForm({
                         }
                         placeholder={copy.messagePlaceholder}
                         rows={4}
-                        className="border-border min-h-24 resize-none rounded-none bg-transparent shadow-none"
+                        className="min-h-28 resize-none rounded-xl"
                     />
                     <InputError message={errors.message} />
                 </div>
@@ -267,7 +267,7 @@ export function WholesaleForm({
                     <Button
                         type="submit"
                         disabled={processing}
-                        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 h-11 cursor-pointer rounded-none px-6 font-semibold"
+                        className="h-12 cursor-pointer px-8 font-semibold"
                     >
                         {copy.submitLabel ?? 'Send Message'}
                     </Button>

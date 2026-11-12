@@ -7,7 +7,7 @@ type OrderTrackAddressProps = {
 
 export function OrderTrackAddress({ address }: OrderTrackAddressProps) {
     return (
-        <Card className="bg-background gap-3 rounded-none border-none py-5 shadow-none">
+        <Card className="bg-background gap-3 rounded-2xl border py-5 shadow-none">
             <CardHeader className="px-5 pb-0">
                 <CardTitle className="text-foreground text-lg font-semibold sm:text-xl">
                     Shipping address

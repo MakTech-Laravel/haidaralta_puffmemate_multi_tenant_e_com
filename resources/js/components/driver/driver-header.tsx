@@ -25,7 +25,7 @@ export function DriverHeader() {
         url.startsWith(`${notificationsHref}/`);
 
     return (
-        <header className="border-border bg-background/95 sticky top-0 z-40 border-b pt-[env(safe-area-inset-top)] backdrop-blur-sm">
+        <header className="border-border bg-background/85 supports-[backdrop-filter]:bg-background/75 sticky top-0 z-40 border-b pt-[env(safe-area-inset-top)] backdrop-blur-xl">
             <div className="flex h-14 items-center gap-3 px-4 sm:h-16 sm:px-6">
                 <Link
                     href={dashboard.url()}
@@ -50,10 +50,10 @@ export function DriverHeader() {
                         aria-current={notificationsActive ? 'page' : undefined}
                         data-test="driver-header-notifications"
                         className={cn(
-                            'relative inline-flex size-11 items-center justify-center rounded-md transition-colors',
+                            'relative inline-flex size-11 items-center justify-center rounded-full transition-colors',
                             notificationsActive
-                                ? 'text-primary'
-                                : 'text-foreground',
+                                ? 'bg-muted text-foreground'
+                                : 'text-foreground hover:bg-muted/70',
                         )}
                     >
                         <Bell className="size-6" strokeWidth={1.75} />

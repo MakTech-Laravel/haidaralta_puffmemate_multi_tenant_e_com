@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 
-/** Keep in sync with --palette-green-900 in resources/css/app.css (browser-bar fallback only). */
-const DEFAULT_THEME_COLOR = '#174B36';
+/** Keep in sync with --palette-black in resources/css/app.css (browser-bar fallback only). */
+const DEFAULT_THEME_COLOR = '#1D1D1F';
 
 /**
  * Keeps the browser address-bar colour (`meta[name="theme-color"]`) in sync with

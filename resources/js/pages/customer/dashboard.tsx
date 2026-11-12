@@ -92,7 +92,7 @@ export default function CustomerDashboard() {
                                 href={card.href}
                                 prefetch
                                 className={cn(
-                                    'border-border bg-background hover:border-primary flex min-h-28 flex-col items-center justify-center gap-2 border px-3 py-5 transition sm:min-h-40 sm:gap-4 sm:px-6 sm:py-10',
+                                    'border-border bg-card hover:border-foreground/20 flex min-h-28 flex-col items-center justify-center gap-2 rounded-3xl border px-3 py-5 transition hover:shadow-md sm:min-h-40 sm:gap-4 sm:px-6 sm:py-10',
                                 )}
                             >
                                 <Icon

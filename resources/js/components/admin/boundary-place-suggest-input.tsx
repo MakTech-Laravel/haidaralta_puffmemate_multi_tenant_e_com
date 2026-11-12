@@ -146,7 +146,7 @@ export function BoundaryPlaceSuggestInput({
                 id={listId}
                 align="start"
                 sideOffset={4}
-                className="w-(--radix-popover-trigger-width) rounded-none border p-0 shadow-md"
+                className="w-(--radix-popover-trigger-width) rounded-xl border p-0 shadow-lg"
                 onOpenAutoFocus={(event) => event.preventDefault()}
             >
                 <ul className="max-h-60 overflow-y-auto py-1" role="listbox">

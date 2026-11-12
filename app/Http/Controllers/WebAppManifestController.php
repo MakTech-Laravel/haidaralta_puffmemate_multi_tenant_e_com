@@ -34,7 +34,7 @@ class WebAppManifestController extends Controller
             ],
             'orientation' => (string) config('pwa.orientation', 'any'),
             'background_color' => (string) config('pwa.background_color', '#FFFFFF'),
-            'theme_color' => (string) config('pwa.theme_color', '#174B36'),
+            'theme_color' => (string) config('pwa.theme_color', '#1D1D1F'),
             'icons' => config('pwa.icons', []),
             'categories' => config('pwa.categories', ['shopping']),
             'prefer_related_applications' => false,
