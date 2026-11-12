@@ -87,8 +87,9 @@ class CategorySeeder extends Seeder
             [
                 'name' => 'Disposables',
                 'slug' => 'disposables',
-                'featured' => false,
+                'featured' => true,
                 'show_in_nav' => false,
+                'slogan' => 'Ready-to-vape disposables',
                 'image' => 'images/storefront/category-vapes.png',
             ],
             [

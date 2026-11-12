@@ -58,7 +58,7 @@ export function PackCard({
             <PackCardLink href={href}>
                 <div className="bg-muted relative aspect-3/2 overflow-hidden">
                     {pack.savings ? (
-                        <span className="bg-primary text-primary-foreground absolute top-2 left-2 z-10 max-w-[calc(100%-1rem)] truncate rounded-md px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase shadow-sm @xs:top-3 @xs:left-3 @xs:px-2.5 @xs:py-1 @xs:text-xs">
+                        <span className="bg-primary text-primary-foreground absolute top-2 left-2 z-10 max-w-[calc(100%-1rem)] truncate rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-wide uppercase shadow-sm @xs:top-3 @xs:left-3 @xs:px-2.5 @xs:py-1 @xs:text-xs">
                             Save {formatStorefrontAud(pack.savings)}
                         </span>
                     ) : null}

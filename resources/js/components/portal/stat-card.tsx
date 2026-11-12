@@ -23,19 +23,19 @@ export function StatCard({
     valueClassName?: string;
 }) {
     return (
-        <Card className={cn('gap-3 py-4 shadow-none', className)}>
-            <CardHeader className="flex flex-row items-start justify-between gap-2 px-4">
-                <CardDescription className="text-xs font-medium tracking-wide uppercase">
+        <Card className={cn('gap-3 py-5 shadow-none', className)}>
+            <CardHeader className="flex flex-row items-start justify-between gap-2 px-5">
+                <CardDescription className="text-sm font-medium">
                     {label}
                 </CardDescription>
                 {Icon ? (
-                    <Icon className="text-muted-foreground size-4 shrink-0" />
+                    <span className="bg-primary-tint text-primary flex size-9 shrink-0 items-center justify-center rounded-xl"><Icon className="size-4" /></span>
                 ) : null}
             </CardHeader>
-            <CardContent className="px-4">
+            <CardContent className="px-5">
                 <p
                     className={cn(
-                        'text-2xl font-semibold tracking-tight tabular-nums',
+                        'text-3xl font-semibold tracking-tight tabular-nums',
                         valueClassName,
                     )}
                 >

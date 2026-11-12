@@ -66,13 +66,13 @@ export function PacksSavesHero({ maxSavings, className }: PacksSavesHeroProps) {
     return (
         <section
             className={cn(
-                'bg-primary text-primary-foreground relative overflow-hidden rounded-3xl',
+                'bg-ink-surface text-ink-surface-foreground relative overflow-hidden rounded-3xl',
                 className,
             )}
         >
             <div className="relative grid items-center gap-8 px-6 py-10 sm:px-10 sm:py-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:px-14">
                 <div className="max-w-2xl">
-                    <span className="bg-primary-foreground/10 text-primary-foreground inline-flex items-center gap-1.5 rounded-full border border-primary-foreground/15 px-3 py-1 text-[11px] font-semibold tracking-wider uppercase">
+                    <span className="bg-ink-surface-foreground/10 text-ink-surface-foreground inline-flex items-center gap-1.5 rounded-full border border-ink-surface-foreground/15 px-3 py-1 text-[11px] font-semibold tracking-wider uppercase">
                         <Sparkles className="size-3.5" />
                         Puffonmate bundles &amp; savings
                     </span>
@@ -81,7 +81,7 @@ export function PacksSavesHero({ maxSavings, className }: PacksSavesHeroProps) {
                         <br />
                         Massive savings.
                     </h1>
-                    <p className="text-primary-foreground/75 mt-4 max-w-xl text-sm leading-relaxed sm:text-base">
+                    <p className="text-ink-surface-foreground/75 mt-4 max-w-xl text-sm leading-relaxed sm:text-base">
                         Curated multi-packs, carton drops, and mix-and-match
                         pairs delivered on-demand straight to your door. No
                         subscriptions, zero warehouse delays.
@@ -90,7 +90,7 @@ export function PacksSavesHero({ maxSavings, className }: PacksSavesHeroProps) {
                         {heroChips.map(({ icon: Icon, label }) => (
                             <li
                                 key={label}
-                                className="text-primary-foreground/85 inline-flex items-center gap-1.5 rounded-md border border-primary-foreground/15 bg-primary-foreground/10 px-2.5 py-1.5 text-xs"
+                                className="text-ink-surface-foreground/85 inline-flex items-center gap-1.5 rounded-full border border-ink-surface-foreground/15 bg-ink-surface-foreground/10 px-2.5 py-1.5 text-xs"
                             >
                                 <Icon className="size-3.5" />
                                 {label}
@@ -98,7 +98,7 @@ export function PacksSavesHero({ maxSavings, className }: PacksSavesHeroProps) {
                         ))}
                     </ul>
                     <div className="mt-6 flex flex-wrap items-center gap-3">
-                        <span className="inline-flex items-center gap-2 rounded-md bg-primary-foreground/10 px-3 py-2 text-xs">
+                        <span className="inline-flex items-center gap-2 rounded-full bg-ink-surface-foreground/10 px-3 py-2 text-xs">
                             <Timer className="size-4" />
                             Weekend Volume Drop — Ends in{' '}
                             <span className="font-semibold tabular-nums">
@@ -107,7 +107,7 @@ export function PacksSavesHero({ maxSavings, className }: PacksSavesHeroProps) {
                         </span>
                         <Link
                             href={shop()}
-                            className="text-primary-foreground/85 hover:text-primary-foreground inline-flex items-center gap-1.5 text-xs font-semibold transition"
+                            className="text-ink-surface-foreground/85 hover:text-ink-surface-foreground inline-flex items-center gap-1.5 text-xs font-semibold transition"
                         >
                             Build custom pack
                             <ArrowRight className="size-3.5" />
@@ -126,7 +126,7 @@ export function PacksSavesHero({ maxSavings, className }: PacksSavesHeroProps) {
                             more
                         </p>
                         {maxSavings ? (
-                            <span className="text-foreground rounded-md bg-card px-3 py-1 text-xs font-semibold uppercase">
+                            <span className="text-foreground rounded-full bg-card px-3 py-1 text-xs font-semibold uppercase">
                                 Up to ${maxSavings} off
                             </span>
                         ) : null}

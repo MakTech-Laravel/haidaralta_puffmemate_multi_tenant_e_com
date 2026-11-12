@@ -87,11 +87,11 @@ export default function StorefrontCategory({
             <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <h1 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
+                        <h1 className="text-foreground text-2xl font-semibold tracking-tight sm:text-4xl">
                             {category.name}
                         </h1>
                         {category.slogan ? (
-                            <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
+                            <p className="text-muted-foreground font-inter mt-1 text-sm font-normal">
                                 {category.slogan}
                             </p>
                         ) : null}
@@ -141,7 +141,7 @@ export default function StorefrontCategory({
                             </p>
                         </div>
                     ) : (
-                        <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                        <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
                             {products.map((product) => (
                                 <ProductCard
                                     key={product.id}

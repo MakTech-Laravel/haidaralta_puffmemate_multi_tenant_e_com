@@ -48,7 +48,7 @@ export function PackageProductCard({
                         }}
                     />
                     <div
-                        className="bg-primary/70 text-primary-foreground absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:right-3 sm:bottom-3 sm:px-2.5 sm:py-1"
+                        className="bg-ink-surface/80 text-ink-surface-foreground absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:right-3 sm:bottom-3 sm:px-2.5 sm:py-1"
                         aria-label={`${product.views} views`}
                     >
                         <EyeIcon className="size-3.5 sm:size-4" />
@@ -74,7 +74,7 @@ export function PackageProductCard({
                 <Button
                     asChild
                     size="sm"
-                    className="h-9 w-full rounded-none text-xs font-semibold tracking-wide uppercase"
+                    className="h-10 w-full text-sm font-semibold"
                 >
                     <Link href={productShow(product.id)}>Choose package</Link>
                 </Button>

@@ -103,7 +103,7 @@ export function AccountSidebar({ className }: AccountSidebarProps) {
     const { url } = usePage();
 
     return (
-        <nav className={cn('flex flex-col', className)} aria-label="Account">
+        <nav className={cn('flex flex-col gap-1', className)} aria-label="Account">
             {accountNavItems.map((item) => {
                 const active = Boolean(item.match?.(url));
                 const Icon = item.icon;
@@ -114,7 +114,7 @@ export function AccountSidebar({ className }: AccountSidebarProps) {
                             key={item.label}
                             href={logout()}
                             as="button"
-                            className="border-border text-foreground hover:text-primary flex cursor-pointer items-center gap-3 border-b py-3 text-left text-base font-medium transition-colors first:border-t"
+                            className="text-muted-foreground hover:bg-muted hover:text-foreground flex cursor-pointer items-center gap-3 rounded-xl px-3 py-2.5 text-left text-[15px] font-medium transition-colors"
                             data-test="account-logout"
                         >
                             <Icon className="size-5 shrink-0" aria-hidden />
@@ -129,10 +129,10 @@ export function AccountSidebar({ className }: AccountSidebarProps) {
                         href={item.href!}
                         prefetch
                         className={cn(
-                            'flex items-center gap-3 border-b py-3 text-base font-medium transition-colors first:border-t',
+                            'flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors',
                             active
-                                ? 'text-primary border-primary'
-                                : 'border-border text-foreground hover:text-primary',
+                                ? 'bg-muted text-foreground'
+                                : 'text-muted-foreground hover:bg-muted hover:text-foreground',
                         )}
                         aria-current={active ? 'page' : undefined}
                     >
@@ -141,7 +141,7 @@ export function AccountSidebar({ className }: AccountSidebarProps) {
                     </Link>
                 );
             })}
-            <PwaInstallMenuItem className="border-border text-foreground hover:text-primary flex items-center gap-3 border-b py-3 text-base font-medium transition-colors [&_svg]:size-5" />
+            <PwaInstallMenuItem className="text-muted-foreground hover:bg-muted hover:text-foreground flex items-center gap-3 rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors [&_svg]:size-5" />
         </nav>
     );
 }

@@ -9,7 +9,7 @@ type OrderDeliveryTimelineProps = {
 
 export function OrderDeliveryTimeline({ steps }: OrderDeliveryTimelineProps) {
     return (
-        <Card className="bg-background gap-4 rounded-none border-none py-5 shadow-none">
+        <Card className="bg-background gap-4 rounded-2xl border py-5 shadow-none">
             <CardHeader className="px-5 pb-0">
                 <CardTitle className="text-base font-semibold">
                     Delivery timeline

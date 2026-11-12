@@ -338,8 +338,8 @@ test('general settings reject a theme color that is not a six digit hex value', 
         ->assertSessionHasErrors('theme_color');
 })->with(['red', '#FFF', '174B36', 'url(javascript:alert(1))']);
 
-test('theme color falls back to the brand grey-green default', function () {
-    expect(config('pwa.theme_color'))->toBe('#174B36');
+test('theme color falls back to the brand near-black default', function () {
+    expect(config('pwa.theme_color'))->toBe('#1D1D1F');
 });
 
 test('guests are redirected from application settings', function () {

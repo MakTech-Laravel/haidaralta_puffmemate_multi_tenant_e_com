@@ -46,10 +46,10 @@ export function ProductSectionTabs({
                         type="button"
                         onClick={() => onChange(tab.id)}
                         className={cn(
-                            'h-12 rounded-none border px-3 text-xs font-semibold tracking-wide uppercase transition sm:text-sm',
+                            'h-11 rounded-full border px-4 text-sm font-medium transition',
                             isActive
-                                ? 'border-primary bg-primary text-primary-foreground'
-                                : 'border-border bg-background text-foreground hover:border-primary',
+                                ? 'border-foreground bg-foreground text-background'
+                                : 'border-border bg-card text-foreground hover:bg-muted',
                         )}
                     >
                         {label}

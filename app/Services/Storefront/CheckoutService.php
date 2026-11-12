@@ -68,18 +68,12 @@ class CheckoutService
             ->map(fn (DeliveryShift $shift): array => $this->deliveryShifts->payloadSlot($shift))
             ->values()
             ->all();
+        $today = $now->toDateString();
         $lateMin = $this->deliveryShifts->lateMinDate($now);
         $lateMax = $this->deliveryShifts->lateMaxDate($now);
 
         return $this->activeDeliveryMethods()
-            ->filter(function (DeliveryMethod $method) use ($sameDaySlots): bool {
-                if ($method->key === DeliveryShiftAvailability::METHOD_SAME_DAY) {
-                    return $sameDaySlots !== [];
-                }
-
-                return true;
-            })
-            ->map(function (DeliveryMethod $method) use ($sameDaySlots, $allSlots, $lateMin, $lateMax): array {
+            ->map(function (DeliveryMethod $method) use ($sameDaySlots, $allSlots, $today, $lateMin, $lateMax): array {
                 $isLate = $method->key === DeliveryShiftAvailability::METHOD_LATE;
                 $slots = $isLate ? $allSlots : $sameDaySlots;
 
@@ -89,8 +83,9 @@ class CheckoutService
                     'description' => $method->description ?? '',
                     'requiresSlot' => true,
                     'requiresDate' => $isLate,
-                    'minDate' => $isLate ? $lateMin : null,
-                    'maxDate' => $isLate ? $lateMax : null,
+                    // Same day is pinned to today so the Day picker can show today through the last Late date.
+                    'minDate' => $isLate ? $lateMin : $today,
+                    'maxDate' => $isLate ? $lateMax : $today,
                     'timeSlots' => $slots,
                 ];
             })
@@ -195,6 +190,8 @@ class CheckoutService
      *     fee: float,
      *     formattedFee: string,
      *     requiresLateDelivery?: bool,
+     *     sameDayInRadius?: bool|null,
+     *     sameDayRadiusKm?: float,
      *     shortfallLines?: list<array{
      *         productId: int,
      *         variantId: int|null,
@@ -230,6 +227,8 @@ class CheckoutService
                 'formattedFee' => '$'.number_format($fee, 2),
                 'requiresLateDelivery' => false,
                 'shortfallLines' => [],
+                'sameDayInRadius' => null,
+                'sameDayRadiusKm' => (float) config('catalog.same_day_radius_km'),
             ];
         }
 
@@ -258,6 +257,8 @@ class CheckoutService
             'fee' => $fee,
             'formattedFee' => '$'.number_format($fee, 2),
             'requiresLateDelivery' => $plan['requires_late_delivery'],
+            'sameDayInRadius' => $plan['same_day_in_radius'],
+            'sameDayRadiusKm' => (float) config('catalog.same_day_radius_km'),
             'shortfallLines' => collect($plan['lines'])
                 ->filter(fn (array $line): bool => $line['shortfall'] > 0)
                 ->map(function (array $line) use ($cart): array {

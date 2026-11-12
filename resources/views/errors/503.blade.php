@@ -8,7 +8,7 @@
         $applicationSettings = app(\App\Services\Application\ApplicationSettingsService::class);
         $shared = $applicationSettings->sharedPayload();
         $appName = (string) config('app.name', 'PuffMeMate');
-        $themeColor = (string) ($shared['themeColor'] ?? config('pwa.theme_color', '#174B36'));
+        $themeColor = (string) ($shared['themeColor'] ?? config('pwa.theme_color', '#1D1D1F'));
         $backgroundColor = (string) ($shared['backgroundColor'] ?? '#FFFFFF');
         $logoUrl = $shared['logoUrl'] ?? '/images/storefront/logo.png';
         $faviconUrl = $applicationSettings->faviconHref();
@@ -34,8 +34,8 @@
             --brand-rgb: {{ $r }}, {{ $g }}, {{ $b }};
             --bg: {{ $backgroundColor }};
             /* Palette mirrors resources/css/app.css (standalone page, no Vite assets). */
-            --ink: #202923;
-            --muted: #5f6863;
+            --ink: #1D1D1F;
+            --muted: #6E6E73;
             --surface: rgba(255, 255, 255, 0.72);
         }
 
@@ -74,7 +74,7 @@
                 radial-gradient(ellipse 80% 60% at 50% -10%, rgba(var(--brand-rgb), 0.28), transparent 55%),
                 radial-gradient(ellipse 50% 40% at 100% 100%, rgba(var(--brand-rgb), 0.14), transparent 50%),
                 radial-gradient(ellipse 40% 35% at 0% 80%, rgba(var(--brand-rgb), 0.1), transparent 45%),
-                linear-gradient(180deg, #f3f5f2 0%, var(--bg) 45%, #f3f5f2 100%);
+                linear-gradient(180deg, #f5f5f7 0%, var(--bg) 45%, #f5f5f7 100%);
         }
 
         .grid-fade {

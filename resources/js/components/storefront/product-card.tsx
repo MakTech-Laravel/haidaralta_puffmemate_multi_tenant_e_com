@@ -26,7 +26,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
     return (
         <article
             className={cn(
-                'border-border bg-card hover:border-primary/40 flex h-full flex-col overflow-hidden rounded-xl border transition',
+                'border-border bg-card flex h-full flex-col overflow-hidden rounded-2xl border transition hover:shadow-lg',
                 className,
             )}
         >
@@ -36,7 +36,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
             >
                 <div className="bg-muted relative aspect-3/2 overflow-hidden">
                     {hasOffer ? (
-                        <span className="bg-primary/70 text-primary-foreground absolute top-2 right-2 z-10 rounded-full px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:top-3 sm:right-3 sm:px-2.5 sm:py-1">
+                        <span className="bg-ink-surface/80 text-ink-surface-foreground absolute top-2 right-2 z-10 rounded-full px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:top-3 sm:right-3 sm:px-2.5 sm:py-1">
                             Offer Product
                         </span>
                     ) : null}
@@ -52,7 +52,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                         }}
                     />
                     <div
-                        className="bg-primary/70 text-primary-foreground absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:right-3 sm:bottom-3 sm:px-2.5 sm:py-1"
+                        className="bg-ink-surface/80 text-ink-surface-foreground absolute right-2 bottom-2 z-10 flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium backdrop-blur-sm sm:right-3 sm:bottom-3 sm:px-2.5 sm:py-1"
                         aria-label={`${displayViews} views`}
                     >
                         <EyeIcon className="size-3.5 sm:size-4" />
@@ -60,14 +60,14 @@ export function ProductCard({ product, className }: ProductCardProps) {
                     </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-1 p-4 pb-2">
-                    <h3 className="text-foreground min-w-0 truncate text-base font-semibold sm:text-lg">
+                    <h3 className="text-foreground min-w-0 truncate text-base font-semibold tracking-tight sm:text-lg">
                         {product.name}
                     </h3>
                     <p className="text-muted-foreground truncate text-sm font-normal">
                         {product.description}
                     </p>
                     <div className="mt-2 flex flex-wrap items-baseline gap-2">
-                        <p className="text-primary text-lg font-semibold">
+                        <p className="text-foreground text-lg font-semibold">
                             {product.price}
                         </p>
                         {hasOffer ? (
@@ -82,7 +82,7 @@ export function ProductCard({ product, className }: ProductCardProps) {
                 <Button
                     type="button"
                     size="sm"
-                    className="h-9 w-full rounded-none text-xs font-semibold tracking-wide uppercase"
+                    className="h-10 w-full text-sm font-semibold"
                     disabled={adding}
                     onClick={() => {
                         setAdding(true);
