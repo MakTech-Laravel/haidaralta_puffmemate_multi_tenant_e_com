@@ -1,5 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
-import { CheckCircle2, MapPin, Navigation, Package } from 'lucide-react';
+import { MapPin, Navigation, Package } from 'lucide-react';
 import { useEffect } from 'react';
 import { DriverEmptyState } from '@/components/driver/driver-empty-state';
 import {
@@ -37,11 +37,9 @@ export default function DriverRouteIndex({
         assignedCount === 0
             ? 0
             : Math.round((completed.length / assignedCount) * 100);
-    const mapStops = remaining.length > 0 ? remaining : completed;
+    const mapStops = remaining;
     const highlightedStop =
-        remaining.find((order) => order.id === highlightId) ??
-        completed.find((order) => order.id === highlightId) ??
-        null;
+        remaining.find((order) => order.id === highlightId) ?? null;
 
     useEffect(() => {
         if (!highlightId) {
@@ -139,7 +137,7 @@ export default function DriverRouteIndex({
                     <DriverEmptyState
                         icon={Package}
                         title="Route complete"
-                        description="All assigned drops for this run are delivered."
+                        description="All assigned drops for this run are delivered. Review them on Orders."
                     />
                 ) : (
                     <section className="flex flex-col gap-3">
@@ -219,45 +217,6 @@ export default function DriverRouteIndex({
                         </ol>
                     </section>
                 )}
-
-                {completed.length > 0 ? (
-                    <section className="space-y-3">
-                        <h2 className="text-foreground text-lg font-semibold">
-                            Completed
-                        </h2>
-                        <ul className="flex flex-col gap-2">
-                            {completed.map((order) => (
-                                <li
-                                    key={order.id}
-                                    id={`driver-stop-${order.id}`}
-                                >
-                                    <Link
-                                        href={orderShow.url(order.id)}
-                                        prefetch
-                                        className={cn(
-                                            'text-muted-foreground hover:text-foreground flex items-start gap-3 rounded-xl border px-4 py-3 text-base transition-colors',
-                                            highlightId === order.id &&
-                                                'ring-primary text-foreground ring-2',
-                                        )}
-                                    >
-                                        <CheckCircle2
-                                            className="mt-0.5 size-5 shrink-0"
-                                            aria-hidden
-                                        />
-                                        <span className="min-w-0">
-                                            <span className="text-foreground block font-medium">
-                                                {order.customerName}
-                                            </span>
-                                            <span className="block text-sm">
-                                                {order.addressSummary}
-                                            </span>
-                                        </span>
-                                    </Link>
-                                </li>
-                            ))}
-                        </ul>
-                    </section>
-                ) : null}
             </div>
         </>
     );

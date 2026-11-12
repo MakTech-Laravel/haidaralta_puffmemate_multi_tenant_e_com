@@ -34,13 +34,33 @@ type DriverRouteMapPanelProps = {
 const SYDNEY: LatLngTuple = [-33.8688, 151.2093];
 
 function kmLabel(meters: number): string {
-    return meters < 1000
-        ? `${Math.round(meters)} m`
-        : `${(meters / 1000).toFixed(1)} km`;
+    if (meters < 1000) {
+        return `${Math.round(meters)} m`;
+    }
+
+    const km = meters / 1000;
+
+    return km >= 100 ? `${Math.round(km)} km` : `${km.toFixed(1)} km`;
 }
 
 function minutesLabel(seconds: number): string {
     return `${Math.max(1, Math.round(seconds / 60))} min`;
+}
+
+function stopKindLabel(
+    focusStop: DriverAssignedOrder,
+    nextStop: DriverAssignedOrder | null,
+    highlightId: string | null,
+): string {
+    if (highlightId === focusStop.id) {
+        return 'Selected';
+    }
+
+    if (focusStop.id === nextStop?.id) {
+        return 'Next';
+    }
+
+    return 'Stop';
 }
 
 export function DriverRouteMapPanel({
@@ -114,6 +134,12 @@ export function DriverRouteMapPanel({
                   },
               )
             : null;
+
+    const distanceHint = roadRoute
+        ? `${kmLabel(roadRoute.distance_meters)} · ${minutesLabel(roadRoute.duration_seconds)}`
+        : straightLine !== null
+          ? `${kmLabel(straightLine)} straight`
+          : null;
 
     const loadRoute = async () => {
         if (!focusStop || loading) {
@@ -190,7 +216,7 @@ export function DriverRouteMapPanel({
             data-test="driver-route-map"
             data-fullscreen={fullScreen ? 'true' : 'false'}
         >
-            <div className="relative">
+            <div className="relative isolate overflow-hidden">
                 <MapView
                     center={center}
                     markers={markers}
@@ -198,101 +224,82 @@ export function DriverRouteMapPanel({
                     fitKey={mapFitKey}
                     className={cn(
                         'w-full',
-                        fullScreen
-                            ? 'h-[100svh]'
-                            : 'h-72 sm:h-96',
+                        fullScreen ? 'h-[100svh]' : 'h-72 sm:h-96',
                     )}
                 />
 
                 <div
                     className={cn(
-                        'absolute top-3 right-3 z-[1000] flex gap-2',
+                        'absolute top-2 right-2 z-10',
                         fullScreen &&
-                            'top-[max(0.75rem,env(safe-area-inset-top))] right-[max(0.75rem,env(safe-area-inset-right))]',
+                            'top-[max(0.5rem,env(safe-area-inset-top))] right-[max(0.5rem,env(safe-area-inset-right))]',
                     )}
                 >
                     {fullScreen ? (
                         <Button
                             type="button"
-                            size="sm"
+                            size="icon-sm"
                             variant="secondary"
-                            className="bg-background/95 shadow-md"
+                            className="bg-background/95 shadow-sm"
                             onClick={() => setFullScreen(false)}
                             aria-label="Exit full screen"
                             data-test="driver-route-map-exit-fullscreen"
                         >
-                            <X data-icon="inline-start" />
-                            Close
+                            <X />
                         </Button>
                     ) : (
                         <Button
                             type="button"
-                            size="sm"
+                            size="icon-sm"
                             variant="secondary"
-                            className="bg-background/95 shadow-md"
+                            className="bg-background/95 shadow-sm"
                             onClick={() => setFullScreen(true)}
                             aria-label="Open map full screen"
                             data-test="driver-route-map-fullscreen"
                         >
-                            <Maximize2 data-icon="inline-start" />
-                            Full screen
+                            <Maximize2 />
                         </Button>
                     )}
                 </div>
 
                 {pinned.length === 0 ? (
-                    <p className="bg-background/90 text-muted-foreground pointer-events-none absolute inset-x-3 top-14 z-[1000] rounded-lg px-3 py-2 text-sm">
-                        These stops have no map pin yet. Use Navigate to open
-                        the address in your maps app.
+                    <p className="bg-background/90 text-muted-foreground pointer-events-none absolute inset-x-2 top-12 z-10 rounded-md px-2.5 py-1.5 text-xs">
+                        No map pins yet. Use Navigate for the address.
                     </p>
                 ) : null}
 
-                {focusStop ? (
+                {fullScreen && focusStop ? (
                     <div
                         className={cn(
-                            'absolute inset-x-3 bottom-3 z-[1000] rounded-xl bg-white/95 p-3 shadow-lg sm:inset-x-auto sm:right-3 sm:left-auto sm:w-80',
-                            fullScreen &&
-                                'bottom-[max(0.75rem,env(safe-area-inset-bottom))]',
+                            'border-border bg-background/95 absolute inset-x-2 z-10 max-w-sm rounded-xl border p-2.5 shadow-sm sm:right-2 sm:left-auto',
+                            'bottom-[max(0.5rem,env(safe-area-inset-bottom))]',
                         )}
                     >
-                        <p className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                            {highlightId === focusStop.id
-                                ? 'Selected stop'
-                                : focusStop.id === nextStop?.id
-                                  ? 'Next stop'
-                                  : 'Stop'}
+                        <p className="text-muted-foreground text-[0.65rem] font-medium tracking-wide uppercase">
+                            {stopKindLabel(focusStop, nextStop, highlightId)}
                         </p>
-                        <p className="text-foreground mt-0.5 truncate font-semibold">
+                        <p className="text-foreground truncate text-sm font-semibold">
                             {focusStop.customerName}
                         </p>
-                        <p className="text-muted-foreground truncate text-sm">
+                        <p className="text-muted-foreground truncate text-xs">
                             {focusStop.addressSummary}
                         </p>
-
-                        {roadRoute ? (
-                            <p className="text-foreground mt-1.5 text-sm font-medium">
-                                {kmLabel(roadRoute.distance_meters)} ·{' '}
-                                {minutesLabel(roadRoute.duration_seconds)} by
-                                road
-                            </p>
-                        ) : straightLine !== null ? (
-                            <p className="text-muted-foreground mt-1.5 text-sm">
-                                About {kmLabel(straightLine)} away in a
-                                straight line
+                        {distanceHint ? (
+                            <p className="text-muted-foreground mt-1 text-xs">
+                                {distanceHint}
                             </p>
                         ) : null}
-
                         {routeError ? (
-                            <p className="text-destructive mt-1.5 text-xs">
+                            <p className="text-destructive mt-1 text-xs">
                                 {routeError}
                             </p>
                         ) : null}
-
-                        <div className="mt-2 flex flex-wrap gap-2">
+                        <div className="mt-2 flex gap-2">
                             <Button
                                 type="button"
                                 size="sm"
                                 variant="secondary"
+                                className="flex-1"
                                 disabled={!position || !focusHasPin || loading}
                                 onClick={() => void loadRoute()}
                             >
@@ -304,7 +311,7 @@ export function DriverRouteMapPanel({
                                 ) : (
                                     <RouteIcon data-icon="inline-start" />
                                 )}
-                                Show road route
+                                Road route
                             </Button>
                             <Button
                                 type="button"
@@ -316,7 +323,7 @@ export function DriverRouteMapPanel({
                                     href={orderShow.url(focusStop.id)}
                                     prefetch
                                 >
-                                    Open stop
+                                    Open
                                 </Link>
                             </Button>
                         </div>
@@ -325,17 +332,83 @@ export function DriverRouteMapPanel({
             </div>
 
             {!fullScreen ? (
-                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
-                    <div className="min-w-0">
-                        <p className="text-foreground text-sm font-medium">
-                            {areaLabel ?? "Today's run"}
-                        </p>
-                        <p className="text-muted-foreground text-sm">
-                            {stops.length}{' '}
-                            {stops.length === 1 ? 'drop' : 'drops'} on this map
-                        </p>
-                    </div>
-                    <Button type="button" variant="outline" size="sm" asChild>
+                <div className="space-y-2 px-3 py-3 sm:px-4">
+                    {focusStop ? (
+                        <div className="flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="text-muted-foreground text-[0.65rem] font-medium tracking-wide uppercase">
+                                    {stopKindLabel(
+                                        focusStop,
+                                        nextStop,
+                                        highlightId,
+                                    )}{' '}
+                                    · {areaLabel ?? "Today's run"}
+                                </p>
+                                <p className="text-foreground truncate text-sm font-medium">
+                                    {focusStop.customerName}
+                                </p>
+                                <p className="text-muted-foreground truncate text-xs">
+                                    {distanceHint ?? focusStop.addressSummary}
+                                </p>
+                                {routeError ? (
+                                    <p className="text-destructive mt-0.5 text-xs">
+                                        {routeError}
+                                    </p>
+                                ) : null}
+                            </div>
+                            <div className="flex shrink-0 gap-1.5">
+                                <Button
+                                    type="button"
+                                    size="icon-sm"
+                                    variant="secondary"
+                                    disabled={
+                                        !position || !focusHasPin || loading
+                                    }
+                                    onClick={() => void loadRoute()}
+                                    aria-label="Show road route"
+                                >
+                                    {loading ? (
+                                        <Loader2 className="animate-spin" />
+                                    ) : (
+                                        <RouteIcon />
+                                    )}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    size="icon-sm"
+                                    variant="outline"
+                                    asChild
+                                >
+                                    <Link
+                                        href={orderShow.url(focusStop.id)}
+                                        prefetch
+                                        aria-label="Open stop"
+                                    >
+                                        <Navigation />
+                                    </Link>
+                                </Button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="min-w-0">
+                            <p className="text-foreground text-sm font-medium">
+                                {areaLabel ?? "Today's run"}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                                {stops.length}{' '}
+                                {stops.length === 1 ? 'drop' : 'drops'} on this
+                                map
+                            </p>
+                        </div>
+                    )}
+
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        asChild
+                    >
                         <a
                             href={navigateHref}
                             target="_blank"
