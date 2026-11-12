@@ -42,6 +42,19 @@ return [
 
     'display' => 'standalone',
 
+    /*
+    |--------------------------------------------------------------------------
+    | Link capturing
+    |--------------------------------------------------------------------------
+    |
+    | Keep browser tabs in the browser. "not-preferred" stops Chrome from
+    | handing same-origin links (e.g. admin → storefront) to the installed
+    | standalone PWA window.
+    |
+    */
+
+    'handle_links' => 'not-preferred',
+
     'orientation' => 'any',
 
     'categories' => ['shopping'],

@@ -141,7 +141,7 @@ export default function StorefrontCategory({
                             </p>
                         </div>
                     ) : (
-                        <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+                        <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
                             {products.map((product) => (
                                 <ProductCard
                                     key={product.id}

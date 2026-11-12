@@ -16,6 +16,7 @@ import {
     SAME_DAY_METHOD_ID,
     sameDayOutOfRadiusMessage,
 } from '@/lib/delivery-shift-availability';
+import { cart } from '@/routes';
 import type {
     StorefrontCartItem,
     StorefrontDeliveryMethod,
@@ -677,6 +678,7 @@ export default function StorefrontCheckout({
                                       : undefined)
                             }
                             sameDayInRadius={sameDayInRadius}
+                            sameDayRadiusKm={quote?.sameDayRadiusKm ?? null}
                             onChange={onDetailChange}
                             onPinSelect={applyPin}
                         />
@@ -716,9 +718,41 @@ export default function StorefrontCheckout({
                             sameDayUnavailable={
                                 sameDayOutsideRadius || sameDayNoShifts
                             }
+                            cartUrl={cart.url()}
                             onAcceptLateDeliveryChange={(accepted) => {
-                                dismissErrors('accept_late_delivery');
-                                form.setData('accept_late_delivery', accepted);
+                                dismissErrors(
+                                    'accept_late_delivery',
+                                    'delivery_method',
+                                    'delivery_date',
+                                    'time_slot_id',
+                                );
+
+                                if (
+                                    accepted &&
+                                    details.deliveryMethodId ===
+                                        SAME_DAY_METHOD_ID
+                                ) {
+                                    const lateMethod = deliveryMethods.find(
+                                        (method) => method.requiresDate,
+                                    );
+
+                                    form.setData((current) => ({
+                                        ...current,
+                                        accept_late_delivery: true,
+                                        delivery_method:
+                                            lateMethod?.id ??
+                                            current.delivery_method,
+                                        delivery_date: '',
+                                        time_slot_id: '',
+                                    }));
+
+                                    return;
+                                }
+
+                                form.setData(
+                                    'accept_late_delivery',
+                                    accepted,
+                                );
                             }}
                             onCouponChange={setCouponCode}
                             onApplyCoupon={() =>
