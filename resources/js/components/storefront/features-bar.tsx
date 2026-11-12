@@ -8,7 +8,7 @@ type FeaturesBarProps = {
 
 export function FeaturesBar({ features, className }: FeaturesBarProps) {
     return (
-        <section className={cn('', className)}>
+        <section className={cn('mb-14 sm:mb-16', className)}>
             <div className="container mx-auto px-4 sm:px-6">
                 <ul className="bg-muted grid overflow-hidden rounded-3xl sm:grid-cols-2 lg:grid-cols-4">
                     {features.map((feature, index) => (
