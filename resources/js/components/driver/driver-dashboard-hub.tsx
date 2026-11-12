@@ -18,7 +18,7 @@ import {
 import { useState } from 'react';
 import { toast } from 'sonner';
 import {
-    driverMapsQuery,
+    driverMapsDirectionsUrl,
     driverOrderStatusLabel,
     type DriverDashboardHub,
     type DriverDashboardSummary,
@@ -41,6 +41,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useInitials } from '@/hooks/use-initials';
+import { useDriverPosition } from '@/lib/driver-position-store';
 import { cn } from '@/lib/utils';
 import { index as earningsIndex } from '@/routes/driver/earnings';
 import { index as notificationsIndex } from '@/routes/driver/notifications';
@@ -52,10 +53,6 @@ import {
 import { index as profileIndex } from '@/routes/driver/profile';
 import { index as routeIndex } from '@/routes/driver/route';
 import type { User } from '@/types';
-
-function mapsSearchUrl(query: string): string {
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-}
 
 function demoOnly(message: string): void {
     toast.message(message, {
@@ -75,9 +72,24 @@ export function DriverDashboardHub({
     hub,
 }: DriverDashboardHubProps) {
     const getInitials = useInitials();
+    const position = useDriverPosition();
     const [online, setOnline] = useState(hub.online);
     const firstName = user?.name.split(/\s+/u)[0] ?? 'there';
     const nextStop = summary.nextStop;
+    const navigateHref = nextStop
+        ? driverMapsDirectionsUrl({
+              origin: position
+                  ? { lat: position.lat, lng: position.lng }
+                  : null,
+              destination:
+                  nextStop.latitude != null && nextStop.longitude != null
+                      ? {
+                            lat: nextStop.latitude,
+                            lng: nextStop.longitude,
+                        }
+                      : { query: nextStop.addressSummary },
+          })
+        : null;
     const assignedCount = summary.assignedCount;
     const progressPercent =
         assignedCount > 0
@@ -260,24 +272,24 @@ export function DriverDashboardHub({
                                 Open this stop
                             </Link>
                         </Button>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="lg"
-                            className="h-12"
-                            asChild
-                        >
-                            <a
-                                href={mapsSearchUrl(
-                                    driverMapsQuery(nextStop.addressSummary),
-                                )}
-                                target="_blank"
-                                rel="noreferrer"
+                        {navigateHref ? (
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="lg"
+                                className="h-12"
+                                asChild
                             >
-                                <MapPin data-icon="inline-start" />
-                                Navigate
-                            </a>
-                        </Button>
+                                <a
+                                    href={navigateHref}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <MapPin data-icon="inline-start" />
+                                    Navigate
+                                </a>
+                            </Button>
+                        ) : null}
                         <Button
                             type="button"
                             variant="outline"

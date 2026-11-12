@@ -7,7 +7,10 @@ import {
     X,
 } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
-import type { DriverAssignedOrder } from '@/components/driver/driver-order-types';
+import {
+    driverMapsDirectionsUrl,
+    type DriverAssignedOrder,
+} from '@/components/driver/driver-order-types';
 import { MapView } from '@/components/map/map-view';
 import { Button } from '@/components/ui/button';
 import { distanceMeters } from '@/lib/driver-location';
@@ -28,7 +31,6 @@ type DriverRouteMapPanelProps = {
     nextStop: DriverAssignedOrder | null;
     highlightId?: string | null;
     areaLabel: string | null;
-    navigateHref: string;
 };
 
 const SYDNEY: LatLngTuple = [-33.8688, 151.2093];
@@ -68,7 +70,6 @@ export function DriverRouteMapPanel({
     nextStop,
     highlightId = null,
     areaLabel,
-    navigateHref,
 }: DriverRouteMapPanelProps) {
     const position = useDriverPosition();
     const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -205,6 +206,23 @@ export function DriverRouteMapPanel({
           : SYDNEY;
 
     const mapFitKey = `${pinned.length}-${position ? 'me' : 'no'}-${roadRoute ? 'road' : 'none'}-${fullScreen ? 'fs' : 'card'}`;
+
+    const navigateTarget = focusStop ?? nextStop ?? stops[0] ?? null;
+    const navigateHref = navigateTarget
+        ? driverMapsDirectionsUrl({
+              origin: position
+                  ? { lat: position.lat, lng: position.lng }
+                  : null,
+              destination:
+                  navigateTarget.latitude != null &&
+                  navigateTarget.longitude != null
+                      ? {
+                            lat: navigateTarget.latitude,
+                            lng: navigateTarget.longitude,
+                        }
+                      : { query: navigateTarget.addressSummary },
+          })
+        : null;
 
     return (
         <section
@@ -402,22 +420,35 @@ export function DriverRouteMapPanel({
                         </div>
                     )}
 
-                    <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        asChild
-                    >
-                        <a
-                            href={navigateHref}
-                            target="_blank"
-                            rel="noreferrer"
+                    {navigateHref ? (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            asChild
+                        >
+                            <a
+                                href={navigateHref}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <Navigation data-icon="inline-start" />
+                                Navigate
+                            </a>
+                        </Button>
+                    ) : (
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="w-full"
+                            disabled
                         >
                             <Navigation data-icon="inline-start" />
                             Navigate
-                        </a>
-                    </Button>
+                        </Button>
+                    )}
                 </div>
             ) : null}
         </section>
