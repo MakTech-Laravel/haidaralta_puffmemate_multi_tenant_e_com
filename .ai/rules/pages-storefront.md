@@ -20,4 +20,4 @@ In React, useHttp.transform() returns undefined. Call transform(() => ({ latitud
 Call form.transform(...) then form.post(url) on the next line. form.transform(...).post() throws because transform returns undefined in React.
 
 ## Storefront product grids are 2 columns on mobile
-ProductCard grids on shop, category and product (similar products) start at grid-cols-2 on mobile, matching the home carousel's basis-1/2. Never use grid-cols-1 for product card grids; larger breakpoints (md/lg/xl) add columns.
+ProductCard grids on shop, category and product (similar products) start at grid-cols-2 on mobile, matching the home carousel's basis-1/2. Never use grid-cols-1 for product card grids. Shop scales to md:3 / lg:4 (sidebar layout). Category and product similar products scale to md:3 / xl:5, matching the home product carousel's 5-up large rail.

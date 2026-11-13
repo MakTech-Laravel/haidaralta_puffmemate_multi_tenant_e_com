@@ -1,11 +1,17 @@
 import { Head, Link, setLayoutProps, usePage } from '@inertiajs/react';
 import {
+    Bike,
+    Boxes,
+    Calendar,
+    ChartColumn,
     Clock,
     Package,
+    Plus,
     ShoppingBag,
     TriangleAlert,
     Users,
 } from 'lucide-react';
+import { QuickActionTile } from '@/components/portal/quick-action-tile';
 import { StatCard } from '@/components/portal/stat-card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -136,6 +142,69 @@ export default function BranchDashboard() {
                         value="3"
                         hint="Needs a restock walk"
                     />
+                </div>
+
+                <div>
+                    <h2 className="text-foreground mb-3 text-lg font-semibold">
+                        Quick actions
+                    </h2>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <QuickActionTile
+                            icon={Plus}
+                            label="New order"
+                            hint="Phone or walk-in"
+                            tone="primary"
+                        />
+                        <QuickActionTile
+                            href={`/branch/${branch.slug}/orders`}
+                            icon={Package}
+                            label="Orders"
+                            hint="Today's queue"
+                            tone="primary"
+                        />
+                        <QuickActionTile
+                            href={`/branch/${branch.slug}/drivers`}
+                            icon={Bike}
+                            label="Drivers"
+                            hint="Driver app sign-ins & status"
+                            tone="primary"
+                        />
+                        <QuickActionTile
+                            href={`/branch/${branch.slug}/shift-assignments`}
+                            icon={Calendar}
+                            label="Roster"
+                            hint="Plan & publish shifts"
+                            tone="warning"
+                        />
+                        <QuickActionTile
+                            href={`/branch/${branch.slug}/products`}
+                            icon={ShoppingBag}
+                            label="Products"
+                            hint="Prices, photos, badges"
+                            tone="warning"
+                        />
+                        <QuickActionTile
+                            href={`/branch/${branch.slug}/stock/manage`}
+                            icon={Boxes}
+                            label="Warehouse"
+                            hint="Stock in & counts"
+                            tone="warning"
+                        />
+                        <QuickActionTile
+                            href={`/branch/${branch.slug}/customers`}
+                            icon={Users}
+                            label="Customers"
+                            hint="Accounts & VIPs"
+                            tone="quiet"
+                        />
+                        <QuickActionTile
+                            href={`/branch/${branch.slug}/reports/order-reports`}
+                            icon={ChartColumn}
+                            label="Reports"
+                            hint="Business report & sales"
+                            tone="muted"
+                        />
+                    </div>
                 </div>
 
                 <Alert>

@@ -85,7 +85,7 @@ class StorefrontCatalog
      */
     public static function featuredCategories(): array
     {
-        $limit = (int) config('catalog.featured_categories_max', 5);
+        $limit = (int) config('catalog.featured_categories_max', 6);
 
         $categories = Category::query()
             ->where('status', true)
@@ -96,6 +96,7 @@ class StorefrontCatalog
                 WHEN 'tobacco' THEN 3
                 WHEN 'nicotine-pouches' THEN 4
                 WHEN 'accessories' THEN 5
+                WHEN 'disposables' THEN 6
                 ELSE 99
             END")
             ->orderBy('name')

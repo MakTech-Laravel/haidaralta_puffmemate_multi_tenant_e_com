@@ -72,6 +72,8 @@ type CheckoutFormProps = {
     deliveryMethodError?: string;
     /** Whether the pinned address is inside the same-day radius (null until quoted). */
     sameDayInRadius?: boolean | null;
+    /** Same-day straight-line radius in km (from quote / catalog config). */
+    sameDayRadiusKm?: number | null;
     onChange: <K extends keyof CheckoutDetails>(
         key: K,
         value: CheckoutDetails[K],
@@ -127,6 +129,7 @@ export function CheckoutForm({
     errors = {},
     deliveryMethodError,
     sameDayInRadius = null,
+    sameDayRadiusKm = null,
     onChange,
     onPinSelect,
     className,
@@ -139,6 +142,8 @@ export function CheckoutForm({
     );
     const showTimeSlots = selectedMethod?.requiresSlot ?? false;
     const showDeliveryDate = selectedMethod?.requiresDate ?? false;
+    const isSameDaySelected =
+        details.deliveryMethodId === SAME_DAY_METHOD_ID;
     const timeSlots = useMemo(() => {
         const slots = selectedMethod?.timeSlots ?? [];
 
@@ -153,7 +158,7 @@ export function CheckoutForm({
         (method) => method.id === SAME_DAY_METHOD_ID,
     );
     const lateMethod = deliveryMethods.find((method) => method.requiresDate);
-    // One Day picker: today (Same day) through the last Late date (today + 7 by default).
+    // Same day wires "today" without a Day picker; Late days start tomorrow.
     const todayIso =
         sameDayMethod?.minDate ??
         (lateMethod?.minDate ? shiftIsoDate(lateMethod.minDate, -1) : null);
@@ -162,19 +167,11 @@ export function CheckoutForm({
         () => deliveryDateOptions(todayIso, lastDayIso),
         [todayIso, lastDayIso],
     );
-    const activeDay =
-        details.deliveryMethodId === SAME_DAY_METHOD_ID
-            ? todayIso
-            : details.deliveryDate;
+    const lateDateOptions = useMemo(
+        () => dateOptions.filter((option) => option.value !== todayIso),
+        [dateOptions, todayIso],
+    );
     const pickDay = (day: string) => {
-        if (day === todayIso) {
-            if (sameDayMethod) {
-                onChange('deliveryMethodId', sameDayMethod.id);
-            }
-
-            return;
-        }
-
         if (!lateMethod) {
             return;
         }
@@ -186,14 +183,15 @@ export function CheckoutForm({
         onChange('deliveryDate', day);
     };
     const hasPin = details.latitude !== '' && details.longitude !== '';
-    const sameDayOpenToday =
-        sameDayMethod !== undefined && usableSlots(sameDayMethod).length > 0;
     // The radius notice shows until a pinned address is confirmed inside the same-day radius.
     const showSameDayNotice = !(hasPin && sameDayInRadius === true);
+    const radiusKm = sameDayRadiusKm ?? 15;
+    const radiusLabel = Number.isInteger(radiusKm)
+        ? String(radiusKm)
+        : String(Number(radiusKm.toFixed(1)));
     // Same day is selected but no shift is left today: the message under the cards explains it.
     const sameDayNoShifts =
-        details.deliveryMethodId === SAME_DAY_METHOD_ID &&
-        timeSlots.length === 0;
+        isSameDaySelected && timeSlots.length === 0;
     const paymentHint = paymentMethods.some(
         (method) => method.id === 'payment_link',
     )
@@ -467,11 +465,11 @@ export function CheckoutForm({
                 <CardContent className="space-y-4 px-0">
                     {showSameDayNotice ? (
                         <p className="bg-warning-tint text-warning rounded-2xl px-4 py-3 text-sm font-semibold">
-                            SAME DAY DELIVERY SERVICE ONLY AVAILABLE WITHIN 15km
-                            RADIUS OF COORPAROO, QLD &amp; WEST IPSWICH, QLD.....
-                            DONT WORRY WE SHIP AUSTRALIA WIDE! FOR ANY ORDERS
-                            OUTSIDE THIS RADIUS, YOU CAN EXPECT YOUR ORDER WITHIN 3
-                            BUSINESS DAYS AFTER FULFILLING PAYMENT LINK.
+                            Based on your delivery location, same day delivery
+                            is available when your nearest branch is within
+                            about {radiusLabel} km. Don&apos;t worry — we still
+                            deliver Australia-wide. Outside that radius, choose
+                            Late delivery for a scheduled day.
                         </p>
                     ) : null}
                     <div
@@ -547,9 +545,10 @@ export function CheckoutForm({
                     <FieldError
                         message={deliveryMethodError ?? errors.delivery_method}
                     />
-                    {(showTimeSlots && !sameDayNoShifts) || dateOptions.length > 0 ? (
+                    {(showTimeSlots && !sameDayNoShifts) ||
+                    (showDeliveryDate && lateDateOptions.length > 0) ? (
                         <div className="space-y-5">
-                            {dateOptions.length > 0 ? (
+                            {showDeliveryDate && lateDateOptions.length > 0 ? (
                                 <div className="space-y-2">
                                     <p className="text-muted-foreground text-sm font-medium">
                                         Day <RequiredMark />
@@ -559,9 +558,10 @@ export function CheckoutForm({
                                         aria-label="Delivery day"
                                         className="grid grid-cols-4 gap-2 md:grid-cols-8"
                                     >
-                                        {dateOptions.map((option) => {
+                                        {lateDateOptions.map((option) => {
                                             const active =
-                                                activeDay === option.value;
+                                                details.deliveryDate ===
+                                                option.value;
 
                                             return (
                                                 <button

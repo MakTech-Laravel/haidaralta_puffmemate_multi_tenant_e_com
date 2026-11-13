@@ -1,11 +1,14 @@
+import { Link } from '@inertiajs/react';
 import { useEffect, useState } from 'react';
+import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
+import { Switch } from '@/components/ui/switch';
 import { useAppBrand } from '@/hooks/use-app-brand';
 import { cn } from '@/lib/utils';
+import { cart } from '@/routes';
 import type { StorefrontCartItem } from '@/types/storefront';
 import { formatStorefrontMoney } from '@/types/storefront';
 
@@ -81,7 +84,7 @@ export function CheckoutOrderSummary({
     acceptLateError,
     sameDayLateConflict = false,
     sameDayUnavailable = false,
-    cartUrl = '/cart',
+    cartUrl = cart.url(),
     onAcceptLateDeliveryChange,
     onCouponChange,
     onApplyCoupon,
@@ -269,17 +272,17 @@ export function CheckoutOrderSummary({
             </div>
 
             {requiresLateDelivery && shortfallLines.length > 0 ? (
-                <div className="border-border bg-background mt-5 space-y-3 rounded-2xl border p-4">
-                    <p className="text-foreground text-sm font-semibold">
+                <div className="border-warning/30 bg-warning-tint mt-5 space-y-3 rounded-2xl border p-4">
+                    <p className="text-warning text-sm font-semibold">
                         Some items may arrive later
                     </p>
-                    <p className="text-muted-foreground text-xs leading-relaxed">
+                    <p className="text-warning/85 text-xs leading-relaxed">
                         Your delivery branch does not have enough stock for
                         these items right now. Remove them from your cart, or
                         accept that they may be delivered later once stock is
                         collected.
                     </p>
-                    <ul className="text-muted-foreground space-y-1 text-xs">
+                    <ul className="text-warning/80 space-y-1 text-xs">
                         {shortfallLines.map((line) => {
                             const label = line.packageLabel
                                 ? `${line.productName} · ${line.packageLabel}`
@@ -305,27 +308,23 @@ export function CheckoutOrderSummary({
                             );
                         })}
                     </ul>
-                    <a
-                        href={cartUrl}
-                        className="text-foreground text-xs font-medium underline underline-offset-2"
-                    >
-                        Edit cart
-                    </a>
-                    <div className="flex items-start gap-2.5">
-                        <Checkbox
+                    <Button size="sm" variant="outline" asChild>
+                        <Link href={cartUrl}>Edit cart</Link>
+                    </Button>
+                    <div className="flex items-center justify-between gap-3">
+                        <Label
+                            htmlFor="checkout-accept-late"
+                            className="text-warning text-xs leading-relaxed font-normal"
+                        >
+                            I accept late delivery for these items
+                        </Label>
+                        <Switch
                             id="checkout-accept-late"
                             checked={acceptLateDelivery}
                             onCheckedChange={(checked) =>
                                 onAcceptLateDeliveryChange?.(checked === true)
                             }
-                            className="mt-0.5"
                         />
-                        <Label
-                            htmlFor="checkout-accept-late"
-                            className="text-foreground text-xs leading-relaxed font-normal"
-                        >
-                            I accept late delivery for these items
-                        </Label>
                     </div>
                     {acceptLateError ? (
                         <p className="text-destructive text-xs">
