@@ -128,13 +128,16 @@ test('cart checkout outside every area but inside Australia uses the nearest act
     $this->actingAs($user, 'customer')
         ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
 
-    // Adelaide — inside AU bounds, outside the tiny Sydney area polygon.
+    // Adelaide — inside AU bounds, outside the tiny Sydney area polygon. Late delivery
+    // has no radius limit, so the nearest active branch still fulfils it.
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), areaCheckoutPayload([
             'latitude' => -34.9285,
             'longitude' => 138.6007,
             'city' => 'Adelaide',
             'postal_code' => '5000',
+            'delivery_method' => 'express',
+            'delivery_date' => '2026-11-10',
         ]))
         ->assertRedirect();
 
@@ -143,6 +146,71 @@ test('cart checkout outside every area but inside Australia uses the nearest act
     expect($order->fulfillment->branch_id)->toBe($branch->id)
         ->and(AllocationDecisionLog::query()->where('order_id', $order->id)->firstOrFail()
             ->considered_branches[0]['allocation'] ?? null)->toBe('nearest_active');
+});
+
+test('same day delivery is rejected when the address is outside the same-day radius', function () {
+    $user = User::factory()->create();
+    $product = areaCheckoutProduct('area-same-day-outside-radius');
+    [$branch] = areaCheckoutBranchWithZone(-33.8688, 151.2093, 0.01);
+
+    Inventory::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'quantity' => 5,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($user, 'customer')
+        ->from(route('checkout'))
+        ->post(route('checkout.store'), areaCheckoutPayload([
+            'latitude' => -34.9285,
+            'longitude' => 138.6007,
+            'city' => 'Adelaide',
+            'postal_code' => '5000',
+            'delivery_method' => 'regular',
+        ]))
+        ->assertRedirect(route('checkout'))
+        ->assertSessionHasErrors(['delivery_method' => DeliveryShiftAvailability::sameDayOutOfRadiusMessage()]);
+
+    expect(Order::query()->count())->toBe(0);
+});
+
+test('shipping quote reports whether the pin is inside the same-day radius', function () {
+    $user = User::factory()->create();
+    $product = areaCheckoutProduct('area-quote-same-day-radius');
+    [$branch] = areaCheckoutBranchWithZone(-33.8688, 151.2093, 0.01);
+
+    Inventory::factory()->create([
+        'branch_id' => $branch->id,
+        'product_id' => $product->id,
+        'quantity' => 5,
+        'status' => true,
+    ]);
+
+    $this->actingAs($user, 'customer')
+        ->post(route('cart.store'), ['product' => $product->slug, 'quantity' => 1]);
+
+    $this->actingAs($user, 'customer')
+        ->postJson(route('checkout.shipping'), [
+            'latitude' => -33.8688,
+            'longitude' => 151.2093,
+            'delivery_method' => 'express',
+        ])
+        ->assertOk()
+        ->assertJsonPath('sameDayInRadius', true)
+        ->assertJsonPath('sameDayRadiusKm', 15);
+
+    $this->actingAs($user, 'customer')
+        ->postJson(route('checkout.shipping'), [
+            'latitude' => -34.9285,
+            'longitude' => 138.6007,
+            'delivery_method' => 'express',
+        ])
+        ->assertOk()
+        ->assertJsonPath('sameDayInRadius', false);
 });
 
 test('cart checkout rejects a pin outside Australia', function () {

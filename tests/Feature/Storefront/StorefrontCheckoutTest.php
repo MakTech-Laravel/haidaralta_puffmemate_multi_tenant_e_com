@@ -140,7 +140,9 @@ test('checkout props omit branch keys', function () {
             ->where('deliveryMethods.1.requiresSlot', true)
             ->where('deliveryMethods.1.requiresDate', true)
             ->where('deliveryMethods.1.minDate', '2026-11-10')
-            ->where('deliveryMethods.1.maxDate', '2026-11-23')
+            ->where('deliveryMethods.1.maxDate', '2026-11-16')
+            ->where('deliveryMethods.0.minDate', '2026-11-09')
+            ->where('deliveryMethods.0.maxDate', '2026-11-09')
             ->has('deliveryMethods.0.timeSlots', 2)
             ->has('deliveryMethods.1.timeSlots', 3)
             ->missing('timeSlots')
@@ -380,7 +382,7 @@ test('same-day checkout rejects a shift that has already started', function () {
             ->where('deliveryMethods.0.timeSlots.0.name', 'Evening Delivery')
             ->where('deliveryMethods.1.requiresDate', true)
             ->where('deliveryMethods.1.minDate', '2026-11-10')
-            ->where('deliveryMethods.1.maxDate', '2026-11-23'));
+            ->where('deliveryMethods.1.maxDate', '2026-11-16'));
 
     $this->actingAs($user, 'customer')
         ->from(route('checkout'))
@@ -418,7 +420,7 @@ test('late delivery requires a future date within fourteen days', function () {
         ->from(route('checkout'))
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
-            'delivery_date' => '2026-11-24',
+            'delivery_date' => '2026-11-17',
             'time_slot_id' => $shiftId,
         ]))
         ->assertRedirect(route('checkout'))
@@ -427,7 +429,7 @@ test('late delivery requires a future date within fourteen days', function () {
     $this->actingAs($user, 'customer')
         ->post(route('checkout.store'), checkoutPayload([
             'delivery_method' => 'express',
-            'delivery_date' => '2026-11-23',
+            'delivery_date' => '2026-11-16',
             'time_slot_id' => $shiftId,
         ]))
         ->assertRedirect();
@@ -435,11 +437,11 @@ test('late delivery requires a future date within fourteen days', function () {
     $order = Order::query()->firstOrFail();
 
     expect($order->delivery_method)->toBe('express')
-        ->and($order->delivery_date?->toDateString())->toBe('2026-11-23')
+        ->and($order->delivery_date?->toDateString())->toBe('2026-11-16')
         ->and($order->delivery_shift_id)->toBe($shiftId);
 });
 
-test('same-day method is omitted when no eligible shifts remain', function () {
+test('same-day method stays listed without shifts when none remain today', function () {
     Carbon\Carbon::setTestNow(Carbon\Carbon::parse('2026-11-09 22:00:00', config('app.timezone')));
 
     $user = User::factory()->create();
@@ -457,8 +459,11 @@ test('same-day method is omitted when no eligible shifts remain', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('storefront/checkout')
-            ->has('deliveryMethods', 1)
-            ->where('deliveryMethods.0.id', 'express'));
+            ->has('deliveryMethods', 2)
+            ->where('deliveryMethods.0.id', 'regular')
+            ->has('deliveryMethods.0.timeSlots', 0)
+            ->where('deliveryMethods.1.id', 'express')
+            ->has('deliveryMethods.1.timeSlots', 3));
 });
 
 test('pinning a location quotes the distance-based shipping fee', function () {

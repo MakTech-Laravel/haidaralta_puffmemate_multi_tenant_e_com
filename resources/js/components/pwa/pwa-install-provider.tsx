@@ -131,7 +131,7 @@ export function PwaInstallProvider({
             {children}
             {showBanner ? (
                 <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4 xl:bottom-6">
-                    <div className="pointer-events-auto border-border bg-background flex w-full max-w-lg items-center gap-3 rounded-xl border p-3 shadow-lg">
+                    <div className="pointer-events-auto border-border bg-background/95 flex w-full max-w-lg items-center gap-3 rounded-2xl border p-3 shadow-xl backdrop-blur-xl">
                         <Download className="text-primary size-5 shrink-0" aria-hidden />
                         <p className="min-w-0 flex-1 text-sm font-medium">
                             Install {name} on your home screen

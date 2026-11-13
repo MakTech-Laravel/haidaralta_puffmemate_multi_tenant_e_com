@@ -69,7 +69,7 @@ export default function StorefrontOrderTracking({ order }: OrderTrackingProps) {
                             </div>
                             <Badge
                                 className={cn(
-                                    "rounded-sm px-2.5 py-0.5 text-sm font-medium",
+                                    "rounded-full px-3 py-1 text-sm font-medium",
                                     finished
                                         ? "bg-muted-foreground/15 text-foreground border-transparent"
                                         : "bg-primary text-primary-foreground border-transparent",
@@ -118,7 +118,7 @@ export default function StorefrontOrderTracking({ order }: OrderTrackingProps) {
                                 <Button
                                     asChild
                                     size="lg"
-                                    className=" mx-auto max-w-[200px]  rounded-none text-sm font-semibold tracking-wide uppercase"
+                                    className="mx-auto max-w-[220px] text-sm font-semibold"
                                 >
                                     <Link href={shop.url()}>
                                         Continue shopping

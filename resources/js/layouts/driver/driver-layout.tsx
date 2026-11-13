@@ -62,7 +62,7 @@ export default function DriverLayout({
                                 );
                             })}
                         </ol>
-                        <div className="border-border bg-border mt-4 h-0.5 w-full" />
+                        <div className="border-border bg-border mt-4 h-px w-full" />
                     </nav>
 
                     <div className="grid gap-8 xl:grid-cols-[13rem_minmax(0,1fr)] xl:gap-12">

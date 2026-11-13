@@ -194,7 +194,7 @@ export function BranchAreaPolygonMap({
                             allowIntersection: false,
                             showArea: false,
                             shapeOptions: {
-                                color: '#174B36',
+                                color: '#2B70DB',
                                 weight: 2,
                                 fillOpacity: 0.2,
                             },
@@ -329,7 +329,7 @@ export function BranchAreaPolygonMap({
             (point) => [point.lat, point.lng] as [number, number],
         );
         const layer = L.polygon(latLngs, {
-            color: '#174B36',
+            color: '#2B70DB',
             weight: 2,
             fillOpacity: 0.2,
         });

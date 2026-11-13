@@ -6,8 +6,8 @@ export function ProductResponsibleRetail({
     points,
 }: ProductResponsibleRetailProps) {
     return (
-        <section className="bg-accent flex flex-col gap-4 p-5">
-            <h2 className="text-foreground font-inter text-2xl font-semibold uppercase">
+        <section className="bg-muted flex flex-col gap-4 rounded-3xl p-5 sm:p-8">
+            <h2 className="text-foreground font-inter text-2xl font-semibold tracking-tight">
                 Responsible Retail
             </h2>
             <p className="text-primary font-inter text-lg font-semibold">

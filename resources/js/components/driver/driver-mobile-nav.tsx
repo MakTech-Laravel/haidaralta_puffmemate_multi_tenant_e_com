@@ -16,7 +16,7 @@ export function DriverMobileNav() {
 
     return (
         <nav
-            className="border-border bg-background/95 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-sm xl:hidden"
+            className="border-border bg-background/85 supports-[backdrop-filter]:bg-background/75 fixed inset-x-0 bottom-0 z-40 border-t pb-[env(safe-area-inset-bottom)] backdrop-blur-xl xl:hidden"
             aria-label="Driver"
         >
             <ul
@@ -49,11 +49,18 @@ export function DriverMobileNav() {
                                                 : 'text-muted-foreground',
                                         )}
                                     >
-                                        <Icon
-                                            className="size-6 shrink-0"
-                                            strokeWidth={active ? 2.25 : 1.75}
-                                            aria-hidden
-                                        />
+                                        <span
+                                            className={cn(
+                                                'flex h-8 w-14 items-center justify-center rounded-full transition-colors',
+                                                active && 'bg-primary-tint',
+                                            )}
+                                        >
+                                            <Icon
+                                                className="size-6 shrink-0"
+                                                strokeWidth={active ? 2.25 : 1.75}
+                                                aria-hidden
+                                            />
+                                        </span>
                                     </Link>
                                 </TooltipTrigger>
                                 <TooltipContent side="top">{tip}</TooltipContent>

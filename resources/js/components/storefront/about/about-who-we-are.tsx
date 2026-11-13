@@ -65,13 +65,13 @@ export function AboutWhoWeAre({ data, className }: AboutWhoWeAreProps) {
                         aria-label={data.mediaCaption}
                     />
                     <div
-                        className="from-primary/85 via-primary/25 absolute inset-0 bg-linear-to-t to-transparent"
+                        className="from-ink-surface/85 via-ink-surface/25 absolute inset-0 bg-linear-to-t to-transparent"
                         aria-hidden
                     />
-                    <p className="text-primary-foreground/80 font-inter absolute inset-x-0 bottom-10 p-5 text-base font-medium tracking-[0.06em]">
+                    <p className="text-ink-surface-foreground/80 font-inter absolute inset-x-0 bottom-10 p-5 text-base font-medium tracking-[0.06em]">
                         {data.mediaTitle}
                     </p>
-                    <p className="text-primary-foreground font-inter absolute inset-x-0 bottom-0 p-5 text-sm font-semibold sm:p-6 sm:text-lg">
+                    <p className="text-ink-surface-foreground font-inter absolute inset-x-0 bottom-0 p-5 text-sm font-semibold sm:p-6 sm:text-lg">
                         {data.mediaCaption}
                     </p>
                 </div>

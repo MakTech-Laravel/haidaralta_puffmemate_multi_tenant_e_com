@@ -31,6 +31,7 @@ class AreaCheckoutAllocator
      *     operational_cost: float,
      *     transferred_units: int,
      *     requires_late_delivery: bool,
+     *     same_day_in_radius: bool,
      *     lines: list<array{
      *         product_id: int,
      *         variant_id: int|null,
@@ -83,8 +84,11 @@ class AreaCheckoutAllocator
             ]);
         }
 
+        $sameDay = $this->areas->resolveForSameDay($latitude, $longitude, (float) config('catalog.same_day_radius_km'));
+        $sameDayInRadius = $sameDay !== null && str_starts_with($sameDay['allocation'], 'same_day');
+
         $match = $deliveryMethod === DeliveryShiftAvailability::METHOD_SAME_DAY
-            ? $this->areas->resolveForSameDay($latitude, $longitude, (float) config('catalog.same_day_radius_km'))
+            ? $sameDay
             : $this->areas->resolveForCheckout($latitude, $longitude);
 
         if ($match === null) {
@@ -149,6 +153,7 @@ class AreaCheckoutAllocator
             'operational_cost' => 0.0,
             'transferred_units' => 0,
             'requires_late_delivery' => $requiresLate,
+            'same_day_in_radius' => $sameDayInRadius,
             'lines' => $lines,
             'transfers' => [],
             'decision_trace' => [

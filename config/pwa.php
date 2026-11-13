@@ -19,8 +19,8 @@ return [
     'lang' => 'en-AU',
 
     // Browser bar / installed-app colour only. Site colours live in resources/css/app.css.
-    // Keep in sync with --palette-green-900 there.
-    'theme_color' => '#174B36',
+    // Keep in sync with --palette-black (the dark announcement bar / ink surface) there.
+    'theme_color' => '#1D1D1F',
 
     'background_color' => '#FFFFFF',
 
@@ -41,6 +41,19 @@ return [
     'scope' => '/',
 
     'display' => 'standalone',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Link capturing
+    |--------------------------------------------------------------------------
+    |
+    | Keep browser tabs in the browser. "not-preferred" stops Chrome from
+    | handing same-origin links (e.g. admin → storefront) to the installed
+    | standalone PWA window.
+    |
+    */
+
+    'handle_links' => 'not-preferred',
 
     'orientation' => 'any',
 

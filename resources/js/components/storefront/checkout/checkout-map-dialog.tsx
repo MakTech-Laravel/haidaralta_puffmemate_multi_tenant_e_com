@@ -11,8 +11,6 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import type { MarkerSpec } from '@/lib/maps/types';
 import { reverseGeocodeDetails } from '@/lib/nominatim';
 
@@ -138,28 +136,8 @@ export function CheckoutMapDialog({
                     centerKey={`${pinLat},${pinLng}`}
                     markers={pinMarkers}
                     onMapClick={dropPin}
-                    className="h-64 w-full overflow-hidden rounded-md"
+                    className="h-64 w-full cursor-pointer! overflow-hidden rounded-xl **:cursor-pointer!"
                 />
-                <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="space-y-1.5">
-                        <Label htmlFor="checkout-lat">Latitude</Label>
-                        <Input
-                            id="checkout-lat"
-                            value={lat}
-                            onChange={(event) => setLat(event.target.value)}
-                            placeholder="-33.8688"
-                        />
-                    </div>
-                    <div className="space-y-1.5">
-                        <Label htmlFor="checkout-lng">Longitude</Label>
-                        <Input
-                            id="checkout-lng"
-                            value={lng}
-                            onChange={(event) => setLng(event.target.value)}
-                            placeholder="151.2093"
-                        />
-                    </div>
-                </div>
                 {locationError ? (
                     <p className="text-destructive text-sm">{locationError}</p>
                 ) : null}

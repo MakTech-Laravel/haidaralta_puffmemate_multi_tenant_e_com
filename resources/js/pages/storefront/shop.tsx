@@ -200,10 +200,10 @@ export default function StorefrontShop({
             <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                 <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <h1 className="text-foreground text-2xl font-medium tracking-tight uppercase sm:text-[40px]">
+                        <h1 className="text-foreground text-2xl font-semibold tracking-tight sm:text-4xl">
                             Shop the collection
                         </h1>
-                        <p className="text-muted-foreground font-inter mb-1 text-sm font-normal uppercase">
+                        <p className="text-muted-foreground font-inter mt-1 text-sm font-normal">
                             Search, filter, and sort the full catalog
                         </p>
                     </div>
@@ -269,7 +269,7 @@ export default function StorefrontShop({
                             </p>
                         ) : null}
                         {products.length === 0 ? (
-                            <div className="border-border bg-card rounded-xl border p-10 text-center">
+                            <div className="border-border bg-card rounded-2xl border p-10 text-center">
                                 <p className="text-foreground text-base font-semibold">
                                     No products match
                                 </p>
@@ -279,7 +279,7 @@ export default function StorefrontShop({
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid w-full grid-cols-2 gap-4 lg:grid-cols-3">
+                            <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
                                 {products.map((product) => (
                                     <ProductCard
                                         key={product.id}

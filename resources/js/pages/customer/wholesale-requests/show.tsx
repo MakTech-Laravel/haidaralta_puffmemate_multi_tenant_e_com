@@ -64,7 +64,7 @@ export default function CustomerWholesaleRequestShow({
                 </div>
 
                 <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
-                    <Card className="bg-background gap-3 rounded-none border-none py-5 shadow-none">
+                    <Card className="bg-background gap-3 rounded-2xl border py-5 shadow-none">
                         <CardHeader className="px-5 pb-0">
                             <CardTitle className="text-foreground text-lg font-semibold sm:text-xl">
                                 Requested products
@@ -107,7 +107,7 @@ export default function CustomerWholesaleRequestShow({
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-background gap-3 rounded-none border-none py-5 shadow-none">
+                    <Card className="bg-background gap-3 rounded-2xl border py-5 shadow-none">
                         <CardHeader className="px-5 pb-0">
                             <CardTitle className="text-foreground text-lg font-semibold sm:text-xl">
                                 Contact details
