@@ -1,7 +1,6 @@
 import { Head, router } from '@inertiajs/react';
 import { Filter } from 'lucide-react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
 import {
     ShopFiltersSidebar,
@@ -23,7 +22,6 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { storefrontFeatures } from '@/lib/storefront-features';
 import { shop } from '@/routes';
 import type { StorefrontProduct } from '@/types/storefront';
 
@@ -290,8 +288,6 @@ export default function StorefrontShop({
                     </div>
                 </div>
             </div>
-
-            <FeaturesBar features={storefrontFeatures} />
         </>
     );
 }
