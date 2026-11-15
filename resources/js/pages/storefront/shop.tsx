@@ -11,7 +11,10 @@ import {
     type ShopTagOption,
 } from '@/components/storefront/shop-filters-sidebar';
 import { StorefrontSearchBar } from '@/components/storefront/storefront-search-bar';
-import { StorefrontSheetContent } from '@/components/storefront/storefront-sheet';
+import {
+    StorefrontSheetBody,
+    StorefrontSheetContent,
+} from '@/components/storefront/storefront-sheet';
 import { StorefrontSortSelect } from '@/components/storefront/storefront-sort-select';
 import { Button } from '@/components/ui/button';
 import {
@@ -221,16 +224,13 @@ export default function StorefrontShop({
                                     <Filter className="size-5" />
                                 </Button>
                             </SheetTrigger>
-                            <StorefrontSheetContent
-                                side="left"
-                                className="overflow-y-auto"
-                            >
-                                <SheetHeader>
+                            <StorefrontSheetContent side="left">
+                                <SheetHeader className="shrink-0">
                                     <SheetTitle>Filters</SheetTitle>
                                 </SheetHeader>
-                                <div className="mt-2 px-4 pb-6">
+                                <StorefrontSheetBody className="px-4 pt-1 pb-6">
                                     {filtersSidebar}
-                                </div>
+                                </StorefrontSheetBody>
                             </StorefrontSheetContent>
                         </Sheet>
                     ) : null}
