@@ -95,7 +95,7 @@ export default function StorefrontProduct({
                     Back to products
                 </Link>
 
-                <div className="grid min-w-0 gap-8 lg:grid-cols-2 lg:gap-12">
+                <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
                     <ProductGallery
                         className="min-w-0"
                         images={product.images}
