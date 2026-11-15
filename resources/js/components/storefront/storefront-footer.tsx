@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { Mail, Phone } from 'lucide-react';
 import { useAppBrand } from '@/hooks/use-app-brand';
 import { useContacts } from '@/hooks/use-contacts';
 import {
@@ -54,7 +55,7 @@ function FooterLink({ item }: { item: StorefrontChromeItem }) {
         <Link
             href={resolveHref(item)}
             prefetch
-            className="text-muted-foreground hover:text-foreground text-sm leading-relaxed font-normal transition-colors"
+            className="text-muted-foreground hover:text-foreground flex min-h-11 items-center text-[15px] leading-snug font-normal transition-colors sm:min-h-0 sm:py-1 sm:text-sm"
         >
             {item.label}
         </Link>
@@ -69,11 +70,11 @@ function FooterColumn({
     items: StorefrontChromeItem[];
 }) {
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
             <h3 className="text-foreground text-sm font-semibold">
                 {title}
             </h3>
-            <ul className="flex flex-col gap-2">
+            <ul className="grid grid-cols-2 gap-x-3 sm:grid-cols-1">
                 {items.map((item) => (
                     <li key={item.label}>
                         <FooterLink item={item} />
@@ -90,8 +91,8 @@ export function StorefrontFooter() {
 
     return (
         <footer className="border-border bg-muted mt-auto border-t">
-            <div className="container mx-auto grid grid-cols-2 gap-x-6 gap-y-8 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-4 lg:gap-8 lg:py-16">
-                <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">
+            <div className="container mx-auto flex flex-col gap-6 px-4 py-6 sm:px-6 sm:py-12 lg:grid lg:grid-cols-4 lg:gap-8 lg:py-16">
+                <div className="flex flex-col gap-2">
                     <Link
                         href={home()}
                         prefetch
@@ -100,41 +101,51 @@ export function StorefrontFooter() {
                         <img
                             src={brand.logoUrl}
                             alt={brand.name}
-                            className="h-9 w-auto object-contain sm:h-11"
+                            className="h-8 w-auto max-w-full object-contain sm:h-11"
                         />
                     </Link>
-                    <p className="text-muted-foreground max-w-xs text-sm leading-relaxed font-normal">
+                    <p className="text-muted-foreground max-w-sm text-sm leading-snug font-normal">
                         {brand.description || storefrontFooterBlurb}
                     </p>
-                    <div className="text-muted-foreground flex flex-col gap-1 text-sm">
+                    <div className="text-muted-foreground mt-1 flex flex-col text-sm">
                         {contacts.phone ? (
                             <a
                                 href={`tel:${contacts.phone.replace(/\s+/g, '')}`}
-                                className="hover:text-foreground transition-colors"
+                                className="hover:text-foreground flex min-h-11 items-center gap-2 break-words transition-colors sm:min-h-0 sm:py-1"
                             >
+                                <Phone
+                                    className="text-foreground size-4 shrink-0"
+                                    aria-hidden
+                                />
                                 {contacts.phone}
                             </a>
                         ) : null}
                         {contacts.email ? (
                             <a
                                 href={`mailto:${contacts.email}`}
-                                className="hover:text-foreground transition-colors"
+                                className="hover:text-foreground flex min-h-11 items-center gap-2 break-all transition-colors sm:min-h-0 sm:py-1"
                             >
+                                <Mail
+                                    className="text-foreground size-4 shrink-0"
+                                    aria-hidden
+                                />
                                 {contacts.email}
                             </a>
                         ) : null}
                     </div>
                 </div>
 
-                <FooterColumn title="Shop" items={storefrontFooterShop} />
-                <FooterColumn
-                    title="Customer"
-                    items={storefrontFooterCustomer}
-                />
-                <FooterColumn
-                    title={brand.shortName}
-                    items={storefrontFooterBrand}
-                />
+                <div className="border-border flex flex-col gap-5 border-t pt-5 sm:grid sm:grid-cols-3 sm:gap-8 sm:border-0 sm:pt-0 lg:contents">
+                    <FooterColumn title="Shop" items={storefrontFooterShop} />
+                    <FooterColumn
+                        title="Customer"
+                        items={storefrontFooterCustomer}
+                    />
+                    <FooterColumn
+                        title={brand.shortName}
+                        items={storefrontFooterBrand}
+                    />
+                </div>
             </div>
         </footer>
     );
