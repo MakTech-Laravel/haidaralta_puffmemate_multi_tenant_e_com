@@ -9,6 +9,7 @@ import {
     storefrontFooterShop,
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
+import { cn } from '@/lib/utils';
 import {
     about,
     contact,
@@ -55,7 +56,7 @@ function FooterLink({ item }: { item: StorefrontChromeItem }) {
         <Link
             href={resolveHref(item)}
             prefetch
-            className="text-muted-foreground hover:text-foreground flex min-h-11 items-center text-[15px] leading-snug font-normal transition-colors sm:min-h-0 sm:py-1 sm:text-sm"
+            className="text-muted-foreground hover:text-foreground flex items-center py-1.5 text-sm leading-snug font-normal transition-colors"
         >
             {item.label}
         </Link>
@@ -85,13 +86,13 @@ function FooterColumn({
     );
 }
 
-export function StorefrontFooter() {
+export function StorefrontFooter({ className }: { className?: string }) {
     const brand = useAppBrand();
     const contacts = useContacts();
 
     return (
-        <footer className="border-border bg-muted border-t">
-            <div className="container mx-auto flex flex-col gap-6 px-4 py-6 sm:px-6 sm:py-12 lg:grid lg:grid-cols-4 lg:gap-8 lg:py-16">
+        <footer className={cn('border-border bg-muted border-t', className)}>
+            <div className="container mx-auto flex flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:grid lg:grid-cols-4 lg:gap-6 lg:py-10">
                 <div className="flex flex-col gap-2">
                     <Link
                         href={home()}
@@ -111,7 +112,7 @@ export function StorefrontFooter() {
                         {contacts.phone ? (
                             <a
                                 href={`tel:${contacts.phone.replace(/\s+/g, '')}`}
-                                className="hover:text-foreground flex min-h-11 items-center gap-2 break-words transition-colors sm:min-h-0 sm:py-1"
+                                className="hover:text-foreground flex items-center gap-2 py-1.5 break-words transition-colors"
                             >
                                 <Phone
                                     className="text-foreground size-4 shrink-0"
@@ -123,7 +124,7 @@ export function StorefrontFooter() {
                         {contacts.email ? (
                             <a
                                 href={`mailto:${contacts.email}`}
-                                className="hover:text-foreground flex min-h-11 items-center gap-2 break-all transition-colors sm:min-h-0 sm:py-1"
+                                className="hover:text-foreground flex items-center gap-2 py-1.5 break-all transition-colors"
                             >
                                 <Mail
                                     className="text-foreground size-4 shrink-0"
@@ -135,7 +136,7 @@ export function StorefrontFooter() {
                     </div>
                 </div>
 
-                <div className="border-border flex flex-col gap-5 border-t pt-5 sm:grid sm:grid-cols-3 sm:gap-8 sm:border-0 sm:pt-0 lg:contents">
+                <div className="border-border flex flex-col gap-4 border-t pt-4 sm:grid sm:grid-cols-3 sm:gap-6 sm:border-0 sm:pt-0 lg:contents">
                     <FooterColumn title="Shop" items={storefrontFooterShop} />
                     <FooterColumn
                         title="Customer"

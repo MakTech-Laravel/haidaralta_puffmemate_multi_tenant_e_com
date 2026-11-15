@@ -8,7 +8,6 @@ import {
 } from '@/components/storefront/storefront-mobile-nav';
 import { StorefrontFooter } from '@/components/storefront/storefront-footer';
 import { StorefrontHeader } from '@/components/storefront/storefront-header';
-import { cn } from '@/lib/utils';
 
 export default function StorefrontLayout({
     children,
@@ -18,15 +17,12 @@ export default function StorefrontLayout({
     const checkout = isStorefrontCheckout(usePage().url);
 
     return (
-        <div
-            className={cn(
-                'bg-background text-foreground flex min-h-svh max-w-full flex-col overflow-x-clip',
-                checkout ? undefined : storefrontMobileNavPadding,
-            )}
-        >
+        <div className="bg-background text-foreground flex min-h-svh max-w-full flex-col overflow-x-clip">
             <StorefrontHeader />
             <main className="flex min-w-0 flex-1 flex-col">{children}</main>
-            <StorefrontFooter />
+            <StorefrontFooter
+                className={checkout ? undefined : storefrontMobileNavPadding}
+            />
             <AgeGateDialog />
             {checkout ? null : <StorefrontMobileNav />}
         </div>
