@@ -223,7 +223,7 @@ export function PwaInstallProvider({
             {children}
             {showBanner ? (
                 <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4 xl:bottom-6">
-                    <div className="border-border bg-background pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border p-3 shadow-xl">
+                    <div className="border-border bg-background/80 pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border p-3 shadow-xl backdrop-blur-xl">
                         <AppMark />
                         <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold">
