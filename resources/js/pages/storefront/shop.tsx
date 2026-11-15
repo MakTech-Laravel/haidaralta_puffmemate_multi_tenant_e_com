@@ -208,18 +208,17 @@ export default function StorefrontShop({
                         </p>
                     </div>
                 </div>
-                <div className="mb-8 flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="mb-6 flex w-full items-center gap-2">
                     {isBelowLg ? (
                         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
                             <SheetTrigger asChild>
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="shrink-0 gap-2 self-start"
+                                    className="size-11 shrink-0 rounded-full px-0"
                                     aria-label="Open filters"
                                 >
                                     <Menu className="size-5" />
-                                    Filters
                                 </Button>
                             </SheetTrigger>
                             <SheetContent
@@ -240,7 +239,7 @@ export default function StorefrontShop({
                         value={search}
                         onChange={setSearch}
                         onSubmit={() => visit({ search })}
-                        className="lg:min-w-0 lg:flex-1"
+                        className="min-w-0 flex-1"
                     />
                     <StorefrontSortSelect
                         value={sort}
@@ -248,7 +247,7 @@ export default function StorefrontShop({
                             setSort(nextSort);
                             visit({ sort: nextSort });
                         }}
-                        className="lg:w-44 lg:max-w-xs lg:shrink-0"
+                        className="w-[6.75rem] shrink-0 sm:w-44"
                     />
                 </div>
 
@@ -279,7 +278,7 @@ export default function StorefrontShop({
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="grid w-full grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
                                 {products.map((product) => (
                                     <ProductCard
                                         key={product.id}

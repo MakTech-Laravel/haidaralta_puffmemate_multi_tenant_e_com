@@ -27,10 +27,10 @@ export function CategoryCard({ category, className }: CategoryCardProps) {
                 aria-hidden
             />
             <div className="absolute inset-x-0 bottom-0 p-3.5 sm:p-5 lg:p-4">
-                <h3 className="text-ink-surface-foreground line-clamp-2 text-base font-semibold tracking-tight sm:text-xl lg:text-lg xl:text-xl">
+                <h3 className="text-ink-surface-foreground line-clamp-2 text-sm font-semibold tracking-tight sm:text-lg">
                     {category.name}
                 </h3>
-                <p className="text-ink-surface-foreground/85 font-dm-sans mt-1 line-clamp-2 text-xs font-normal">
+                <p className="text-ink-surface-foreground/85 font-dm-sans mt-1 line-clamp-1 text-xs font-normal sm:line-clamp-2">
                     {category.description}
                 </p>
             </div>

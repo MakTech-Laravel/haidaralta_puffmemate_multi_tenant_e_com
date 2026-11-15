@@ -19,12 +19,12 @@ type AboutCtaProps = {
 
 export function AboutCta({ data, className }: AboutCtaProps) {
     return (
-        <section className={cn('bg-ink-surface py-16 sm:py-20', className)}>
+        <section className={cn('bg-ink-surface py-10 sm:py-16', className)}>
             <div className="container mx-auto max-w-2xl px-4 text-center sm:px-6">
                 <p className="text-ink-surface-foreground/85 text-xs font-semibold tracking-[0.14em] uppercase">
                     {data.eyebrow}
                 </p>
-                <h2 className="text-ink-surface-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
+                <h2 className="text-ink-surface-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-4xl">
                     {data.heading}
                 </h2>
                 <p className="text-ink-surface-foreground/85 font-inter mt-4 text-sm leading-relaxed font-normal sm:text-lg">

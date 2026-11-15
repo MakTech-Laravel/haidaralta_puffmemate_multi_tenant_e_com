@@ -20,6 +20,8 @@ import { index as wholesaleRequestsIndex } from '@/routes/customer/wholesale-req
 
 export type AccountNavItem = {
     label: string;
+    /** Short label for the phone tab bar. */
+    shortLabel?: string;
     icon: LucideIcon;
     href?: string;
     match?: (url: string) => boolean;
@@ -31,6 +33,7 @@ export type AccountNavItem = {
 export const accountNavItems: AccountNavItem[] = [
     {
         label: 'Dashboard',
+        shortLabel: 'Home',
         icon: LayoutGrid,
         href: '/dashboard',
         match: (url) => url === '/dashboard' || url.startsWith('/dashboard?'),
@@ -56,6 +59,7 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Product to review',
+        shortLabel: 'Reviews',
         icon: Star,
         href: productToReview.url(),
         match: (url) =>
@@ -65,6 +69,7 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Notification',
+        shortLabel: 'Alerts',
         icon: Bell,
         href: notificationsIndex.url(),
         match: (url) =>
@@ -90,6 +95,7 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Log Out',
+        shortLabel: 'Log out',
         icon: LogOut,
         logout: true,
     },

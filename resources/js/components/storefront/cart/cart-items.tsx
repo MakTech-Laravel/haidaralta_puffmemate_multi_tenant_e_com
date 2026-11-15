@@ -91,11 +91,11 @@ export function CartItems({ items, className }: CartItemsProps) {
                                     each
                                 </p>
                             </div>
-                            <div className="flex h-9 shrink-0 items-center gap-3">
-                                <div className="bg-muted flex h-9 items-center rounded-full">
+                            <div className="flex h-11 shrink-0 items-center gap-2">
+                                <div className="bg-muted flex h-11 items-center rounded-full">
                                     <button
                                         type="button"
-                                        className="text-foreground flex size-9 items-center justify-center"
+                                        className="text-foreground flex size-11 items-center justify-center"
                                         aria-label="Decrease quantity"
                                         onClick={() =>
                                             syncCartQuantity(
@@ -111,7 +111,7 @@ export function CartItems({ items, className }: CartItemsProps) {
                                     </span>
                                     <button
                                         type="button"
-                                        className="text-foreground flex size-9 items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="text-foreground flex size-11 items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Increase quantity"
                                         disabled={
                                             item.quantity >= item.maxQuantity
@@ -128,7 +128,7 @@ export function CartItems({ items, className }: CartItemsProps) {
                                 </div>
                                 <button
                                     type="button"
-                                    className="text-muted-foreground hover:text-destructive flex size-9 shrink-0 items-center justify-center"
+                                    className="text-muted-foreground hover:text-destructive flex size-11 shrink-0 items-center justify-center"
                                     aria-label={`Remove ${item.name}`}
                                     onClick={() => removeCartItem(item.id)}
                                 >

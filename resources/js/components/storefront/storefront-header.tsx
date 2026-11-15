@@ -175,22 +175,22 @@ export function StorefrontHeader() {
     return (
         <div className="sticky top-0 z-40">
             <div className="bg-ink-surface text-ink-surface-foreground">
-                <p className="px-4 py-2 text-center text-[11px] leading-snug font-medium tracking-wide uppercase sm:text-xs">
+                <p className="px-3 py-1.5 text-center text-[11px] leading-snug font-medium tracking-wide break-words uppercase sm:px-4 sm:py-2 sm:text-xs">
                     {storefrontAnnouncement}
                 </p>
             </div>
 
             <header className="border-border/60 bg-background/85 supports-[backdrop-filter]:bg-background/75 border-b backdrop-blur-xl">
-                <div className="container mx-auto flex h-14 items-center gap-4 px-4 sm:h-16 sm:px-6">
+                <div className="container mx-auto flex h-14 items-center gap-1.5 px-3 sm:h-16 sm:gap-4 sm:px-6">
                     <Link
                         href={home()}
                         prefetch
-                        className="flex shrink-0 items-center"
+                        className="flex min-w-0 shrink items-center"
                     >
                         <img
                             src={brand.logoUrl}
                             alt={name}
-                            className="h-8 w-auto object-contain sm:h-10"
+                            className="h-7 w-auto max-w-[6.5rem] object-contain object-left sm:h-10 sm:max-w-none"
                         />
                     </Link>
 
@@ -204,7 +204,7 @@ export function StorefrontHeader() {
                         ))}
                     </nav>
 
-                    <div className="ml-auto flex items-center gap-1 sm:gap-2">
+                    <div className="ml-auto flex shrink-0 items-center">
                         <CartSheet
                             cart={
                                 storefront?.cart ?? {
@@ -231,7 +231,7 @@ export function StorefrontHeader() {
                             href={accountHref}
                             prefetch
                             className={cn(
-                                'relative inline-flex size-10 items-center justify-center rounded-full transition-colors',
+                                'relative inline-flex size-11 items-center justify-center rounded-full transition-colors',
                                 accountActive
                                     ? 'bg-muted text-foreground'
                                     : 'text-foreground hover:bg-muted/70',
@@ -258,7 +258,7 @@ export function StorefrontHeader() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="text-foreground size-10 lg:hidden"
+                                    className="text-foreground size-11 lg:hidden"
                                     aria-label="Open menu"
                                 >
                                     <Menu className="size-5" />

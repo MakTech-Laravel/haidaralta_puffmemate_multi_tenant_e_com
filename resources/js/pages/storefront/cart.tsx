@@ -23,7 +23,7 @@ export default function StorefrontCart(cart: StorefrontCart) {
 
                     <div className="mt-4 mb-8">
                         <div className="flex flex-wrap items-baseline gap-3">
-                            <h1 className="text-foreground text-4xl font-semibold tracking-tight">
+                            <h1 className="text-foreground text-2xl font-semibold tracking-tight sm:text-4xl">
                                 Your cart
                             </h1>
                             <span className="text-muted-foreground text-lg font-medium">
@@ -34,8 +34,11 @@ export default function StorefrontCart(cart: StorefrontCart) {
                     </div>
 
                     <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start">
+                        <CartOrderSummary
+                            className="order-first min-w-0 lg:order-none"
+                            cart={cart}
+                        />
                         <CartItems className="min-w-0" items={cart.items} />
-                        <CartOrderSummary className="min-w-0" cart={cart} />
                     </div>
                 </div>
             </div>

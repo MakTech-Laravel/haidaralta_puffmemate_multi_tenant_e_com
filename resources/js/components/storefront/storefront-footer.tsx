@@ -90,8 +90,8 @@ export function StorefrontFooter() {
 
     return (
         <footer className="border-border bg-muted mt-auto border-t">
-            <div className="container mx-auto grid gap-10 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-                <div className="flex flex-col gap-3 md:col-span-2 lg:col-span-1">
+            <div className="container mx-auto grid grid-cols-2 gap-x-6 gap-y-8 px-4 py-8 sm:px-6 sm:py-12 lg:grid-cols-4 lg:gap-8 lg:py-16">
+                <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">
                     <Link
                         href={home()}
                         prefetch

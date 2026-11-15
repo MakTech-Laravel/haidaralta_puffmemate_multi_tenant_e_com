@@ -105,7 +105,10 @@ export function CheckoutOrderSummary({
 
     return (
         <aside
-            className={cn('bg-muted h-fit rounded-3xl p-6 lg:sticky lg:top-28', className)}
+            className={cn(
+                'bg-muted h-fit rounded-3xl p-4 sm:p-6 lg:sticky lg:top-28',
+                className,
+            )}
         >
             <div className="flex items-center justify-between gap-3">
                 <h2 className="text-foreground text-2xl font-semibold tracking-tight">
@@ -343,7 +346,7 @@ export function CheckoutOrderSummary({
                         ? undefined
                         : 'Fill every required field to place your order.'
                 }
-                className="mt-5 h-14 w-full text-base font-semibold"
+                className="mt-5 hidden h-14 w-full text-base font-semibold lg:inline-flex"
             >
                 {processing ? 'Placing order…' : 'Place order'}
             </Button>

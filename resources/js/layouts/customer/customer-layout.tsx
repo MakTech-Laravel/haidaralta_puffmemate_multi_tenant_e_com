@@ -26,8 +26,8 @@ export default function CustomerLayout({
         <div className="bg-background text-foreground flex min-h-svh flex-col">
             <StorefrontHeader />
 
-            <main className="flex-1 pb-20 lg:pb-0">
-                <h1 className="bg-muted text-foreground py-6 text-center text-3xl font-semibold tracking-tight sm:py-10 sm:text-4xl md:text-5xl">
+            <main className="flex-1 pb-24 lg:pb-0">
+                <h1 className="bg-muted text-foreground py-4 text-center text-2xl font-semibold tracking-tight sm:py-8 sm:text-4xl">
                     My Account
                 </h1>
                 <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
@@ -74,7 +74,7 @@ export default function CustomerLayout({
                 </div>
             </main>
 
-            <div className="mb-16 lg:mb-0">
+            <div className="mb-24 lg:mb-0">
                 <StorefrontFooter />
             </div>
             <AccountMobileNav />

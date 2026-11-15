@@ -14,7 +14,7 @@ export function CartOrderSummary({ cart, className }: CartOrderSummaryProps) {
     return (
         <aside
             className={cn(
-                'border-border bg-background h-fit w-full max-w-full min-w-0 rounded-3xl border p-6 lg:sticky lg:top-28',
+                'border-border bg-background h-fit w-full max-w-full min-w-0 rounded-3xl border p-4 sm:p-6 lg:sticky lg:top-28',
                 className,
             )}
         >
