@@ -25,7 +25,7 @@ export default function StorefrontLayout({
             )}
         >
             <StorefrontHeader />
-            <main className="min-w-0 flex-1">{children}</main>
+            <main className="flex min-w-0 flex-1 flex-col">{children}</main>
             <StorefrontFooter />
             <AgeGateDialog />
             {checkout ? null : <StorefrontMobileNav />}

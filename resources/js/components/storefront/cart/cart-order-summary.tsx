@@ -46,15 +46,14 @@ export function CartOrderSummary({ cart, className }: CartOrderSummaryProps) {
             <Button
                 asChild
                 size="lg"
-                className="mt-5 h-12 w-full text-sm font-semibold"
-                disabled={cart.itemCount === 0}
+                className="mt-5 hidden h-12 w-full text-sm font-semibold lg:inline-flex"
             >
                 <Link href={checkout.url()} prefetch>
                     Checkout →
                 </Link>
             </Button>
 
-            <p className="text-muted-foreground mt-3 flex items-center justify-center gap-1.5 text-xs">
+            <p className="text-muted-foreground mt-3 hidden items-center justify-center gap-1.5 text-xs lg:flex">
                 <Check className="text-tertiary size-3.5" aria-hidden />
                 Secure checkout · No hidden fees
             </p>

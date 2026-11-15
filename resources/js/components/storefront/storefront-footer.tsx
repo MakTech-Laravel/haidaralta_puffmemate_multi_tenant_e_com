@@ -90,7 +90,7 @@ export function StorefrontFooter() {
     const contacts = useContacts();
 
     return (
-        <footer className="border-border bg-muted mt-auto border-t">
+        <footer className="border-border bg-muted border-t">
             <div className="container mx-auto flex flex-col gap-6 px-4 py-6 sm:px-6 sm:py-12 lg:grid lg:grid-cols-4 lg:gap-8 lg:py-16">
                 <div className="flex flex-col gap-2">
                     <Link
