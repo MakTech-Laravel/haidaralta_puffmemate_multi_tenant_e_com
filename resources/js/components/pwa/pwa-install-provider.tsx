@@ -16,10 +16,13 @@ import {
 } from '@/components/ui/dialog';
 import { requestFcmToken } from '@/lib/fcm';
 import {
+    clearDeferredInstallPrompt,
+    getDeferredInstallPrompt,
     isInAppBrowser,
     isIosSafari,
     isStandaloneDisplay,
     PWA_BANNER_DISMISSED_KEY,
+    subscribeInstallPrompt,
     type BeforeInstallPromptEvent,
 } from '@/lib/pwa';
 
@@ -68,7 +71,7 @@ export function PwaInstallProvider({
 }: PwaInstallProviderProps) {
     const [isInstalled, setIsInstalled] = useState(isStandaloneDisplay);
     const [deferredPrompt, setDeferredPrompt] =
-        useState<BeforeInstallPromptEvent | null>(null);
+        useState<BeforeInstallPromptEvent | null>(getDeferredInstallPrompt);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [installView, setInstallView] = useState<InstallView>('offer');
     const [bannerDismissed, setBannerDismissed] = useState(() => {
@@ -102,18 +105,14 @@ export function PwaInstallProvider({
         const media = window.matchMedia('(display-mode: standalone)');
         media.addEventListener('change', onDisplayMode);
 
-        const onBeforeInstall = (event: Event): void => {
-            event.preventDefault();
-            setDeferredPrompt(event as BeforeInstallPromptEvent);
-        };
-
-        window.addEventListener('beforeinstallprompt', onBeforeInstall);
         window.addEventListener('appinstalled', onDisplayMode);
+        const unsubscribePrompt = subscribeInstallPrompt(setDeferredPrompt);
+        setDeferredPrompt(getDeferredInstallPrompt());
 
         return () => {
             media.removeEventListener('change', onDisplayMode);
-            window.removeEventListener('beforeinstallprompt', onBeforeInstall);
             window.removeEventListener('appinstalled', onDisplayMode);
+            unsubscribePrompt();
         };
     }, []);
 
@@ -151,7 +150,7 @@ export function PwaInstallProvider({
 
         await deferredPrompt.prompt();
         const choice = await deferredPrompt.userChoice;
-        setDeferredPrompt(null);
+        clearDeferredInstallPrompt();
 
         if (choice.outcome === 'accepted') {
             dismissBanner();
@@ -223,7 +222,7 @@ export function PwaInstallProvider({
             {children}
             {showBanner ? (
                 <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4 xl:bottom-6">
-                    <div className="border-border bg-background/80 pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border p-3 shadow-xl backdrop-blur-xl">
+                    <div className="border-border bg-background/70 pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border p-3 shadow-xl backdrop-blur-xl">
                         <AppMark />
                         <div className="min-w-0 flex-1">
                             <p className="text-sm font-semibold">
