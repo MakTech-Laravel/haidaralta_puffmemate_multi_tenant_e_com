@@ -4,14 +4,15 @@ import { useState } from 'react';
 import { CartSheet } from '@/components/storefront/cart/cart-sheet';
 import { NotificationsPopover } from '@/components/notifications/notifications-popover';
 import type { NotificationItem } from '@/components/notifications/types';
+import { usePwaInstall } from '@/components/pwa/pwa-install-provider';
 import {
     PwaInstallHeaderButton,
     PwaInstallMenuItem,
 } from '@/components/pwa/pwa-install-menu-item';
+import { StorefrontSheetContent } from '@/components/storefront/storefront-sheet';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
-    SheetContent,
     SheetHeader,
     SheetTitle,
     SheetTrigger,
@@ -163,6 +164,7 @@ export function StorefrontHeader() {
     const name = brand.name;
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
+    const pwa = usePwaInstall();
     const accountHref = auth.user
         ? (auth.dashboardUrl ?? dashboard())
         : login();
@@ -268,14 +270,11 @@ export function StorefrontHeader() {
                                     <Menu className="size-5" />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent
-                                side="right"
-                                className="w-[min(100%,20rem)]"
-                            >
+                            <StorefrontSheetContent side="right">
                                 <SheetHeader>
                                     <SheetTitle>Menu</SheetTitle>
                                 </SheetHeader>
-                                <nav className="mt-4 flex flex-col gap-1 px-3">
+                                <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3">
                                     {items.map((item) => (
                                         <NavLabel
                                             key={`${item.label}-${item.categorySlug ?? item.route}`}
@@ -287,14 +286,18 @@ export function StorefrontHeader() {
                                             }
                                         />
                                     ))}
-                                    <PwaInstallMenuItem
-                                        className="text-foreground/70 rounded-xl px-3 py-2.5 text-base font-medium"
-                                        onInstalledNavigate={() =>
-                                            setMobileOpen(false)
-                                        }
-                                    />
                                 </nav>
-                            </SheetContent>
+                                {pwa?.showMenuItem ? (
+                                    <div className="shrink-0 px-3 pt-3 pb-4">
+                                        <PwaInstallMenuItem
+                                            variant="primary"
+                                            onInstalledNavigate={() =>
+                                                setMobileOpen(false)
+                                            }
+                                        />
+                                    </div>
+                                ) : null}
+                            </StorefrontSheetContent>
                         </Sheet>
                     </div>
                 </div>

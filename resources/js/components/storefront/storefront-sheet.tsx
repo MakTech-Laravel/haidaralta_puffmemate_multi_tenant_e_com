@@ -1,0 +1,43 @@
+import * as SheetPrimitive from '@radix-ui/react-dialog';
+import { XIcon } from 'lucide-react';
+import type { ComponentProps } from 'react';
+import { cn } from '@/lib/utils';
+
+type StorefrontSheetSide = 'left' | 'right';
+
+/**
+ * Floating storefront panel. The default sheet stays full-bleed and square;
+ * this one sits inset with the same corner radius as the rest of the shop.
+ */
+export function StorefrontSheetContent({
+    className,
+    children,
+    side = 'right',
+    ...props
+}: ComponentProps<typeof SheetPrimitive.Content> & {
+    side?: StorefrontSheetSide;
+}) {
+    return (
+        <SheetPrimitive.Portal>
+            <SheetPrimitive.Overlay className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-scrim backdrop-blur-[2px]" />
+            <SheetPrimitive.Content
+                data-slot="storefront-sheet-content"
+                className={cn(
+                    'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 overflow-hidden rounded-3xl border shadow-xl transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500',
+                    side === 'right' &&
+                        'data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right top-3 right-3 bottom-3 w-[min(calc(100vw-1.5rem),20rem)]',
+                    side === 'left' &&
+                        'data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left top-3 bottom-3 left-3 w-[min(calc(100vw-1.5rem),20rem)]',
+                    className,
+                )}
+                {...props}
+            >
+                {children}
+                <SheetPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-secondary absolute top-4 right-4 flex size-8 items-center justify-center rounded-full opacity-70 transition-[opacity,background-color] hover:bg-accent hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden disabled:pointer-events-none">
+                    <XIcon className="size-4" />
+                    <span className="sr-only">Close</span>
+                </SheetPrimitive.Close>
+            </SheetPrimitive.Content>
+        </SheetPrimitive.Portal>
+    );
+}

@@ -10,11 +10,13 @@ import { cn } from '@/lib/utils';
 type PwaInstallMenuItemProps = {
     className?: string;
     onInstalledNavigate?: () => void;
+    variant?: 'default' | 'primary';
 };
 
 export function PwaInstallMenuItem({
     className,
     onInstalledNavigate,
+    variant = 'default',
 }: PwaInstallMenuItemProps) {
     const pwa = usePwaInstall();
 
@@ -26,7 +28,10 @@ export function PwaInstallMenuItem({
         <button
             type="button"
             className={cn(
-                'flex w-full cursor-pointer items-center gap-2 text-left',
+                'flex w-full cursor-pointer items-center gap-2',
+                variant === 'primary'
+                    ? 'bg-primary text-primary-foreground hover:bg-primary/90 h-11 justify-center rounded-full px-4 text-sm font-medium'
+                    : 'text-left',
                 className,
             )}
             onClick={() => {

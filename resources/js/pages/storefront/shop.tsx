@@ -1,5 +1,5 @@
 import { Head, router } from '@inertiajs/react';
-import { Menu } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
@@ -11,11 +11,11 @@ import {
     type ShopTagOption,
 } from '@/components/storefront/shop-filters-sidebar';
 import { StorefrontSearchBar } from '@/components/storefront/storefront-search-bar';
+import { StorefrontSheetContent } from '@/components/storefront/storefront-sheet';
 import { StorefrontSortSelect } from '@/components/storefront/storefront-sort-select';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
-    SheetContent,
     SheetHeader,
     SheetTitle,
     SheetTrigger,
@@ -218,20 +218,20 @@ export default function StorefrontShop({
                                     className="size-11 shrink-0 rounded-full px-0"
                                     aria-label="Open filters"
                                 >
-                                    <Menu className="size-5" />
+                                    <Filter className="size-5" />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent
+                            <StorefrontSheetContent
                                 side="left"
-                                className="w-[min(100%,20rem)] overflow-y-auto"
+                                className="overflow-y-auto"
                             >
                                 <SheetHeader>
                                     <SheetTitle>Filters</SheetTitle>
                                 </SheetHeader>
-                                <div className="mt-6 px-4 pb-6">
+                                <div className="mt-2 px-4 pb-6">
                                     {filtersSidebar}
                                 </div>
-                            </SheetContent>
+                            </StorefrontSheetContent>
                         </Sheet>
                     ) : null}
 
@@ -278,7 +278,7 @@ export default function StorefrontShop({
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid w-full grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="grid w-full grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-2 lg:gap-6 xl:grid-cols-3 2xl:grid-cols-4">
                                 {products.map((product) => (
                                     <ProductCard
                                         key={product.id}
