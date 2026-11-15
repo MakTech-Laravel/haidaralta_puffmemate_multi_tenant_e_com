@@ -10,7 +10,7 @@ import {
     StorefrontMobileNav,
     storefrontMobileNavPadding,
 } from '@/components/storefront/storefront-mobile-nav';
-import { cn, toUrl } from '@/lib/utils';
+import { toUrl } from '@/lib/utils';
 import { home } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -29,12 +29,7 @@ export default function CustomerLayout({
     ];
 
     return (
-        <div
-            className={cn(
-                'bg-background text-foreground flex min-h-svh flex-col',
-                storefrontMobileNavPadding,
-            )}
-        >
+        <div className="bg-background text-foreground flex min-h-svh flex-col">
             <StorefrontHeader />
 
             <main className="flex-1">
@@ -86,7 +81,7 @@ export default function CustomerLayout({
                 </div>
             </main>
 
-            <StorefrontFooter />
+            <StorefrontFooter className={storefrontMobileNavPadding} />
             <StorefrontMobileNav />
         </div>
     );
