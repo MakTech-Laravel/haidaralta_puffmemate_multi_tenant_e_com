@@ -4,7 +4,10 @@ import { useState } from 'react';
 import { CartSheet } from '@/components/storefront/cart/cart-sheet';
 import { NotificationsPopover } from '@/components/notifications/notifications-popover';
 import type { NotificationItem } from '@/components/notifications/types';
-import { PwaInstallMenuItem } from '@/components/pwa/pwa-install-menu-item';
+import {
+    PwaInstallHeaderButton,
+    PwaInstallMenuItem,
+} from '@/components/pwa/pwa-install-menu-item';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
@@ -205,6 +208,7 @@ export function StorefrontHeader() {
                     </nav>
 
                     <div className="ml-auto flex shrink-0 items-center">
+                        <PwaInstallHeaderButton />
                         <CartSheet
                             cart={
                                 storefront?.cart ?? {
