@@ -1,10 +1,16 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
-import { AccountMobileNav } from '@/components/customer/account-mobile-nav';
-import { AccountSidebar } from '@/components/customer/account-sidebar';
+import {
+    AccountSectionNav,
+    AccountSidebar,
+} from '@/components/customer/account-sidebar';
 import { StorefrontFooter } from '@/components/storefront/storefront-footer';
 import { StorefrontHeader } from '@/components/storefront/storefront-header';
-import { toUrl } from '@/lib/utils';
+import {
+    StorefrontMobileNav,
+    storefrontMobileNavPadding,
+} from '@/components/storefront/storefront-mobile-nav';
+import { cn, toUrl } from '@/lib/utils';
 import { home } from '@/routes';
 import type { BreadcrumbItem } from '@/types';
 
@@ -23,13 +29,19 @@ export default function CustomerLayout({
     ];
 
     return (
-        <div className="bg-background text-foreground flex min-h-svh flex-col">
+        <div
+            className={cn(
+                'bg-background text-foreground flex min-h-svh flex-col',
+                storefrontMobileNavPadding,
+            )}
+        >
             <StorefrontHeader />
 
-            <main className="flex-1 pb-24 lg:pb-0">
+            <main className="flex-1">
                 <h1 className="bg-muted text-foreground py-4 text-center text-2xl font-semibold tracking-tight sm:py-8 sm:text-4xl">
                     My Account
                 </h1>
+                <AccountSectionNav />
                 <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
                     <nav
                         aria-label="Breadcrumb"
@@ -74,10 +86,8 @@ export default function CustomerLayout({
                 </div>
             </main>
 
-            <div className="mb-24 lg:mb-0">
-                <StorefrontFooter />
-            </div>
-            <AccountMobileNav />
+            <StorefrontFooter />
+            <StorefrontMobileNav />
         </div>
     );
 }

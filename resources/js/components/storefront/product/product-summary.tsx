@@ -233,7 +233,7 @@ export function ProductSummary({
                 </Button>
             </div>
 
-            <div className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-30 border-t px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
+            <div className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 border-t px-3 py-2 backdrop-blur-xl lg:hidden">
                 <div className="mx-auto flex max-w-lg items-center gap-2">
                     <p className="text-foreground w-16 shrink-0 truncate text-sm font-semibold">
                         {displayPrice}

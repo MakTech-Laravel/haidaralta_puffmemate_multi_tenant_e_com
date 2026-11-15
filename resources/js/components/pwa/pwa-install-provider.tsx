@@ -1,3 +1,4 @@
+import { router } from '@inertiajs/react';
 import {
     createContext,
     useContext,
@@ -15,6 +16,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { requestFcmToken } from '@/lib/fcm';
+import { cn } from '@/lib/utils';
 import {
     clearDeferredInstallPrompt,
     getDeferredInstallPrompt,
@@ -47,6 +49,22 @@ type PwaInstallProviderProps = {
     name: string;
 };
 
+function pageHasStorefrontTabBar(): boolean {
+    const page = router.page;
+
+    if (!page) {
+        return false;
+    }
+
+    const onStorefront =
+        page.component.startsWith('storefront/') ||
+        page.component.startsWith('customer/');
+    const checkout =
+        page.url === '/checkout' || page.url.startsWith('/checkout?');
+
+    return onStorefront && !checkout;
+}
+
 type InstallView = 'offer' | 'ios' | 'in-app' | 'unavailable';
 
 function AppMark() {
@@ -69,6 +87,7 @@ export function PwaInstallProvider({
     children,
     name,
 }: PwaInstallProviderProps) {
+    const [aboveTabBar, setAboveTabBar] = useState(pageHasStorefrontTabBar);
     const [isInstalled, setIsInstalled] = useState(isStandaloneDisplay);
     const [deferredPrompt, setDeferredPrompt] =
         useState<BeforeInstallPromptEvent | null>(getDeferredInstallPrompt);
@@ -90,6 +109,8 @@ export function PwaInstallProvider({
     });
     const [alertsBusy, setAlertsBusy] = useState(false);
     const [alertsHint, setAlertsHint] = useState<string | null>(null);
+
+    useEffect(() => router.on('navigate', () => setAboveTabBar(pageHasStorefrontTabBar())), []);
 
     const isIos = isIosSafari();
     const inApp = isInAppBrowser();
@@ -221,7 +242,14 @@ export function PwaInstallProvider({
         >
             {children}
             {showBanner ? (
-                <div className="pointer-events-none fixed inset-x-0 bottom-[calc(1rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-4">
+                <div
+                    className={cn(
+                        'pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4',
+                        aboveTabBar
+                            ? 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))]'
+                            : 'bottom-[calc(1rem+env(safe-area-inset-bottom))]',
+                    )}
+                >
                     <div className="border-border bg-background/70 pointer-events-auto flex w-full max-w-md items-center gap-3 rounded-2xl border p-3 shadow-xl backdrop-blur-xl">
                         <AppMark />
                         <div className="min-w-0 flex-1">

@@ -221,6 +221,7 @@ export function StorefrontHeader() {
                                 }
                             }
                             active={cartActive}
+                            triggerClassName="hidden lg:inline-flex"
                         />
 
                         {auth.user ? (
@@ -237,7 +238,7 @@ export function StorefrontHeader() {
                             href={accountHref}
                             prefetch
                             className={cn(
-                                'relative inline-flex size-11 items-center justify-center rounded-full transition-colors',
+                                'relative hidden size-11 items-center justify-center rounded-full transition-colors lg:inline-flex',
                                 accountActive
                                     ? 'bg-muted text-foreground'
                                     : 'text-foreground hover:bg-muted/70',

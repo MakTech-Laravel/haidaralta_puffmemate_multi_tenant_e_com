@@ -85,7 +85,7 @@ export default function StorefrontProduct({
         <>
             <Head title={product.name} />
 
-            <div className="container mx-auto px-4 py-6 pb-28 sm:px-6 sm:py-10 lg:pb-10">
+            <div className="container mx-auto px-4 py-6 pb-[calc(9.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-10 lg:pb-10">
                 <Link
                     href={backHref}
                     prefetch
