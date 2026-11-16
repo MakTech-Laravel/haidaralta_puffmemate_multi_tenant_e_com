@@ -35,6 +35,8 @@ export interface MapAdapter {
     setPolyline(spec: PolylineSpec): void;
     removePolyline(id: string): void;
     fitBounds(points: LatLngTuple[], padding?: number): void;
+    /** Call after the map container changes size (full-bleed layouts, orientation). */
+    invalidateSize(): void;
     onClick(handler: (lat: number, lng: number) => void): void;
     destroy(): void;
 }
