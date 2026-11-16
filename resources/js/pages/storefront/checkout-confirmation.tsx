@@ -54,11 +54,11 @@ function Detail({
     }
 
     return (
-        <div>
+        <div className="min-w-0">
             <dt className="text-muted-foreground text-[10px] font-semibold tracking-wider uppercase">
                 {label}
             </dt>
-            <dd className="text-foreground mt-1 text-sm font-semibold">
+            <dd className="text-foreground mt-1 text-sm font-semibold break-words">
                 {value}
             </dd>
         </div>
@@ -94,15 +94,15 @@ export default function StorefrontCheckoutConfirmation({
                         ) : null}
                     </div>
 
-                    <div className="mt-8 grid items-start gap-6 lg:grid-cols-[1fr_22rem] lg:gap-8">
-                        <div className="flex flex-col gap-3 sm:gap-4">
+                    <div className="mt-8 grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-8">
+                        <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
                             <Card className={sectionCardClass}>
-                                <CardHeader>
+                                <CardHeader className="px-0">
                                     <CardTitle className="text-foreground text-lg font-semibold">
                                         Your details
                                     </CardTitle>
                                 </CardHeader>
-                                <CardContent className="grid gap-4 px-0 sm:grid-cols-2">
+                                <CardContent className="grid grid-cols-1 gap-4 px-0 sm:grid-cols-2">
                                     <Detail label="Full name" value={order.name} />
                                     <Detail
                                         label="Mobile number"
@@ -112,14 +112,14 @@ export default function StorefrontCheckoutConfirmation({
                             </Card>
 
                             <Card className={sectionCardClass}>
-                                <CardHeader>
+                                <CardHeader className="px-0">
                                     <CardTitle className="text-foreground text-lg font-semibold">
                                         Delivery
                                     </CardTitle>
                                 </CardHeader>
                                 <CardContent className="space-y-4 px-0">
                                     <Detail label="Address" value={order.address} />
-                                    <div className="grid gap-4 sm:grid-cols-2">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                         <Detail label="City" value={cityLine} />
                                         <Detail
                                             label="Method"
@@ -127,7 +127,7 @@ export default function StorefrontCheckoutConfirmation({
                                         />
                                     </div>
                                     {order.deliveryDate || order.timeSlot ? (
-                                        <div className="grid gap-4 sm:grid-cols-2">
+                                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                             <Detail
                                                 label="Delivery date"
                                                 value={order.deliveryDate}
@@ -142,7 +142,7 @@ export default function StorefrontCheckoutConfirmation({
                             </Card>
 
                             <Card className={sectionCardClass}>
-                                <CardHeader>
+                                <CardHeader className="px-0">
                                     <CardTitle className="text-foreground text-lg font-semibold">
                                         Payment at delivery
                                     </CardTitle>
@@ -159,7 +159,7 @@ export default function StorefrontCheckoutConfirmation({
                             </Card>
                         </div>
 
-                        <aside className="bg-accent h-fit p-5 lg:sticky lg:top-28">
+                        <aside className="bg-accent h-fit min-w-0 p-5 lg:sticky lg:top-28">
                             <div className="flex items-center justify-between gap-3">
                                 <h2 className="text-foreground text-2xl font-semibold tracking-tight">
                                     Your order
