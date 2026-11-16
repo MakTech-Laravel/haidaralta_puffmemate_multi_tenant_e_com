@@ -204,7 +204,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->whereHas('categories', fn ($builder) => $builder->where('categories.id', $category->id))
-            ->with(['categories:id,name,slug', 'media']);
+            ->with(self::cardRelations());
 
         match ($sort) {
             'name_desc' => $query->orderByDesc('name'),
@@ -237,7 +237,7 @@ class StorefrontCatalog
     ): array {
         $query = Product::query()
             ->where('status', true)
-            ->with(['categories:id,name,slug', 'media']);
+            ->with(self::cardRelations());
 
         match ($sort) {
             'name_desc' => $query->orderByDesc('name'),
@@ -294,7 +294,7 @@ class StorefrontCatalog
                         });
                 });
             })
-            ->with(['categories:id,name,slug', 'media'])
+            ->with(self::cardRelations())
             ->orderBy('name');
 
         if ($limit !== null) {
@@ -317,7 +317,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->whereJsonContains('tags', $tag->value)
-            ->with(['categories:id,name,slug', 'media'])
+            ->with(self::cardRelations())
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->limit(max(1, $limit));
@@ -355,7 +355,7 @@ class StorefrontCatalog
             ->select('products.*')
             ->joinSub($sales, 'sales', 'sales.product_id', '=', 'products.id')
             ->where('products.status', true)
-            ->with(['categories:id,name,slug', 'media'])
+            ->with(self::cardRelations())
             ->orderByDesc('sales.total_sold')
             ->orderBy('products.name')
             ->orderBy('products.id')
@@ -601,7 +601,7 @@ class StorefrontCatalog
         $query = Product::query()
             ->where('status', true)
             ->where('id', '!=', $product->id)
-            ->with(['categories:id,name,slug', 'media'])
+            ->with(self::cardRelations())
             ->limit(100);
 
         if ($categoryIds->isNotEmpty()) {
@@ -632,7 +632,7 @@ class StorefrontCatalog
                 $builder->whereJsonContains('tags', ProductTag::BestSelling->value)
                     ->orWhereJsonContains('tags', ProductTag::Popular->value);
             })
-            ->with(['categories:id,name,slug', 'media'])
+            ->with(self::cardRelations())
             ->limit(max(1, $limit))
             ->get();
     }
@@ -688,7 +688,21 @@ class StorefrontCatalog
     }
 
     /**
-     * @return array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string, views: string}
+     * Relations every product card needs, including enabled packages.
+     *
+     * @return array<int|string, mixed>
+     */
+    public static function cardRelations(): array
+    {
+        return [
+            'categories:id,name,slug',
+            'media',
+            'packages' => fn ($query) => $query->enabled()->ordered(),
+        ];
+    }
+
+    /**
+     * @return array{id: string, name: string, description: string, price: string, compareAtPrice: string, category: string, image: string, views: string, packages: list<array{id: int, label: string, quantity: int, formattedPrice: string}>}
      */
     public static function mapProductCard(Product $product, ?Branch $branch = null): array
     {
@@ -714,7 +728,35 @@ class StorefrontCatalog
             'category' => $categoryName,
             'image' => $product->imageUrl(MediaUrl::DEFAULT_FALLBACK),
             'views' => CompactNumber::format((int) $product->views),
+            'packages' => self::cardPackages($product),
         ];
+    }
+
+    /**
+     * Enabled packages the shop card must offer before adding to the cart.
+     *
+     * @return list<array{id: int, label: string, quantity: int, formattedPrice: string}>
+     */
+    private static function cardPackages(Product $product): array
+    {
+        if (! ProductPackagePricing::productPackagesEnabled($product)) {
+            return [];
+        }
+
+        $product->loadMissing([
+            'packages' => fn ($query) => $query->enabled()->ordered(),
+        ]);
+
+        return $product->packages
+            ->filter(fn (ProductPackage $package): bool => (bool) $package->status)
+            ->map(fn (ProductPackage $package): array => [
+                'id' => $package->id,
+                'label' => $package->label,
+                'quantity' => (int) $package->quantity,
+                'formattedPrice' => BranchProductPriceDisplay::formatAud((float) $package->price),
+            ])
+            ->values()
+            ->all();
     }
 
     /**

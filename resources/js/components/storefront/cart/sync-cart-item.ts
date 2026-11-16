@@ -153,6 +153,11 @@ export function addToCart(
                 notifyAddedToCart();
                 options.onSuccess?.(page as AddToCartSuccessPage);
             },
+            onError: (errors) => {
+                toast.error(
+                    errors.product ?? 'We could not add this to your cart.',
+                );
+            },
             onFinish,
         },
     );

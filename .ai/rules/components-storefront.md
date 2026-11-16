@@ -15,7 +15,7 @@ Shop price range: min/max inputs live-sync the dual slider (no floating tooltips
 Shop dual-range price slider does not show floating value bubbles/tooltips; values are shown only via the synced min/max inputs.
 
 ## Product cards add to cart
-Shared ProductCard keeps image/title/price as a PDP link and a separate Add to cart button (never nest the button in the Link). Cards add quantity 1 via addToCart(product.id) — card id is the product slug. Variants stay on the PDP.
+Shared ProductCard keeps image/title/price as a PDP link and a separate cart button (never nest the button in the Link). Products without packages add quantity 1 via addToCart(product.id) — card id is the product slug. When `packages` is non-empty the button is "Choose package" and adds only after a package is selected, sending that `productPackageId`. Variants stay on the PDP.
 
 ## Product cards show compact views
 ProductCard shows CompactNumber-formatted views from mapProductCard (1k, 1.2k, 1m, 1b) as a pill in the bottom-right of the image (Offer badge stays top-right). Card Add to cart sends countView and bumps the shown count locally when it is a plain number. Do not prefetch the PDP link. Do not nest Add to cart inside the Link.

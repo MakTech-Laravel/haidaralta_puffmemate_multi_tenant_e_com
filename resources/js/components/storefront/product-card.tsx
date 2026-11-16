@@ -3,7 +3,18 @@ import { EyeIcon, ShoppingCart } from 'lucide-react';
 import { useState } from 'react';
 import { addToCart } from '@/components/storefront/cart/sync-cart-item';
 import { Button } from '@/components/ui/button';
-import type { StorefrontProduct } from '@/types/storefront';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import type {
+    StorefrontProduct,
+    StorefrontProductPackage,
+} from '@/types/storefront';
 import { cn } from '@/lib/utils';
 import { show as productShow } from '@/routes/products';
 
@@ -14,14 +25,43 @@ type ProductCardProps = {
     className?: string;
 };
 
+function packageTitle(pkg: StorefrontProductPackage): string {
+    const quantityLabel = `${pkg.quantity} ${pkg.quantity === 1 ? 'Item' : 'Items'}`;
+
+    if (/^\d+$/.test(pkg.label.trim())) {
+        return quantityLabel;
+    }
+
+    return pkg.label;
+}
+
 export function ProductCard({ product, className }: ProductCardProps) {
     const hasOffer = Boolean(product.compareAtPrice);
     const imageSrc = product.image || FALLBACK_IMAGE;
+    const packages = product.packages ?? [];
+    const needsPackage = packages.length > 0;
     const [adding, setAdding] = useState(false);
+    const [chooserOpen, setChooserOpen] = useState(false);
+    const [packageId, setPackageId] = useState<number | null>(null);
     const [addedViews, setAddedViews] = useState(0);
     const displayViews = /^\d+$/.test(product.views)
         ? String(Number(product.views) + addedViews)
         : product.views;
+
+    function add(selectedPackageId?: number): void {
+        setAdding(true);
+        addToCart(product.id, 1, () => setAdding(false), {
+            countView: true,
+            productPackageId: selectedPackageId,
+            onSuccess: (page) => {
+                setChooserOpen(false);
+
+                if (page.flash?.view_counted === true) {
+                    setAddedViews((count) => count + 1);
+                }
+            },
+        });
+    }
 
     return (
         <article
@@ -85,21 +125,88 @@ export function ProductCard({ product, className }: ProductCardProps) {
                     className="h-11 w-full text-xs font-semibold sm:text-sm"
                     disabled={adding}
                     onClick={() => {
-                        setAdding(true);
-                        addToCart(product.id, 1, () => setAdding(false), {
-                            countView: true,
-                            onSuccess: (page) => {
-                                if (page.flash?.view_counted === true) {
-                                    setAddedViews((count) => count + 1);
-                                }
-                            },
-                        });
+                        if (!needsPackage) {
+                            add();
+
+                            return;
+                        }
+
+                        setPackageId(packages[0]?.id ?? null);
+                        setChooserOpen(true);
                     }}
                 >
                     <ShoppingCart className="size-3.5" />
-                    {adding ? 'Adding...' : 'Add to cart'}
+                    {adding
+                        ? 'Adding...'
+                        : needsPackage
+                          ? 'Choose package'
+                          : 'Add to cart'}
                 </Button>
             </div>
+            {needsPackage ? (
+                <Dialog open={chooserOpen} onOpenChange={setChooserOpen}>
+                    <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Choose a package</DialogTitle>
+                            <DialogDescription>{product.name}</DialogDescription>
+                        </DialogHeader>
+                        <ul className="flex max-h-72 flex-col gap-2 overflow-y-auto">
+                            {packages.map((pkg) => {
+                                const selected = packageId === pkg.id;
+                                const title = packageTitle(pkg);
+                                const quantityLabel = `${pkg.quantity} ${
+                                    pkg.quantity === 1 ? 'Item' : 'Items'
+                                }`;
+
+                                return (
+                                    <li key={pkg.id}>
+                                        <button
+                                            type="button"
+                                            onClick={() => setPackageId(pkg.id)}
+                                            className={cn(
+                                                'bg-background flex w-full items-center justify-between gap-3 rounded-2xl border-2 px-4 py-3 text-left',
+                                                selected
+                                                    ? 'border-primary'
+                                                    : 'border-border',
+                                            )}
+                                            aria-pressed={selected}
+                                        >
+                                            <span className="min-w-0">
+                                                <span className="text-foreground block text-sm font-semibold">
+                                                    {title}
+                                                </span>
+                                                {title !== quantityLabel ? (
+                                                    <span className="text-muted-foreground block text-xs">
+                                                        {quantityLabel}
+                                                    </span>
+                                                ) : null}
+                                            </span>
+                                            <span className="text-foreground shrink-0 text-sm font-semibold">
+                                                {pkg.formattedPrice}
+                                            </span>
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                        <DialogFooter>
+                            <Button
+                                type="button"
+                                className="w-full sm:w-auto"
+                                disabled={adding || packageId === null}
+                                onClick={() => {
+                                    if (packageId !== null) {
+                                        add(packageId);
+                                    }
+                                }}
+                            >
+                                <ShoppingCart className="size-4" />
+                                {adding ? 'Adding...' : 'Add to cart'}
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            ) : null}
         </article>
     );
 }

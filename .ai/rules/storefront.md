@@ -34,7 +34,7 @@ Homepage featured category cards use `StorefrontCatalog::featuredCategories()`. 
 
 ## ProductCard contract
 
-Shared `ProductCard` never shows or receives stock quantity (PDP may still show stock). Cards use fixed `aspect-[3/2]` with a real `<img>` (`object-cover`, lazy, async decode, sizes) and `/images/storefront/logo.png` fallback. Offer badge is driven by truthy `compareAtPrice`. Mapper (`mapProductCard`) prefers `Product::packSummary()` for the subtitle and uses catalog prices via `BranchProductPriceDisplay::forCatalogProduct` when no branch is selected.
+Shared `ProductCard` never shows or receives stock quantity (PDP may still show stock). Cards use fixed `aspect-[3/2]` with a real `<img>` (`object-cover`, lazy, async decode, sizes) and `/images/storefront/logo.png` fallback. Offer badge is driven by truthy `compareAtPrice`. Mapper (`mapProductCard`) prefers `Product::packSummary()` for the subtitle and uses catalog prices via `BranchProductPriceDisplay::forCatalogProduct` when no branch is selected. It also returns `packages` (enabled package id, label, quantity, formatted price) when product packages are on; otherwise `packages` is an empty list.
 
 ## Product detail has no branch picker
 

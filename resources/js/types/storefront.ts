@@ -17,6 +17,13 @@ export type StorefrontHeroSlide = {
     secondaryCta: { label: string; href: string };
 };
 
+export type StorefrontProductPackage = {
+    id: number;
+    label: string;
+    quantity: number;
+    formattedPrice: string;
+};
+
 export type StorefrontProduct = {
     id: string;
     name: string;
@@ -26,6 +33,7 @@ export type StorefrontProduct = {
     category: string;
     image: string;
     views: string;
+    packages?: StorefrontProductPackage[];
 };
 
 export type StorefrontPackagedProduct = StorefrontProduct & {
