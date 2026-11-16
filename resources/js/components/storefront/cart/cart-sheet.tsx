@@ -63,13 +63,13 @@ export function CartSheet({
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
                 className={cn(
-                    'relative inline-flex size-10 items-center justify-center rounded-full transition-colors',
+                    'relative inline-flex size-11 items-center justify-center rounded-full transition-colors',
                     triggerClassName,
                     active ? 'bg-muted text-foreground' : 'text-foreground hover:bg-muted/70',
                 )}
                 aria-label="Cart"
             >
-                <ShoppingCart className="size-5 md:size-[22px]" strokeWidth={1.75} />
+                <ShoppingCart className="size-6" strokeWidth={1.75} />
                 {cartData.itemCount > 0 ? (
                     <span className="bg-primary text-primary-foreground absolute top-0 right-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold">
                         {cartData.itemCount}
@@ -135,10 +135,10 @@ export function CartSheet({
                                         </span>
                                     </p>
                                     <div className="mt-3 flex items-center gap-3">
-                                        <div className="bg-muted flex h-9 items-center rounded-full">
+                                        <div className="bg-muted flex h-11 items-center rounded-full">
                                             <button
                                                 type="button"
-                                                className="text-foreground flex size-9 items-center justify-center"
+                                                className="text-foreground flex size-11 items-center justify-center"
                                                 aria-label="Decrease quantity"
                                                 onClick={() =>
                                                     syncCartQuantity(
@@ -154,7 +154,7 @@ export function CartSheet({
                                             </span>
                                             <button
                                                 type="button"
-                                                className="text-foreground flex size-9 items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
+                                                className="text-foreground flex size-11 items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
                                                 aria-label="Increase quantity"
                                                 disabled={
                                                     item.quantity >=
@@ -172,7 +172,7 @@ export function CartSheet({
                                         </div>
                                         <button
                                             type="button"
-                                            className="text-muted-foreground hover:text-destructive ml-auto flex size-9 items-center justify-center"
+                                            className="text-muted-foreground hover:text-destructive ml-auto flex size-11 items-center justify-center"
                                             aria-label={`Remove ${item.name}`}
                                             onClick={() =>
                                                 removeCartItem(item.id)

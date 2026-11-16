@@ -1,5 +1,6 @@
 import { Link } from '@inertiajs/react';
-import { Minus, Plus, Trash2 } from 'lucide-react';
+import { Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { removeCartItem, syncCartQuantity } from '@/components/storefront/cart/sync-cart-item';
 import { StorefrontProductImage } from '@/components/storefront/storefront-product-image';
 import { cn } from '@/lib/utils';
@@ -17,16 +18,32 @@ export function CartItems({ items, className }: CartItemsProps) {
         return (
             <div
                 className={cn(
-                    'border-border bg-background rounded-2xl border p-8 text-center',
+                    'mx-auto flex max-w-xs flex-col items-center px-2 py-2 text-center',
                     className,
                 )}
             >
-                <p className="text-foreground font-semibold">
+                <div className="bg-background relative flex size-16 items-center justify-center rounded-full shadow-sm motion-safe:animate-cart-float">
+                    <span
+                        className="bg-primary/10 absolute inset-1.5 rounded-full"
+                        aria-hidden
+                    />
+                    <ShoppingBag
+                        className="text-primary relative size-7"
+                        strokeWidth={1.75}
+                        aria-hidden
+                    />
+                </div>
+                <p className="text-foreground mt-4 text-base font-semibold">
                     Your cart is empty
                 </p>
-                <p className="text-muted-foreground mt-1 text-sm">
+                <p className="text-muted-foreground mt-1 text-sm leading-snug">
                     Add products from the shop to get started.
                 </p>
+                <Button asChild className="mt-5">
+                    <Link href={shop.url()} prefetch>
+                        Browse the shop
+                    </Link>
+                </Button>
             </div>
         );
     }
@@ -91,11 +108,11 @@ export function CartItems({ items, className }: CartItemsProps) {
                                     each
                                 </p>
                             </div>
-                            <div className="flex h-9 shrink-0 items-center gap-3">
-                                <div className="bg-muted flex h-9 items-center rounded-full">
+                            <div className="flex h-11 shrink-0 items-center gap-2">
+                                <div className="bg-muted flex h-11 items-center rounded-full">
                                     <button
                                         type="button"
-                                        className="text-foreground flex size-9 items-center justify-center"
+                                        className="text-foreground flex size-11 items-center justify-center"
                                         aria-label="Decrease quantity"
                                         onClick={() =>
                                             syncCartQuantity(
@@ -111,7 +128,7 @@ export function CartItems({ items, className }: CartItemsProps) {
                                     </span>
                                     <button
                                         type="button"
-                                        className="text-foreground flex size-9 items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
+                                        className="text-foreground flex size-11 items-center justify-center disabled:cursor-not-allowed disabled:opacity-40"
                                         aria-label="Increase quantity"
                                         disabled={
                                             item.quantity >= item.maxQuantity
@@ -128,7 +145,7 @@ export function CartItems({ items, className }: CartItemsProps) {
                                 </div>
                                 <button
                                     type="button"
-                                    className="text-muted-foreground hover:text-destructive flex size-9 shrink-0 items-center justify-center"
+                                    className="text-muted-foreground hover:text-destructive flex size-11 shrink-0 items-center justify-center"
                                     aria-label={`Remove ${item.name}`}
                                     onClick={() => removeCartItem(item.id)}
                                 >

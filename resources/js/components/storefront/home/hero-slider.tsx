@@ -50,7 +50,7 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
             opts={{ loop: true }}
             setApi={setApi}
             className={cn(
-                'relative isolate min-h-112 w-full overflow-hidden sm:min-h-128 lg:min-h-144',
+                'relative isolate min-h-80 w-full overflow-hidden sm:min-h-112 lg:min-h-144',
                 className,
             )}
         >
@@ -58,7 +58,7 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                 {slides.map((slide) => (
                     <CarouselItem
                         key={slide.id}
-                        className="relative isolate min-h-112 basis-full pl-0 sm:min-h-128 lg:min-h-144"
+                        className="relative isolate min-h-80 basis-full pl-0 sm:min-h-112 lg:min-h-144"
                     >
                         <div
                             className="bg-ink-surface absolute inset-0 bg-cover bg-center"
@@ -70,12 +70,12 @@ export function HomeHeroSlider({ slides, className }: HomeHeroSliderProps) {
                             aria-hidden
                         />
 
-                        <div className="relative container mx-auto flex h-full min-h-112 flex-col justify-center px-4 py-12 sm:min-h-128 sm:px-6 sm:py-16 lg:min-h-144">
+                        <div className="relative container mx-auto flex h-full min-h-80 flex-col justify-center px-4 py-8 sm:min-h-112 sm:px-6 sm:py-16 lg:min-h-144">
                             <div className="text-ink-surface-foreground max-w-md sm:max-w-lg lg:max-w-xl">
                                 <p className="font-inter mb-2 text-xs font-medium tracking-[0.12em] uppercase opacity-90 sm:mb-3 sm:text-sm md:text-base lg:tracking-[0.08em]">
                                     {slide.eyebrow}
                                 </p>
-                                <h1 className="mb-3 text-4xl leading-[1.05] font-semibold tracking-tight sm:mb-4 sm:text-5xl md:text-6xl lg:text-7xl">
+                                <h1 className="mb-3 text-2xl leading-[1.1] font-semibold tracking-tight sm:mb-4 sm:text-4xl md:text-5xl lg:text-6xl">
                                     {slide.title}
                                 </h1>
                                 <p className="text-ink-surface-foreground/85 mb-6 max-w-md text-sm leading-relaxed font-normal sm:mb-8 sm:text-base md:text-lg lg:text-xl">

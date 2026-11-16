@@ -59,15 +59,15 @@ export function ProductCard({ product, className }: ProductCardProps) {
                         <span>{displayViews}</span>
                     </div>
                 </div>
-                <div className="flex flex-1 flex-col gap-1 p-4 pb-2">
-                    <h3 className="text-foreground min-w-0 truncate text-base font-semibold tracking-tight sm:text-lg">
+                <div className="flex flex-1 flex-col gap-1 p-2.5 pb-2 sm:p-4">
+                    <h3 className="text-foreground min-w-0 truncate text-sm font-semibold tracking-tight sm:text-lg">
                         {product.name}
                     </h3>
-                    <p className="text-muted-foreground truncate text-sm font-normal">
+                    <p className="text-muted-foreground truncate text-xs font-normal sm:text-sm">
                         {product.description}
                     </p>
-                    <div className="mt-2 flex flex-wrap items-baseline gap-2">
-                        <p className="text-foreground text-lg font-semibold">
+                    <div className="mt-1 flex flex-wrap items-baseline gap-2 sm:mt-2">
+                        <p className="text-foreground text-base font-semibold sm:text-lg">
                             {product.price}
                         </p>
                         {hasOffer ? (
@@ -78,11 +78,11 @@ export function ProductCard({ product, className }: ProductCardProps) {
                     </div>
                 </div>
             </Link>
-            <div className="px-4 pb-4">
+            <div className="px-2.5 pb-2.5 sm:px-4 sm:pb-4">
                 <Button
                     type="button"
                     size="sm"
-                    className="h-10 w-full text-sm font-semibold"
+                    className="h-11 w-full text-xs font-semibold sm:text-sm"
                     disabled={adding}
                     onClick={() => {
                         setAdding(true);

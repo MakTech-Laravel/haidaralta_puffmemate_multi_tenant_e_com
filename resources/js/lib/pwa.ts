@@ -7,6 +7,64 @@ export type BeforeInstallPromptEvent = Event & {
 
 export const PWA_BANNER_DISMISSED_KEY = 'pwa-install-banner-dismissed';
 
+const PWA_SERVICE_WORKER_URL = '/firebase-messaging-sw.js';
+
+let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
+let installPromptCaptured = false;
+const installPromptListeners = new Set<
+    (event: BeforeInstallPromptEvent | null) => void
+>();
+
+export function getDeferredInstallPrompt(): BeforeInstallPromptEvent | null {
+    return deferredInstallPrompt;
+}
+
+export function clearDeferredInstallPrompt(): void {
+    deferredInstallPrompt = null;
+    installPromptListeners.forEach((listener) => listener(null));
+}
+
+export function subscribeInstallPrompt(
+    listener: (event: BeforeInstallPromptEvent | null) => void,
+): () => void {
+    installPromptListeners.add(listener);
+
+    return () => {
+        installPromptListeners.delete(listener);
+    };
+}
+
+/**
+ * Chrome only emits beforeinstallprompt after the service worker is active.
+ * Listen before React mounts so a prompt that arrives during boot is not lost.
+ */
+export function captureInstallPrompt(): void {
+    if (typeof window === 'undefined' || installPromptCaptured) {
+        return;
+    }
+
+    installPromptCaptured = true;
+
+    window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event as BeforeInstallPromptEvent;
+        installPromptListeners.forEach((listener) =>
+            listener(deferredInstallPrompt),
+        );
+    });
+
+    window.addEventListener('appinstalled', () => {
+        clearDeferredInstallPrompt();
+    });
+}
+
+function registerPwaServiceWorker(): Promise<ServiceWorkerRegistration> {
+    return navigator.serviceWorker.register(PWA_SERVICE_WORKER_URL, {
+        scope: '/',
+        updateViaCache: 'none',
+    });
+}
+
 const OUR_SW_SCRIPT = 'firebase-messaging-sw.js';
 
 export function isStandaloneDisplay(): boolean {
@@ -93,17 +151,18 @@ export async function ensurePwaServiceWorker(): Promise<ServiceWorkerRegistratio
         return null;
     }
 
+    const registration = registerPwaServiceWorker();
     await unregisterForeignServiceWorkers();
 
-    const { registerFcmServiceWorker } = await import('@/lib/fcm');
-
-    return registerFcmServiceWorker();
+    return registration;
 }
 
 export function startPwaServiceWorkerLifecycle(): void {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) {
         return;
     }
+
+    captureInstallPrompt();
 
     const hadController = navigator.serviceWorker.controller !== null;
     let pendingReload = false;

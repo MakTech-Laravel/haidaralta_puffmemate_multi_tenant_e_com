@@ -98,7 +98,7 @@ export default function StorefrontCategory({
                     </div>
                 </div>
 
-                <div className="mb-8 flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="mb-6 flex w-full items-center gap-2">
                     <StorefrontSearchBar
                         value={search}
                         onChange={updateSearch}
@@ -106,7 +106,7 @@ export default function StorefrontCategory({
                             window.clearTimeout(debounceRef.current);
                             visit({ search });
                         }}
-                        className="lg:min-w-0 lg:flex-1"
+                        className="min-w-0 flex-1"
                     />
                     <StorefrontSortSelect
                         value={sort}
@@ -114,7 +114,7 @@ export default function StorefrontCategory({
                             setSort(nextSort);
                             visit({ sort: nextSort });
                         }}
-                        className="lg:w-56 lg:max-w-xs lg:shrink-0"
+                        className="w-[6.75rem] shrink-0 sm:w-56"
                     />
                 </div>
 
@@ -141,7 +141,7 @@ export default function StorefrontCategory({
                             </p>
                         </div>
                     ) : (
-                        <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+                        <div className="grid w-full grid-cols-2 gap-2.5 sm:gap-4 md:grid-cols-3 xl:grid-cols-5">
                             {products.map((product) => (
                                 <ProductCard
                                     key={product.id}

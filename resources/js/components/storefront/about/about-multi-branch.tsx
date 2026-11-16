@@ -21,7 +21,7 @@ export function AboutMultiBranch({ data, className }: AboutMultiBranchProps) {
     return (
         <section
             className={cn(
-                'bg-ink-surface text-ink-surface-foreground py-16 sm:py-20',
+                'bg-ink-surface text-ink-surface-foreground py-10 sm:py-16',
                 className,
             )}
         >
@@ -30,7 +30,7 @@ export function AboutMultiBranch({ data, className }: AboutMultiBranchProps) {
                     <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
                         {data.eyebrow}
                     </p>
-                    <h2 className="mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
+                    <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-4xl">
                         {data.heading}
                     </h2>
                     <p className="font-inter mt-4 max-w-xl text-sm leading-relaxed font-normal text-ink-surface-foreground/75 sm:text-lg">
