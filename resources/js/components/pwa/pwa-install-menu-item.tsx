@@ -54,23 +54,34 @@ export function PwaInstallHeaderButton() {
     }
 
     return (
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <button
-                    type="button"
-                    className="text-foreground hover:bg-muted/70 inline-flex size-11 items-center justify-center rounded-full transition-colors"
-                    aria-label="Get the app"
-                    data-test="pwa-install-header"
-                    onClick={() => pwa.openInstallDialog()}
-                >
-                    <Smartphone
-                        className="size-6"
-                        strokeWidth={1.75}
-                        aria-hidden
-                    />
-                </button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">Get the app</TooltipContent>
-        </Tooltip>
+        <>
+            <button
+                type="button"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 mr-1 inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium lg:hidden"
+                data-test="pwa-install-header"
+                onClick={() => pwa.openInstallDialog()}
+            >
+                <Smartphone className="size-4 shrink-0" aria-hidden />
+                Get the app
+            </button>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <button
+                        type="button"
+                        className="text-foreground hover:bg-muted/70 hidden size-11 items-center justify-center rounded-full transition-colors lg:inline-flex"
+                        aria-label="Get the app"
+                        data-test="pwa-install-header-icon"
+                        onClick={() => pwa.openInstallDialog()}
+                    >
+                        <Smartphone
+                            className="size-6"
+                            strokeWidth={1.75}
+                            aria-hidden
+                        />
+                    </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">Get the app</TooltipContent>
+            </Tooltip>
+        </>
     );
 }
