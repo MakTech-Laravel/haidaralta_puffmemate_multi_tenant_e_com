@@ -1,6 +1,6 @@
-import { usePage } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import { AgeGateDialog } from '@/components/storefront/age-gate-dialog';
+import { usePage } from '@inertiajs/react';
 import {
     isStorefrontCheckout,
     StorefrontMobileNav,
@@ -21,10 +21,14 @@ export default function StorefrontLayout({
             <StorefrontHeader />
             <main className="flex min-w-0 flex-1 flex-col">{children}</main>
             <StorefrontFooter
-                className={checkout ? undefined : storefrontMobileNavPadding}
+                className={
+                    checkout
+                        ? 'pb-[calc(8.5rem+env(safe-area-inset-bottom))] lg:pb-0'
+                        : storefrontMobileNavPadding
+                }
             />
             <AgeGateDialog />
-            {checkout ? null : <StorefrontMobileNav />}
+            <StorefrontMobileNav />
         </div>
     );
 }

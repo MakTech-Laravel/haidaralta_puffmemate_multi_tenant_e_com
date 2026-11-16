@@ -640,9 +640,9 @@ export default function StorefrontCheckout({
                     </div>
                 </div>
 
-                <div className="container mx-auto px-4 py-6 pb-28 sm:px-6 sm:py-10 lg:pb-10">
+                <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
                     <form
-                        className="grid items-start gap-6 lg:grid-cols-[1fr_24rem] lg:gap-8"
+                        className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-8"
                         onSubmit={(event) => {
                             event.preventDefault();
 
@@ -785,26 +785,28 @@ export default function StorefrontCheckout({
                                 form.setData('terms', accepted);
                             }}
                         />
-                        <div className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
-                            <div className="min-w-0">
-                                <p className="text-muted-foreground text-[11px] leading-none font-medium">
-                                    {canPlaceOrder
-                                        ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`
-                                        : 'Finish the form'}
-                                </p>
-                                <p className="text-foreground text-base font-semibold">
-                                    {formatStorefrontMoney(payableTotal)}
-                                </p>
+                        <div className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 lg:hidden">
+                            <div className="border-border bg-background/80 supports-[backdrop-filter]:bg-background/70 mx-auto flex max-w-md items-center gap-3 rounded-full border py-1.5 pr-1.5 pl-4 shadow-xl backdrop-blur-xl">
+                                <div className="min-w-0">
+                                    <p className="text-muted-foreground text-[11px] leading-none font-medium">
+                                        {canPlaceOrder
+                                            ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`
+                                            : 'Finish the form'}
+                                    </p>
+                                    <p className="text-foreground text-base font-semibold">
+                                        {formatStorefrontMoney(payableTotal)}
+                                    </p>
+                                </div>
+                                <Button
+                                    type="submit"
+                                    className="h-11 min-w-0 flex-1 rounded-full"
+                                    disabled={form.processing || !canPlaceOrder}
+                                >
+                                    {form.processing
+                                        ? 'Placing…'
+                                        : 'Place order'}
+                                </Button>
                             </div>
-                            <Button
-                                type="submit"
-                                className="h-11 min-w-0 flex-1"
-                                disabled={form.processing || !canPlaceOrder}
-                            >
-                                {form.processing
-                                    ? 'Placing…'
-                                    : 'Place order'}
-                            </Button>
                         </div>
                     </form>
                 </div>

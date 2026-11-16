@@ -157,6 +157,10 @@ export function CheckoutForm({
     const sameDayMethod = deliveryMethods.find(
         (method) => method.id === SAME_DAY_METHOD_ID,
     );
+    // Same day is only "open today" while at least one shift has not started yet.
+    const sameDayOpenToday = sameDayMethod
+        ? usableSlots(sameDayMethod).length > 0
+        : false;
     const lateMethod = deliveryMethods.find((method) => method.requiresDate);
     // Same day wires "today" without a Day picker; Late days start tomorrow.
     const todayIso =
@@ -222,7 +226,9 @@ export function CheckoutForm({
     });
 
     return (
-        <div className={cn('flex flex-col gap-3 sm:gap-4', className)}>
+        <div
+            className={cn('flex min-w-0 flex-col gap-3 sm:gap-4', className)}
+        >
             {errorMessages.length > 0 ? (
                 <AlertError
                     title="Please fix the following."
@@ -236,8 +242,8 @@ export function CheckoutForm({
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
-                    <div className="grid gap-4">
-                        <div className="space-y-1.5">
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="min-w-0 space-y-1.5">
                             <Label htmlFor="checkout-full-name">
                                 What name should we use for your order?{' '}
                                 <RequiredMark />
@@ -387,8 +393,8 @@ export function CheckoutForm({
                         </Alert>
                     ) : null}
                     <FieldError message={errors.latitude ?? errors.longitude} />
-                    <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-1.5">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="min-w-0 space-y-1.5">
                             <Label htmlFor="checkout-city">
                                 City <RequiredMark />
                             </Label>
@@ -475,7 +481,7 @@ export function CheckoutForm({
                     <div
                         role="radiogroup"
                         aria-label="Delivery method"
-                        className="grid gap-3 sm:grid-cols-2"
+                        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
                     >
                         {deliveryMethods.map((method) => {
                             const selected =
@@ -667,7 +673,7 @@ export function CheckoutForm({
                     ) : null}
                 </CardHeader>
                 <CardContent className="space-y-4 px-0">
-                    <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {paymentMethods.map((method) => {
                             const selected =
                                 details.paymentMethodId === method.id;

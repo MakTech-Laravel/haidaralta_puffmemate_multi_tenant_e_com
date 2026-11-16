@@ -106,7 +106,7 @@ export function CheckoutOrderSummary({
     return (
         <aside
             className={cn(
-                'bg-muted h-fit rounded-3xl p-4 sm:p-6 lg:sticky lg:top-28',
+                'bg-muted h-fit min-w-0 rounded-3xl p-4 sm:p-6 lg:sticky lg:top-28',
                 className,
             )}
         >
