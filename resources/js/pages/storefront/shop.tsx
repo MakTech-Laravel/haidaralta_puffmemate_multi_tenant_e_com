@@ -1,7 +1,6 @@
 import { Head, router } from '@inertiajs/react';
-import { Menu } from 'lucide-react';
+import { Filter } from 'lucide-react';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
-import { FeaturesBar } from '@/components/storefront/features-bar';
 import { ProductCard } from '@/components/storefront/product-card';
 import {
     ShopFiltersSidebar,
@@ -11,16 +10,18 @@ import {
     type ShopTagOption,
 } from '@/components/storefront/shop-filters-sidebar';
 import { StorefrontSearchBar } from '@/components/storefront/storefront-search-bar';
+import {
+    StorefrontSheetBody,
+    StorefrontSheetContent,
+} from '@/components/storefront/storefront-sheet';
 import { StorefrontSortSelect } from '@/components/storefront/storefront-sort-select';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
-    SheetContent,
     SheetHeader,
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { storefrontFeatures } from '@/lib/storefront-features';
 import { shop } from '@/routes';
 import type { StorefrontProduct } from '@/types/storefront';
 
@@ -208,31 +209,27 @@ export default function StorefrontShop({
                         </p>
                     </div>
                 </div>
-                <div className="mb-8 flex w-full flex-col gap-3 lg:flex-row lg:items-center">
+                <div className="mb-6 flex w-full items-center gap-2">
                     {isBelowLg ? (
                         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
                             <SheetTrigger asChild>
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    className="shrink-0 gap-2 self-start"
+                                    className="size-11 shrink-0 rounded-full px-0"
                                     aria-label="Open filters"
                                 >
-                                    <Menu className="size-5" />
-                                    Filters
+                                    <Filter className="size-5" />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent
-                                side="left"
-                                className="w-[min(100%,20rem)] overflow-y-auto"
-                            >
-                                <SheetHeader>
+                            <StorefrontSheetContent side="left">
+                                <SheetHeader className="shrink-0">
                                     <SheetTitle>Filters</SheetTitle>
                                 </SheetHeader>
-                                <div className="mt-6 px-4 pb-6">
+                                <StorefrontSheetBody className="px-4 pt-1 pb-6">
                                     {filtersSidebar}
-                                </div>
-                            </SheetContent>
+                                </StorefrontSheetBody>
+                            </StorefrontSheetContent>
                         </Sheet>
                     ) : null}
 
@@ -240,7 +237,7 @@ export default function StorefrontShop({
                         value={search}
                         onChange={setSearch}
                         onSubmit={() => visit({ search })}
-                        className="lg:min-w-0 lg:flex-1"
+                        className="min-w-0 flex-1"
                     />
                     <StorefrontSortSelect
                         value={sort}
@@ -248,7 +245,7 @@ export default function StorefrontShop({
                             setSort(nextSort);
                             visit({ sort: nextSort });
                         }}
-                        className="lg:w-44 lg:max-w-xs lg:shrink-0"
+                        className="w-[6.75rem] shrink-0 sm:w-44"
                     />
                 </div>
 
@@ -279,7 +276,7 @@ export default function StorefrontShop({
                                 </p>
                             </div>
                         ) : (
-                            <div className="grid w-full grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+                            <div className="grid w-full grid-cols-2 gap-4 sm:gap-5 md:grid-cols-3 lg:grid-cols-2 lg:gap-6 xl:grid-cols-3 2xl:grid-cols-4">
                                 {products.map((product) => (
                                     <ProductCard
                                         key={product.id}
@@ -291,8 +288,6 @@ export default function StorefrontShop({
                     </div>
                 </div>
             </div>
-
-            <FeaturesBar features={storefrontFeatures} />
         </>
     );
 }

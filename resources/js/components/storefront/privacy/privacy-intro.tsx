@@ -68,7 +68,7 @@ export function PrivacyIntro({ className, title, data }: PrivacyIntroProps) {
                     {data.eyebrow}
                 </p>
 
-                <h1 className="text-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
+                <h1 className="text-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-4xl">
                     {title}
                 </h1>
 

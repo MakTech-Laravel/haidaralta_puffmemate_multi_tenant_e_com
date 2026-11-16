@@ -11,17 +11,19 @@ import {
     type CheckoutDetails,
 } from '@/components/storefront/checkout/checkout-form';
 import { CheckoutOrderSummary } from '@/components/storefront/checkout/checkout-order-summary';
+import { Button } from '@/components/ui/button';
 import {
     filterUpcomingDeliverySlots,
     SAME_DAY_METHOD_ID,
     sameDayOutOfRadiusMessage,
 } from '@/lib/delivery-shift-availability';
 import { cart } from '@/routes';
-import type {
-    StorefrontCartItem,
-    StorefrontDeliveryMethod,
-    StorefrontPaymentMethod,
-    StorefrontSavedAddress,
+import {
+    formatStorefrontMoney,
+    type StorefrontCartItem,
+    type StorefrontDeliveryMethod,
+    type StorefrontPaymentMethod,
+    type StorefrontSavedAddress,
 } from '@/types/storefront';
 
 type AppliedCoupon = {
@@ -603,6 +605,13 @@ export default function StorefrontCheckout({
         selectedDeliveryMethod?.id === SAME_DAY_METHOD_ID &&
         usableSlots(selectedDeliveryMethod).length === 0;
 
+    const payableTotal = Math.max(
+        subtotal -
+            (couponsAllowed ? (appliedCoupon?.discount ?? 0) : 0) +
+            (quotedMatchesPin ? (quote?.fee ?? 0) : 0),
+        0,
+    );
+
     const canPlaceOrder = checkoutCanPlaceOrder(
         details,
         deliveryMethods,
@@ -619,9 +628,9 @@ export default function StorefrontCheckout({
 
             <div className="flex-1">
                 <div className="bg-muted">
-                    <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-12">
+                    <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
                         <div className="max-w-2xl">
-                            <h1 className="text-foreground text-4xl font-semibold tracking-tight sm:text-5xl">
+                            <h1 className="text-foreground text-2xl font-semibold tracking-tight sm:text-4xl">
                                 Complete your order.
                             </h1>
                             <p className="text-muted-foreground mt-2 text-base font-normal sm:text-lg">
@@ -631,7 +640,7 @@ export default function StorefrontCheckout({
                     </div>
                 </div>
 
-                <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
+                <div className="container mx-auto px-4 py-6 pb-28 sm:px-6 sm:py-10 lg:pb-10">
                     <form
                         className="grid items-start gap-6 lg:grid-cols-[1fr_24rem] lg:gap-8"
                         onSubmit={(event) => {
@@ -776,6 +785,27 @@ export default function StorefrontCheckout({
                                 form.setData('terms', accepted);
                             }}
                         />
+                        <div className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-0 z-30 flex items-center gap-3 border-t px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] backdrop-blur-xl lg:hidden">
+                            <div className="min-w-0">
+                                <p className="text-muted-foreground text-[11px] leading-none font-medium">
+                                    {canPlaceOrder
+                                        ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`
+                                        : 'Finish the form'}
+                                </p>
+                                <p className="text-foreground text-base font-semibold">
+                                    {formatStorefrontMoney(payableTotal)}
+                                </p>
+                            </div>
+                            <Button
+                                type="submit"
+                                className="h-11 min-w-0 flex-1"
+                                disabled={form.processing || !canPlaceOrder}
+                            >
+                                {form.processing
+                                    ? 'Placing…'
+                                    : 'Place order'}
+                            </Button>
+                        </div>
                     </form>
                 </div>
             </div>

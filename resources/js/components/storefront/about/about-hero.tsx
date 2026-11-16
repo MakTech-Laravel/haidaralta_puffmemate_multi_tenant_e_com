@@ -29,9 +29,9 @@ export function AboutHero({ data, className }: AboutHeroProps) {
                 aria-hidden
             />
 
-            <div className="relative container mx-auto flex min-h-[40vh] flex-col justify-center px-4 py-16 sm:min-h-[48vh] sm:px-6 sm:py-20">
+            <div className="relative container mx-auto flex min-h-0 flex-col justify-center px-4 py-10 sm:min-h-[40vh] sm:px-6 sm:py-16">
                 <div className="text-ink-surface-foreground max-w-xl">
-                    <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+                    <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
                         {data.title}
                     </h1>
                     <p className="font-inter mt-4 max-w-md text-sm leading-relaxed font-normal opacity-90 sm:text-base">

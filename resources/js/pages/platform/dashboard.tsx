@@ -1,11 +1,20 @@
 import { Head, Link, usePage } from '@inertiajs/react';
 import {
     Activity,
+    Bike,
+    Boxes,
     Building2,
+    Calendar,
+    ChartColumn,
+    Package,
+    Plus,
     Radio,
     Server,
+    ShoppingBag,
     TriangleAlert,
+    Users,
 } from 'lucide-react';
+import { QuickActionTile } from '@/components/portal/quick-action-tile';
 import { StatCard } from '@/components/portal/stat-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -119,6 +128,69 @@ export default function PlatformDashboard() {
                         value="14"
                         hint="Scout + default"
                     />
+                </div>
+
+                <div>
+                    <h2 className="text-foreground mb-3 text-lg font-semibold">
+                        Quick actions
+                    </h2>
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        <QuickActionTile
+                            icon={Plus}
+                            label="New order"
+                            hint="Phone or walk-in"
+                            tone="primary"
+                        />
+                        <QuickActionTile
+                            href="/platform/orders"
+                            icon={Package}
+                            label="Orders"
+                            hint="Today's queue"
+                            tone="primary"
+                        />
+                        <QuickActionTile
+                            href="/platform/drivers"
+                            icon={Bike}
+                            label="Drivers"
+                            hint="Driver app sign-ins & status"
+                            tone="primary"
+                        />
+                        <QuickActionTile
+                            href="/platform/shift-assignments"
+                            icon={Calendar}
+                            label="Roster"
+                            hint="Plan & publish shifts"
+                            tone="warning"
+                        />
+                        <QuickActionTile
+                            href="/platform/products"
+                            icon={ShoppingBag}
+                            label="Products"
+                            hint="Prices, photos, badges"
+                            tone="warning"
+                        />
+                        <QuickActionTile
+                            href="/platform/stock/manage"
+                            icon={Boxes}
+                            label="Warehouse"
+                            hint="Stock in & counts"
+                            tone="warning"
+                        />
+                        <QuickActionTile
+                            href="/platform/customers"
+                            icon={Users}
+                            label="Customers"
+                            hint="Accounts & VIPs"
+                            tone="quiet"
+                        />
+                        <QuickActionTile
+                            href="/platform/reports/order-reports"
+                            icon={ChartColumn}
+                            label="Reports"
+                            hint="Business report & sales"
+                            tone="muted"
+                        />
+                    </div>
                 </div>
 
                 <div className="grid gap-4 xl:grid-cols-5">

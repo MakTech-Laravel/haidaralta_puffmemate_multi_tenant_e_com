@@ -32,7 +32,7 @@ export default function StorefrontHome({
 
             <HomeHeroSlider slides={heroSlides} />
 
-            <section className="container mx-auto px-4 py-14 sm:px-6 sm:py-16">
+            <section className="px-4 py-8 sm:px-6 sm:py-14">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p className="text-muted-foreground font-inter mb-1 text-xs font-semibold tracking-[0.12em] uppercase">
@@ -54,7 +54,7 @@ export default function StorefrontHome({
 
                 <CategoryCarousel categories={featuredCategories} />
             </section>
-            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-8 sm:px-6 sm:pb-14">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p className="text-muted-foreground font-inter mb-1 text-xs font-semibold tracking-[0.12em] uppercase">
@@ -77,11 +77,11 @@ export default function StorefrontHome({
                 <ProductCarousel products={newArrivalProducts} />
             </section>
 
-            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-8 sm:px-6 sm:pb-14">
                 <HomeDealsBanner />
             </section>
 
-            <section className="container mx-auto px-4 pb-14 sm:px-6 sm:pb-16">
+            <section className="container mx-auto px-4 pb-8 sm:px-6 sm:pb-14">
                 <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
                     <div>
                         <p className="text-muted-foreground font-inter mb-1 text-xs font-semibold tracking-[0.12em] uppercase">

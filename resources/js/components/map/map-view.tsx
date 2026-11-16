@@ -100,6 +100,7 @@ export function MapView({
 
         let cancelled = false;
         const target = element.current;
+        let resizeObserver: ResizeObserver | null = null;
 
         void createMap(target, latest.current.center, zoom).then((created) => {
             if (cancelled) {
@@ -112,10 +113,17 @@ export function MapView({
             created.onClick((lat, lng) => clickHandler.current?.(lat, lng));
             sync();
             fit();
+            created.invalidateSize();
+
+            resizeObserver = new ResizeObserver(() => {
+                adapter.current?.invalidateSize();
+            });
+            resizeObserver.observe(target);
         });
 
         return () => {
             cancelled = true;
+            resizeObserver?.disconnect();
             adapter.current?.destroy();
             adapter.current = null;
             shownMarkers.current = new Set();
