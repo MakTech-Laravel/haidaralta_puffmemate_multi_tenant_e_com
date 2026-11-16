@@ -64,7 +64,7 @@ export function PwaInstallHeaderButton() {
                     onClick={() => pwa.openInstallDialog()}
                 >
                     <Smartphone
-                        className="size-5"
+                        className="size-6"
                         strokeWidth={1.75}
                         aria-hidden
                     />

@@ -52,7 +52,7 @@ export function NotificationsPopover({
                     aria-expanded={open}
                     data-test="notifications-bell"
                 >
-                    <Bell className="size-6 md:size-8" strokeWidth={1.75} />
+                    <Bell className="size-6" strokeWidth={1.75} />
                     {unreadCount > 0 ? (
                         <span className="bg-primary absolute top-1.5 right-1.5 size-2 rounded-full" />
                     ) : null}

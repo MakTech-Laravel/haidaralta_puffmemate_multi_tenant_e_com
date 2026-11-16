@@ -1,11 +1,18 @@
 import { Link, usePage } from '@inertiajs/react';
-import { House, ShoppingBag, Store, User, type LucideIcon } from 'lucide-react';
+import {
+    House,
+    Package,
+    ShoppingBag,
+    Store,
+    User,
+    type LucideIcon,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { cart, dashboard, home, login, shop } from '@/routes';
+import { cart, dashboard, home, login, packsSaves, shop } from '@/routes';
 import type { StorefrontCart } from '@/types/storefront';
 
 export const storefrontMobileNavPadding =
-    'pb-[calc(4.75rem+env(safe-area-inset-bottom))] lg:pb-0';
+    'pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-[calc(5.75rem+env(safe-area-inset-bottom))] lg:pb-0';
 
 export function isStorefrontCheckout(url: string): boolean {
     return url === '/checkout' || url.startsWith('/checkout?');
@@ -14,6 +21,14 @@ export function isStorefrontCheckout(url: string): boolean {
 function isShopTab(url: string): boolean {
     return (
         url === '/shop' || url.startsWith('/shop?') || url.startsWith('/shop/')
+    );
+}
+
+function isPacksTab(url: string): boolean {
+    return (
+        url === '/packs-saves' ||
+        url.startsWith('/packs-saves?') ||
+        url.startsWith('/packs-saves/')
     );
 }
 
@@ -76,6 +91,12 @@ export function StorefrontMobileNav() {
             active: isShopTab(url),
         },
         {
+            label: 'Packs',
+            href: packsSaves.url(),
+            icon: Package,
+            active: isPacksTab(url),
+        },
+        {
             label: 'Cart',
             href: cart.url(),
             icon: ShoppingBag,
@@ -95,7 +116,7 @@ export function StorefrontMobileNav() {
             aria-label="Storefront"
             className="fixed inset-x-3 bottom-[calc(0.75rem+env(safe-area-inset-bottom))] z-40 lg:hidden"
         >
-            <ul className="border-border bg-background/80 supports-[backdrop-filter]:bg-background/70 mx-auto flex h-14 max-w-md items-center rounded-full border px-1.5 shadow-xl backdrop-blur-xl">
+            <ul className="border-border bg-background/80 supports-[backdrop-filter]:bg-background/70 mx-auto flex h-14 max-w-md items-center rounded-full border px-1.5 shadow-xl backdrop-blur-xl md:h-[4.5rem] md:max-w-2xl md:px-2">
                 {tabs.map((tab) => {
                     const Icon = tab.icon;
 
@@ -107,7 +128,7 @@ export function StorefrontMobileNav() {
                                 aria-label={tab.label}
                                 aria-current={tab.active ? 'page' : undefined}
                                 className={cn(
-                                    'mx-0.5 flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-full text-[11px] leading-none font-medium',
+                                    'mx-0.5 flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-full text-[11px] leading-none font-medium md:h-16 md:gap-1 md:text-sm',
                                     tab.active
                                         ? 'bg-muted text-primary'
                                         : 'text-foreground',
@@ -115,12 +136,12 @@ export function StorefrontMobileNav() {
                             >
                                 <span className="relative">
                                     <Icon
-                                        className="size-5"
+                                        className="size-5 md:size-7"
                                         strokeWidth={1.75}
                                         aria-hidden
                                     />
                                     {tab.badge ? (
-                                        <span className="bg-primary text-primary-foreground absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold">
+                                        <span className="bg-primary text-primary-foreground absolute -top-1.5 -right-2.5 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold md:-top-2 md:-right-3 md:h-5 md:min-w-5 md:text-xs">
                                             {tab.badge}
                                         </span>
                                     ) : null}

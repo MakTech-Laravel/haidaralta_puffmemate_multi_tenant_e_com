@@ -23,7 +23,7 @@ export default function StorefrontLayout({
             <StorefrontFooter
                 className={
                     checkout
-                        ? 'pb-[calc(8.5rem+env(safe-area-inset-bottom))] lg:pb-0'
+                        ? 'pb-[calc(8.5rem+env(safe-area-inset-bottom))] md:pb-[calc(10rem+env(safe-area-inset-bottom))] lg:pb-0'
                         : storefrontMobileNavPadding
                 }
             />

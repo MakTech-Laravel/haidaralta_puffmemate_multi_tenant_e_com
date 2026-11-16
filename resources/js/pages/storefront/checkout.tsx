@@ -785,8 +785,8 @@ export default function StorefrontCheckout({
                                 form.setData('terms', accepted);
                             }}
                         />
-                        <div className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 lg:hidden">
-                            <div className="border-border bg-background/80 supports-[backdrop-filter]:bg-background/70 mx-auto flex max-w-md items-center gap-3 rounded-full border py-1.5 pr-1.5 pl-4 shadow-xl backdrop-blur-xl">
+                        <div className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 md:bottom-[calc(5.75rem+env(safe-area-inset-bottom))] lg:hidden">
+                            <div className="border-border bg-background/80 supports-[backdrop-filter]:bg-background/70 mx-auto flex max-w-md items-center md:max-w-2xl gap-3 rounded-full border py-1.5 pr-1.5 pl-4 shadow-xl backdrop-blur-xl">
                                 <div className="min-w-0">
                                     <p className="text-muted-foreground text-[11px] leading-none font-medium">
                                         {canPlaceOrder
