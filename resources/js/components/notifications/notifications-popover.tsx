@@ -45,7 +45,7 @@ export function NotificationsPopover({
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        'text-foreground relative size-10',
+                        'text-foreground relative size-11',
                         triggerClassName,
                     )}
                     aria-label="Notifications"

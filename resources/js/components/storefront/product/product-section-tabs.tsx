@@ -29,7 +29,7 @@ export function ProductSectionTabs({
     return (
         <div
             className={cn(
-                'grid gap-2 sm:grid-cols-2 lg:grid-cols-4',
+                'flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] lg:grid lg:grid-cols-4 lg:overflow-visible [&::-webkit-scrollbar]:hidden',
                 className,
             )}
         >
@@ -46,7 +46,7 @@ export function ProductSectionTabs({
                         type="button"
                         onClick={() => onChange(tab.id)}
                         className={cn(
-                            'h-11 rounded-full border px-4 text-sm font-medium transition',
+                            'h-11 shrink-0 rounded-full border px-4 text-sm font-medium whitespace-nowrap transition',
                             isActive
                                 ? 'border-foreground bg-foreground text-background'
                                 : 'border-border bg-card text-foreground hover:bg-muted',

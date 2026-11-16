@@ -50,7 +50,10 @@ export function ProductCarousel({ products, className }: ProductCarouselProps) {
             setApi={setApi}
             className={cn('relative w-full', className)}
         >
-            <CarouselContent className="-ml-4">
+            <CarouselContent
+                className="-ml-4"
+                viewportClassName="-my-8 py-8"
+            >
                 {products.map((product) => (
                     <CarouselItem
                         key={product.id}

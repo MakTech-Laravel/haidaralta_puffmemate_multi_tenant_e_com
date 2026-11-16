@@ -70,13 +70,13 @@ export function PacksSavesHero({ maxSavings, className }: PacksSavesHeroProps) {
                 className,
             )}
         >
-            <div className="relative grid items-center gap-8 px-6 py-10 sm:px-10 sm:py-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:px-14">
+            <div className="relative grid items-center gap-6 px-4 py-8 sm:gap-8 sm:px-10 sm:py-12 lg:grid-cols-[minmax(0,1fr)_auto] lg:px-14">
                 <div className="max-w-2xl">
                     <span className="bg-ink-surface-foreground/10 text-ink-surface-foreground inline-flex items-center gap-1.5 rounded-full border border-ink-surface-foreground/15 px-3 py-1 text-[11px] font-semibold tracking-wider uppercase">
                         <Sparkles className="size-3.5" />
                         Puffonmate bundles &amp; savings
                     </span>
-                    <h1 className="mt-4 text-4xl leading-[1.05] font-semibold tracking-tight sm:text-5xl">
+                    <h1 className="mt-3 text-2xl leading-[1.1] font-semibold tracking-tight sm:mt-4 sm:text-4xl">
                         Bigger brands.
                         <br />
                         Massive savings.
@@ -120,7 +120,7 @@ export function PacksSavesHero({ maxSavings, className }: PacksSavesHeroProps) {
                         <p className="text-[10px] font-semibold tracking-[0.2em] uppercase opacity-80">
                             Bundle deals
                         </p>
-                        <p className="text-4xl leading-none font-semibold tracking-tight uppercase">
+                        <p className="text-2xl leading-none font-semibold tracking-tight uppercase sm:text-4xl">
                             Save
                             <br />
                             more

@@ -81,7 +81,7 @@ export function ProductSummary({
             </div>
 
             <div className="mt-5 min-w-0">
-                <h1 className="text-foreground font-inter text-3xl leading-tight font-semibold tracking-tight break-words sm:text-5xl">
+                <h1 className="text-foreground font-inter text-2xl leading-tight font-semibold tracking-tight break-words sm:text-4xl">
                     {name}
                 </h1>
                 <p className="text-muted-foreground font-inter mt-2 text-base font-normal break-words">
@@ -194,8 +194,8 @@ export function ProductSummary({
                 </p>
             </div>
 
-            <div className="flex w-full max-w-full min-w-0 flex-col gap-3 sm:flex-row sm:items-center">
-                <div className="bg-muted flex h-12 w-full max-w-full min-w-0 items-center rounded-full sm:w-auto sm:max-w-none">
+            <div className="hidden w-full max-w-full min-w-0 items-center gap-3 lg:flex">
+                <div className="bg-muted flex h-12 w-auto items-center rounded-full">
                     <button
                         type="button"
                         className="text-foreground flex size-12 shrink-0 items-center justify-center"
@@ -206,7 +206,7 @@ export function ProductSummary({
                     >
                         <Minus className="size-4" />
                     </button>
-                    <span className="text-foreground min-w-0 flex-1 text-center text-sm font-semibold sm:min-w-10 sm:flex-none">
+                    <span className="text-foreground min-w-10 text-center text-sm font-semibold">
                         {quantity}
                     </span>
                     <button
@@ -221,7 +221,7 @@ export function ProductSummary({
                 <Button
                     type="button"
                     size="lg"
-                    className="h-12 w-full max-w-full min-w-0 shrink text-sm font-semibold sm:flex-1"
+                    className="h-12 min-w-0 flex-1 text-sm font-semibold"
                     onClick={() =>
                         addToCart(slug, quantity, undefined, {
                             productPackageId: selectedPackage?.id,
@@ -231,6 +231,54 @@ export function ProductSummary({
                     <ShoppingCart className="size-4" />
                     Add to cart
                 </Button>
+            </div>
+
+            <div className="border-border bg-background/95 supports-[backdrop-filter]:bg-background/80 fixed inset-x-0 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-30 border-t px-3 py-2 backdrop-blur-xl lg:hidden">
+                <div className="mx-auto flex max-w-lg items-center gap-2">
+                    <p className="text-foreground w-16 shrink-0 truncate text-sm font-semibold">
+                        {displayPrice}
+                    </p>
+                    <div className="bg-muted flex h-11 shrink-0 items-center rounded-full">
+                        <button
+                            type="button"
+                            className="text-foreground flex size-11 items-center justify-center"
+                            onClick={() =>
+                                setQuantity((current) =>
+                                    Math.max(1, current - 1),
+                                )
+                            }
+                            aria-label="Decrease quantity"
+                        >
+                            <Minus className="size-4" />
+                        </button>
+                        <span className="text-foreground min-w-6 text-center text-sm font-semibold">
+                            {quantity}
+                        </span>
+                        <button
+                            type="button"
+                            className="text-foreground flex size-11 items-center justify-center"
+                            onClick={() =>
+                                setQuantity((current) => current + 1)
+                            }
+                            aria-label="Increase quantity"
+                        >
+                            <Plus className="size-4" />
+                        </button>
+                    </div>
+                    <Button
+                        type="button"
+                        size="lg"
+                        className="h-11 min-w-0 flex-1 px-3 text-sm font-semibold"
+                        onClick={() =>
+                            addToCart(slug, quantity, undefined, {
+                                productPackageId: selectedPackage?.id,
+                            })
+                        }
+                    >
+                        <ShoppingCart className="size-4" />
+                        Add
+                    </Button>
+                </div>
             </div>
 
             <div className="bg-muted mt-5 flex min-w-0 flex-col gap-4 rounded-2xl p-5 sm:flex-row sm:flex-wrap sm:gap-x-10">

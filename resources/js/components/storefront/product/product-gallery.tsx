@@ -32,7 +32,7 @@ export function ProductGallery({
         <div className={cn('flex flex-col gap-3', className)}>
             <div
                 className={cn(
-                    'bg-muted relative aspect-square overflow-hidden rounded-3xl',
+                    'bg-muted relative aspect-[4/3] max-h-72 overflow-hidden rounded-3xl sm:aspect-[5/4] sm:max-h-80 lg:aspect-square lg:max-h-none',
                     mainClassName,
                 )}
             >
