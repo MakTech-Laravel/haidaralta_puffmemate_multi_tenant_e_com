@@ -254,7 +254,7 @@ export function StorefrontHeader() {
                                 />
                             ) : (
                                 <User
-                                    className="size-5 md:size-[22px]"
+                                    className="size-6"
                                     strokeWidth={1.75}
                                 />
                             )}
@@ -268,7 +268,7 @@ export function StorefrontHeader() {
                                     className="text-foreground size-11 lg:hidden"
                                     aria-label="Open menu"
                                 >
-                                    <Menu className="size-5" />
+                                    <Menu className="size-6" strokeWidth={1.75} />
                                 </Button>
                             </SheetTrigger>
                             <StorefrontSheetContent side="right">

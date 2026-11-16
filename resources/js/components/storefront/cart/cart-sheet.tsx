@@ -69,7 +69,7 @@ export function CartSheet({
                 )}
                 aria-label="Cart"
             >
-                <ShoppingCart className="size-5 md:size-[22px]" strokeWidth={1.75} />
+                <ShoppingCart className="size-6" strokeWidth={1.75} />
                 {cartData.itemCount > 0 ? (
                     <span className="bg-primary text-primary-foreground absolute top-0 right-0 flex h-[18px] min-w-[18px] items-center justify-center rounded-full px-1 text-[10px] font-semibold">
                         {cartData.itemCount}
