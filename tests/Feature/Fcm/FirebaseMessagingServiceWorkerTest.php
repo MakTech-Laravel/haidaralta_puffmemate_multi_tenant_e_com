@@ -11,6 +11,7 @@ test('service worker omits showNotification when FCM_SW_SHOW_NOTIFICATION is fal
         ->assertSee('showNotification', false)
         ->assertSee('const SW_VERSION', false)
         ->assertSee('self.skipWaiting()', false)
+        ->assertSee("self.addEventListener('fetch'", false)
         ->assertSee('notificationclick', false)
         ->assertSee('FCM_MSG', false)
         ->assertSee("self.location.origin + '/'", false)

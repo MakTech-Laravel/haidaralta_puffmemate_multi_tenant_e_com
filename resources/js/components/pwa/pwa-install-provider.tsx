@@ -1,4 +1,5 @@
 import { router } from '@inertiajs/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import {
     createContext,
     useContext,
@@ -20,6 +21,7 @@ import { cn } from '@/lib/utils';
 import {
     clearDeferredInstallPrompt,
     getDeferredInstallPrompt,
+    isChromium,
     isInAppBrowser,
     isIosSafari,
     isStandaloneDisplay,
@@ -47,15 +49,13 @@ export function usePwaInstall(): PwaInstallContextValue | null {
 type PwaInstallProviderProps = {
     children: ReactNode;
     name: string;
+    initialAboveTabBar?: boolean;
 };
 
-function pageHasStorefrontTabBar(): boolean {
-    const page = router.page;
-
-    if (!page) {
-        return false;
-    }
-
+export function pageHasStorefrontTabBar(page: {
+    component: string;
+    url: string;
+}): boolean {
     const onStorefront =
         page.component.startsWith('storefront/') ||
         page.component.startsWith('customer/');
@@ -86,8 +86,9 @@ function getXsrfToken(): string {
 export function PwaInstallProvider({
     children,
     name,
+    initialAboveTabBar = false,
 }: PwaInstallProviderProps) {
-    const [aboveTabBar, setAboveTabBar] = useState(pageHasStorefrontTabBar);
+    const [aboveTabBar, setAboveTabBar] = useState(initialAboveTabBar);
     const [isInstalled, setIsInstalled] = useState(isStandaloneDisplay);
     const [deferredPrompt, setDeferredPrompt] =
         useState<BeforeInstallPromptEvent | null>(getDeferredInstallPrompt);
@@ -110,12 +111,28 @@ export function PwaInstallProvider({
     const [alertsBusy, setAlertsBusy] = useState(false);
     const [alertsHint, setAlertsHint] = useState<string | null>(null);
 
-    useEffect(() => router.on('navigate', () => setAboveTabBar(pageHasStorefrontTabBar())), []);
+    useEffect(() => {
+        return router.on('navigate', (event) => {
+            const next = (
+                event as CustomEvent<{
+                    page: { component: string; url: string };
+                }>
+            ).detail?.page;
 
+            if (!next) {
+                return;
+            }
+
+            setAboveTabBar(pageHasStorefrontTabBar(next));
+        });
+    }, []);
+
+    const reduceMotion = useReducedMotion();
     const isIos = isIosSafari();
     const inApp = isInAppBrowser();
     const canPrompt = deferredPrompt !== null;
-    const showMenuItem = !isInstalled && (canPrompt || isIos || inApp);
+    const showMenuItem =
+        !isInstalled && (canPrompt || isIos || inApp || isChromium());
     const showBanner = showMenuItem && !bannerDismissed;
 
     useEffect(() => {
@@ -241,12 +258,31 @@ export function PwaInstallProvider({
             }}
         >
             {children}
-            {showBanner ? (
-                <div
+            <AnimatePresence>
+                {showBanner ? (
+                    <motion.div
+                    key="pwa-install-banner"
+                    initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={
+                        reduceMotion
+                            ? { opacity: 0 }
+                            : { opacity: 0, y: 16 }
+                    }
+                    transition={
+                        reduceMotion
+                            ? { duration: 0.01 }
+                            : {
+                                  type: 'spring',
+                                  stiffness: 420,
+                                  damping: 32,
+                                  mass: 0.7,
+                              }
+                    }
                     className={cn(
-                        'pointer-events-none fixed inset-x-0 z-40 flex justify-center px-4',
+                        'pointer-events-none fixed inset-x-0 z-50 flex justify-center px-4',
                         aboveTabBar
-                            ? 'bottom-[calc(5.25rem+env(safe-area-inset-bottom))]'
+                            ? 'bottom-[calc(6rem+env(safe-area-inset-bottom))] md:bottom-[calc(7rem+env(safe-area-inset-bottom))] lg:bottom-[calc(1rem+env(safe-area-inset-bottom))]'
                             : 'bottom-[calc(1rem+env(safe-area-inset-bottom))]',
                     )}
                 >
@@ -278,8 +314,9 @@ export function PwaInstallProvider({
                             </button>
                         </div>
                     </div>
-                </div>
-            ) : null}
+                    </motion.div>
+                ) : null}
+            </AnimatePresence>
             <Dialog
                 open={dialogOpen}
                 onOpenChange={(open) => {

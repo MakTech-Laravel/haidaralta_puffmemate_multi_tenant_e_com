@@ -110,6 +110,19 @@ export function isIosSafari(): boolean {
     );
 }
 
+export function isChromium(): boolean {
+    if (typeof navigator === 'undefined') {
+        return false;
+    }
+
+    const ua = navigator.userAgent;
+
+    return (
+        /Chrome|CriOS|Edg\/|SamsungBrowser/i.test(ua) &&
+        !/OPR|Opera|Firefox/i.test(ua)
+    );
+}
+
 export function isInAppBrowser(): boolean {
     if (typeof navigator === 'undefined') {
         return false;

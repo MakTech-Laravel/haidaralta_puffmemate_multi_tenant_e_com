@@ -5,7 +5,10 @@ import { ApplicationTheme } from '@/components/application-theme';
 import { NavigationOverlay } from '@/components/navigation-overlay';
 import { ErrorBoundaryFallback } from '@/components/error-boundary/error-boundary-fallback';
 import { pushError } from '@/components/error-boundary/error-store';
-import { PwaInstallProvider } from '@/components/pwa/pwa-install-provider';
+import {
+    pageHasStorefrontTabBar,
+    PwaInstallProvider,
+} from '@/components/pwa/pwa-install-provider';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { getEcho, logEchoConfig } from '@/echo';
 import { initializeTheme } from '@/hooks/use-appearance';
@@ -74,7 +77,10 @@ void createInertiaApp({
 
         return (
             <TooltipProvider delayDuration={0}>
-                <PwaInstallProvider name={productName}>
+                <PwaInstallProvider
+                    name={productName}
+                    initialAboveTabBar={pageHasStorefrontTabBar(page)}
+                >
                     <ErrorBoundary
                         FallbackComponent={ErrorBoundaryFallback}
                         onReset={() => router.reload()}

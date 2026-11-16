@@ -73,6 +73,10 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+self.addEventListener('fetch', () => {
+  // Network-only. Chrome will not fire beforeinstallprompt without a fetch handler.
+});
+
 function resolveNotificationClickUrl(data) {
   const nested = data.FCM_MSG && data.FCM_MSG.data ? data.FCM_MSG.data : {};
   const value = data.url || data.link || nested.url || nested.link || '';
@@ -127,27 +131,35 @@ self.addEventListener('notificationclick', (event) => {
   })());
 });
 
-importScripts('https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging-compat.js');
+function startFirebaseMessaging() {
+  try {
+    importScripts('https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js');
+    importScripts('https://www.gstatic.com/firebasejs/12.18.0/firebase-messaging-compat.js');
 
-firebase.initializeApp({$json});
+    firebase.initializeApp({$json});
 
-const messaging = firebase.messaging();
-const SHOW_NOTIFICATION = {$showNotification};
+    const messaging = firebase.messaging();
+    const SHOW_NOTIFICATION = {$showNotification};
 
-messaging.onBackgroundMessage((payload) => {
-  if (!SHOW_NOTIFICATION) {
-    return;
-  }
+    messaging.onBackgroundMessage((payload) => {
+      if (!SHOW_NOTIFICATION) {
+        return;
+      }
 
-  const title = payload.notification?.title || payload.data?.title || 'Notification';
-  const options = {
-    body: payload.notification?.body || payload.data?.body || '',
-    data: payload.data || {},
-    icon: payload.notification?.icon || '/apple-touch-icon.png',
-  };
+      const title = payload.notification?.title || payload.data?.title || 'Notification';
+      const options = {
+        body: payload.notification?.body || payload.data?.body || '',
+        data: payload.data || {},
+        icon: payload.notification?.icon || '/apple-touch-icon.png',
+      };
 
-  self.registration.showNotification(title, options);
+      self.registration.showNotification(title, options);
+    });
+  } catch (error) {}
+}
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(Promise.resolve().then(startFirebaseMessaging));
 });
 JS;
     }

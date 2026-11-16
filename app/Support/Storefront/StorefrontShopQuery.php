@@ -114,7 +114,7 @@ class StorefrontShopQuery
 
         $query = Product::query()
             ->where('status', true)
-            ->with(['categories:id,name,slug']);
+            ->with(StorefrontCatalog::cardRelations());
 
         if (is_string($search) && $search !== '') {
             $query->where(function (Builder $builder) use ($search): void {
@@ -262,7 +262,7 @@ class StorefrontShopQuery
         return Product::query()
             ->where('status', true)
             ->whereIn('id', $ids)
-            ->with(['categories:id,name,slug'])
+            ->with(StorefrontCatalog::cardRelations())
             ->get()
             ->sortBy(fn (Product $product): int => $order[$product->id] ?? PHP_INT_MAX)
             ->map(fn (Product $product): array => StorefrontCatalog::mapProductCard($product))

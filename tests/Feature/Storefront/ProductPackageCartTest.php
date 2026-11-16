@@ -65,6 +65,54 @@ test('storefront omits packages when kill switch is off', function () {
     expect($detail['packages'])->toBe([]);
 });
 
+test('product cards list enabled packages and hide disabled ones', function () {
+    $product = Product::factory()->create([
+        'slug' => 'card-with-packages',
+        'packages_enabled' => true,
+        'status' => true,
+        'selling_price' => 120,
+    ]);
+    $package = ProductPackage::factory()->create([
+        'product_id' => $product->id,
+        'label' => '10 Items',
+        'quantity' => 10,
+        'price' => 1000,
+        'status' => true,
+        'sort_order' => 1,
+    ]);
+    ProductPackage::factory()->disabled()->create([
+        'product_id' => $product->id,
+        'label' => 'Hidden',
+        'price' => 1,
+    ]);
+
+    $card = StorefrontCatalog::mapProductCard($product->fresh());
+
+    expect($card['packages'])->toHaveCount(1)
+        ->and($card['packages'][0])->toMatchArray([
+            'id' => $package->id,
+            'label' => '10 Items',
+            'quantity' => 10,
+            'formattedPrice' => 'A$1,000.00',
+        ]);
+});
+
+test('product cards omit packages when the kill switch is off', function () {
+    config(['catalog.show_product_packages' => false]);
+
+    $product = Product::factory()->create([
+        'slug' => 'card-packages-hidden',
+        'packages_enabled' => true,
+        'status' => true,
+    ]);
+    ProductPackage::factory()->create([
+        'product_id' => $product->id,
+        'status' => true,
+    ]);
+
+    expect(StorefrontCatalog::mapProductCard($product->fresh())['packages'])->toBe([]);
+});
+
 test('products without packages still add with catalog price', function () {
     $product = Product::factory()->create([
         'slug' => 'pkg-none',
