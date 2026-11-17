@@ -137,7 +137,7 @@ test('platform admins can open the order reports page', function () {
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
             ->component('platform/reports/order-reports')
-            ->where('dashboard.period', '30d')
+            ->where('dashboard.month', now()->format('Y-m'))
             ->where('dashboard.summary.orders', 1)
             ->where('dashboard.summary.delivered', 1)
             ->where('dashboard.summary.cod_collected', 40)
@@ -146,7 +146,7 @@ test('platform admins can open the order reports page', function () {
             ->has('dashboard.drivers'));
 });
 
-test('order reports dashboard respects the selected period', function () {
+test('order reports dashboard respects the selected month', function () {
     $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
     $sydney = Branch::query()->where('slug', BranchSeeder::SYDNEY_CBD)->firstOrFail();
 
@@ -161,16 +161,16 @@ test('order reports dashboard respects the selected period', function () {
         'branch_id' => $sydney->id,
         'status' => FulfillmentStatus::Delivered,
     ]);
-    $old->forceFill(['created_at' => now()->subDays(45)])->saveQuietly();
-    $oldFulfillment->forceFill(['created_at' => now()->subDays(45)])->saveQuietly();
+    $old->forceFill(['created_at' => now()->subMonthsNoOverflow(2)])->saveQuietly();
+    $oldFulfillment->forceFill(['created_at' => now()->subMonthsNoOverflow(2)])->saveQuietly();
 
     $this->actingAs($admin, 'platform')
         ->get(route('platform.reports.order-reports', [
-            'filter' => ['period' => '7d'],
+            'filter' => ['month' => now()->subMonthsNoOverflow(2)->format('Y-m')],
         ]))
         ->assertOk()
         ->assertInertia(fn (Assert $page) => $page
-            ->where('dashboard.period', '7d')
+            ->where('dashboard.month', now()->subMonthsNoOverflow(2)->format('Y-m'))
             ->where('dashboard.summary.orders', 1)
             ->where('dashboard.summary.delivered', 1));
 });
@@ -220,7 +220,7 @@ test('platform admin can export order reports as csv', function () {
         ->get(route('platform.reports.order-reports.export', [
             'format' => 'csv',
             'scope' => 'filters',
-            'filter' => ['period' => '30d'],
+            'filter' => ['month' => '2026-10', 'compare' => '2026-09'],
         ]));
 
     $response->assertOk()->assertDownload('order-reports-filters-2026-10-05.csv');
@@ -262,4 +262,57 @@ test('branch staff can open the branch order reports page with their drivers', f
 
     expect($driverIds)->toContain($sydneyDriver->id)
         ->and($driverIds)->not->toContain($melbourneDriver->id);
+});
+
+test('order reports count cancelled, refunded and collected payments per month and compare two months', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $lastMonth = now()->subMonthNoOverflow()->startOfMonth()->addDays(2);
+
+    Order::factory()->create(['status' => OrderStatus::Cancelled]);
+
+    $refunded = Order::factory()->create(['status' => OrderStatus::Delivered]);
+    Payment::factory()->create([
+        'order_id' => $refunded->id,
+        'amount' => 30,
+        'status' => PaymentStatus::Refunded,
+    ]);
+
+    $paid = Order::factory()->create(['status' => OrderStatus::Delivered]);
+    Payment::factory()->create([
+        'order_id' => $paid->id,
+        'gateway' => 'pos',
+        'amount' => 70,
+        'status' => PaymentStatus::Verified,
+    ]);
+
+    $old = Order::factory()->create(['status' => OrderStatus::Cancelled]);
+    $old->forceFill(['created_at' => $lastMonth])->saveQuietly();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', [
+            'filter' => ['compare' => $lastMonth->format('Y-m')],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.month', now()->format('Y-m'))
+            ->where('dashboard.summary.cancelled', 1)
+            ->where('dashboard.summary.refunded', 1)
+            ->where('dashboard.summary.refunded_amount', 30)
+            ->where('dashboard.summary.payments_collected', 70)
+            ->where('dashboard.compare.month', $lastMonth->format('Y-m'))
+            ->where('dashboard.compare.summary.cancelled', 1)
+            ->where('dashboard.compare.summary.orders', 1));
+});
+
+test('invalid or identical compare month is ignored and invalid month falls back to the current month', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', [
+            'filter' => ['month' => 'nonsense', 'compare' => now()->format('Y-m')],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.month', now()->format('Y-m'))
+            ->where('dashboard.compare', null));
 });

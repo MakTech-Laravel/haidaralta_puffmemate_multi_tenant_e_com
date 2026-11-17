@@ -13,70 +13,91 @@ use App\Models\OrderItem;
 use App\Models\Payment;
 use App\Models\StockTransfer;
 use App\Models\User;
+use Carbon\Carbon;
 use Carbon\CarbonInterface;
 
 class OrderReportService
 {
-    /**
-     * @return list<string>
-     */
-    public static function periods(): array
+    public function resolveMonth(?string $month): string
     {
-        return ['7d', '30d', '90d', '1y'];
+        $month = is_string($month) ? trim($month) : '';
+
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month) === 1) {
+            return $month;
+        }
+
+        return now()->format('Y-m');
     }
 
-    public function resolvePeriod(?string $period): string
+    /**
+     * Null when the compare month is empty, invalid, or equal to the selected month.
+     */
+    public function resolveCompareMonth(?string $compare, string $month): ?string
     {
-        $period = is_string($period) ? trim($period) : '';
+        $compare = is_string($compare) ? trim($compare) : '';
 
-        return in_array($period, self::periods(), true) ? $period : '30d';
+        if (preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $compare) !== 1 || $compare === $month) {
+            return null;
+        }
+
+        return $compare;
     }
 
     /**
      * @return array{0: CarbonInterface, 1: CarbonInterface}
      */
-    public function periodRange(string $period): array
+    public function monthRange(string $month): array
     {
-        $period = $this->resolvePeriod($period);
-        $end = now()->endOfDay();
+        $start = Carbon::createFromFormat('!Y-m', $this->resolveMonth($month))->startOfMonth();
 
-        $start = match ($period) {
-            '7d' => now()->subDays(7)->startOfDay(),
-            '90d' => now()->subDays(90)->startOfDay(),
-            '1y' => now()->subYear()->startOfDay(),
-            default => now()->subDays(30)->startOfDay(),
-        };
-
-        return [$start, $end];
+        return [$start, $start->copy()->endOfMonth()];
     }
 
     /**
      * @return array{
-     *     period: string,
+     *     month: string,
      *     summary: array{
      *         orders: int,
      *         delivered: int,
      *         waiting: int,
      *         failed: int,
+     *         cancelled: int,
+     *         refunded: int,
+     *         refunded_amount: float,
      *         sales: float,
+     *         payments_collected: float,
      *         cod_collected: float
      *     },
      *     products: list<array{name: string, sold: int}>,
      *     branches: list<array{id: int, branch: string, name: string, sales: float}>,
-     *     drivers: list<array{id: int, driver: string, name: string, deliveries: int}>
+     *     drivers: list<array{id: int, driver: string, name: string, deliveries: int}>,
+     *     compare: array{month: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>}|null
      * }
      */
-    public function platformDashboard(string $period = '30d'): array
+    public function platformDashboard(?string $month = null, ?string $compare = null): array
     {
-        $period = $this->resolvePeriod($period);
-        [$from, $to] = $this->periodRange($period);
+        $month = $this->resolveMonth($month);
+        $compare = $this->resolveCompareMonth($compare, $month);
+        [$from, $to] = $this->monthRange($month);
+
+        $comparison = null;
+
+        if ($compare !== null) {
+            [$compareFrom, $compareTo] = $this->monthRange($compare);
+            $comparison = [
+                'month' => $compare,
+                'summary' => $this->platformSummary($compareFrom, $compareTo),
+                'products' => $this->topProducts($compareFrom, $compareTo),
+            ];
+        }
 
         return [
-            'period' => $period,
+            'month' => $month,
             'summary' => $this->platformSummary($from, $to),
             'products' => $this->topProducts($from, $to),
             'branches' => $this->topBranches($from, $to),
             'drivers' => $this->topDrivers($from, $to),
+            'compare' => $comparison,
         ];
     }
 
@@ -147,7 +168,11 @@ class OrderReportService
      *     delivered: int,
      *     waiting: int,
      *     failed: int,
+     *     cancelled: int,
+     *     refunded: int,
+     *     refunded_amount: float,
      *     sales: float,
+     *     payments_collected: float,
      *     cod_collected: float
      * }
      */
@@ -174,10 +199,27 @@ class OrderReportService
                 ->clone()
                 ->where('status', FulfillmentStatus::DeliveryFailed)
                 ->count(),
+            'cancelled' => Order::query()
+                ->whereBetween('created_at', [$from, $to])
+                ->where('status', OrderStatus::Cancelled)
+                ->count(),
+            'refunded' => Payment::query()
+                ->whereBetween('created_at', [$from, $to])
+                ->where('status', PaymentStatus::Refunded)
+                ->distinct()
+                ->count('order_id'),
+            'refunded_amount' => (float) Payment::query()
+                ->whereBetween('created_at', [$from, $to])
+                ->where('status', PaymentStatus::Refunded)
+                ->sum('amount'),
             'sales' => (float) Order::query()
                 ->whereBetween('created_at', [$from, $to])
                 ->where('status', OrderStatus::Delivered)
                 ->sum('total_amount'),
+            'payments_collected' => (float) Payment::query()
+                ->whereBetween('created_at', [$from, $to])
+                ->whereIn('status', [PaymentStatus::Collected, PaymentStatus::Verified])
+                ->sum('amount'),
             'cod_collected' => (float) Payment::query()
                 ->whereBetween('created_at', [$from, $to])
                 ->where('gateway', 'cod')

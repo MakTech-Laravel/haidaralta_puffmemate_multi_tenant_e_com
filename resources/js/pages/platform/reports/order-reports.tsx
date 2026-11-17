@@ -1,5 +1,5 @@
-import { Head, router } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { Head, router } from "@inertiajs/react";
+import { useMemo } from "react";
 import {
     Bar,
     BarChart,
@@ -12,27 +12,29 @@ import {
     RadialBarChart,
     XAxis,
     YAxis,
-} from 'recharts';
-import OrderReportController from '@/actions/App/Http/Controllers/Platform/Reports/OrderReportController';
-import { ExportDropdown } from '@/components/export/export-dropdown';
-import Heading from '@/components/heading';
+} from "recharts";
+import OrderReportController from "@/actions/App/Http/Controllers/Platform/Reports/OrderReportController";
+import { ExportDropdown } from "@/components/export/export-dropdown";
+import Heading from "@/components/heading";
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
     type ChartConfig,
     ChartContainer,
+    ChartLegend,
+    ChartLegendContent,
     ChartTooltip,
     ChartTooltipContent,
-} from '@/components/ui/chart';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { cn } from '@/lib/utils';
-
-type Period = '7d' | '30d' | '90d' | '1y';
+} from "@/components/ui/chart";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type ProductRow = {
     name: string;
@@ -53,40 +55,65 @@ type DriverRow = {
     deliveries: number;
 };
 
+type Summary = {
+    orders: number;
+    delivered: number;
+    waiting: number;
+    failed: number;
+    cancelled: number;
+    refunded: number;
+    refunded_amount: number;
+    sales: number;
+    payments_collected: number;
+    cod_collected: number;
+};
+
 type Dashboard = {
-    period: Period;
-    summary: {
-        orders: number;
-        delivered: number;
-        waiting: number;
-        failed: number;
-        sales: number;
-        cod_collected: number;
-    };
+    month: string;
+    summary: Summary;
     products: ProductRow[];
     branches: BranchRow[];
     drivers: DriverRow[];
+    compare: {
+        month: string;
+        summary: Summary;
+        products: ProductRow[];
+    } | null;
 };
 
-const PERIODS: Array<{ value: Period; label: string }> = [
-    { value: '7d', label: 'Last 7 days' },
-    { value: '30d', label: 'Last 30 days' },
-    { value: '90d', label: 'Last 90 days' },
-    { value: '1y', label: 'Last 1 year' },
-];
+function formatMonth(value: string): string {
+    const [year, month] = value.split("-").map(Number);
+
+    return new Date(year, month - 1, 1).toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+    });
+}
+
+function changeLabel(current: number, previous: number): string {
+    const diff = current - previous;
+
+    if (previous === 0) {
+        return diff === 0 ? "No change" : "New vs. 0";
+    }
+
+    const percent = Math.round((diff / previous) * 1000) / 10;
+
+    return `${diff > 0 ? "+" : ""}${percent}%`;
+}
 
 const CHART_COLORS = [
-    'var(--chart-1)',
-    'var(--chart-2)',
-    'var(--chart-3)',
-    'var(--chart-4)',
-    'var(--chart-5)',
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
 ] as const;
 
 const productChartConfig = {
     sold: {
-        label: 'Units sold',
-        color: 'var(--chart-1)',
+        label: "Units sold",
+        color: "var(--chart-1)",
     },
 } satisfies ChartConfig;
 
@@ -96,27 +123,27 @@ function formatMoney(value: number): string {
 
 function formatCompactMoney(value: number): string {
     const abs = Math.abs(value);
-    const sign = value < 0 ? '-' : '';
+    const sign = value < 0 ? "-" : "";
 
     const withSuffix = (scaled: number, suffix: string): string => {
         const rounded = Math.round(scaled * 10) / 10;
         const text = Number.isInteger(rounded)
             ? String(rounded)
-            : rounded.toFixed(1).replace(/\.0$/, '');
+            : rounded.toFixed(1).replace(/\.0$/, "");
 
         return `${sign}$${text}${suffix}`;
     };
 
     if (abs >= 1_000_000_000) {
-        return withSuffix(abs / 1_000_000_000, 'B');
+        return withSuffix(abs / 1_000_000_000, "B");
     }
 
     if (abs >= 1_000_000) {
-        return withSuffix(abs / 1_000_000, 'm');
+        return withSuffix(abs / 1_000_000, "m");
     }
 
     if (abs >= 1_000) {
-        return withSuffix(abs / 1_000, 'k');
+        return withSuffix(abs / 1_000, "k");
     }
 
     return formatMoney(value);
@@ -144,11 +171,11 @@ function buildNamedChartConfig(
 function chartColor(
     config: ChartConfig,
     key: string,
-    fallback = 'var(--chart-1)',
+    fallback = "var(--chart-1)",
 ): string {
     const entry = config[key];
 
-    return entry && 'color' in entry && entry.color ? entry.color : fallback;
+    return entry && "color" in entry && entry.color ? entry.color : fallback;
 }
 
 export default function PlatformOrderReports({
@@ -156,33 +183,65 @@ export default function PlatformOrderReports({
 }: {
     dashboard: Dashboard;
 }) {
-    const period = dashboard.period;
-    const summaryCards = [
+    const month = dashboard.month;
+    const compare = dashboard.compare;
+    const summary = dashboard.summary;
+
+    const summaryCards: Array<{
+        label: string;
+        key: keyof Summary;
+        money?: boolean;
+        // Higher is worse (cancelled / refunded / failed): flips delta color.
+        inverse?: boolean;
+    }> = [
+        { label: "Total orders", key: "orders" },
         {
-            label: 'Total orders',
-            value: formatCount(dashboard.summary.orders),
+            label: "Total payment collected",
+            key: "payments_collected",
+            money: true,
         },
+        { label: "Cancelled orders", key: "cancelled", inverse: true },
+        { label: "Refunded orders", key: "refunded", inverse: true },
         {
-            label: 'Delivered',
-            value: formatCount(dashboard.summary.delivered),
+            label: "Refunded amount",
+            key: "refunded_amount",
+            money: true,
+            inverse: true,
         },
+        { label: "Delivered", key: "delivered" },
+        { label: "Waiting to deliver", key: "waiting" },
+        { label: "Could not deliver", key: "failed", inverse: true },
+        { label: "Money from sales", key: "sales", money: true },
         {
-            label: 'Waiting to deliver',
-            value: formatCount(dashboard.summary.waiting),
-        },
-        {
-            label: 'Could not deliver',
-            value: formatCount(dashboard.summary.failed),
-        },
-        {
-            label: 'Money from sales',
-            value: formatMoney(dashboard.summary.sales),
-        },
-        {
-            label: 'Cash collected on delivery',
-            value: formatMoney(dashboard.summary.cod_collected),
+            label: "Cash collected on delivery",
+            key: "cod_collected",
+            money: true,
         },
     ];
+
+    const formatValue = (value: number, money?: boolean): string =>
+        money ? formatMoney(value) : formatCount(value);
+
+    const compareProducts = useMemo(() => {
+        if (!compare) {
+            return [];
+        }
+
+        const names = Array.from(
+            new Set([
+                ...dashboard.products.map((row) => row.name),
+                ...compare.products.map((row) => row.name),
+            ]),
+        );
+
+        return names.map((name) => ({
+            name,
+            current:
+                dashboard.products.find((row) => row.name === name)?.sold ?? 0,
+            previous:
+                compare.products.find((row) => row.name === name)?.sold ?? 0,
+        }));
+    }, [dashboard.products, compare]);
 
     const branches = useMemo(
         () =>
@@ -231,8 +290,8 @@ export default function PlatformOrderReports({
         ...drivers.map((driver) => driver.deliveries),
     );
 
-    const changePeriod = (next: Period) => {
-        if (next === period) {
+    const changeFilters = (next: { month: string; compare: string | null }) => {
+        if (next.month === "") {
             return;
         }
 
@@ -240,7 +299,8 @@ export default function PlatformOrderReports({
             OrderReportController.index.url({
                 query: {
                     filter: {
-                        period: next,
+                        month: next.month,
+                        ...(next.compare ? { compare: next.compare } : {}),
                     },
                 },
             }),
@@ -265,47 +325,62 @@ export default function PlatformOrderReports({
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
                         <div className="space-y-1.5">
-                            <p className="text-sm font-medium">
-                                Show results for
-                            </p>
-                            <ToggleGroup
-                                type="single"
-                                value={period}
-                                onValueChange={(value) => {
-                                    if (
-                                        value === '7d' ||
-                                        value === '30d' ||
-                                        value === '90d' ||
-                                        value === '1y'
-                                    ) {
-                                        changePeriod(value);
+                            <Label htmlFor="report-month">Month</Label>
+                            <Input
+                                id="report-month"
+                                type="month"
+                                value={month}
+                                onChange={(event) =>
+                                    changeFilters({
+                                        month: event.target.value,
+                                        compare: compare?.month ?? null,
+                                    })
+                                }
+                                className="h-9 w-44"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label htmlFor="report-compare">Compare with</Label>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    id="report-compare"
+                                    type="month"
+                                    value={compare?.month ?? ""}
+                                    onChange={(event) =>
+                                        changeFilters({
+                                            month,
+                                            compare: event.target.value || null,
+                                        })
                                     }
-                                }}
-                                variant="outline"
-                                size="sm"
-                                className="flex flex-wrap justify-start gap-2"
-                            >
-                                {PERIODS.map((item) => (
-                                    <ToggleGroupItem
-                                        key={item.value}
-                                        value={item.value}
-                                        aria-label={item.label}
-                                        className={cn(
-                                            'h-9 min-w-28 flex-none rounded-md border px-3 first:rounded-md last:rounded-md data-[variant=outline]:border-l',
-                                            'data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90',
-                                        )}
+                                    className="h-9 w-44"
+                                />
+                                {compare ? (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                            changeFilters({
+                                                month,
+                                                compare: null,
+                                            })
+                                        }
                                     >
-                                        {item.label}
-                                    </ToggleGroupItem>
-                                ))}
-                            </ToggleGroup>
+                                        Clear
+                                    </Button>
+                                ) : null}
+                            </div>
                         </div>
 
                         <ExportDropdown
                             url={OrderReportController.export.url()}
                             query={{
                                 filter: {
-                                    period,
+                                    month,
+                                    ...(compare
+                                        ? { compare: compare.month }
+                                        : {}),
                                 },
                                 sort: null,
                                 per_page: 15,
@@ -322,44 +397,124 @@ export default function PlatformOrderReports({
                             At a glance
                         </h2>
                         <p className="text-muted-foreground mt-0.5 text-sm">
-                            The main numbers for the time you selected.
+                            {compare
+                                ? `${formatMonth(month)} compared with ${formatMonth(compare.month)}.`
+                                : `The main numbers for ${formatMonth(month)}.`}
                         </p>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {summaryCards.map((item) => (
-                            <Card
-                                key={item.label}
-                                className="gap-3 py-4 shadow-none"
-                            >
-                                <CardHeader className="px-4">
-                                    <CardDescription>
-                                        {item.label}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="px-4">
-                                    <p className="text-2xl font-semibold tracking-tight tabular-nums">
-                                        {item.value}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ))}
+                        {summaryCards.map((item) => {
+                            const current = summary[item.key];
+                            const previous = compare?.summary[item.key] ?? 0;
+                            const diff = current - previous;
+                            const isGood = item.inverse ? diff < 0 : diff > 0;
+
+                            return (
+                                <Card
+                                    key={item.label}
+                                    className="gap-3 py-4 shadow-none"
+                                >
+                                    <CardHeader className="px-4">
+                                        <CardDescription>
+                                            {item.label}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-1 px-4">
+                                        <p className="text-2xl font-semibold tracking-tight tabular-nums">
+                                            {formatValue(current, item.money)}
+                                        </p>
+                                        {compare ? (
+                                            <p className="text-muted-foreground text-xs tabular-nums">
+                                                {formatMonth(compare.month)}:{" "}
+                                                {formatValue(
+                                                    previous,
+                                                    item.money,
+                                                )}
+                                                {" · "}
+                                                <span
+                                                    className={cn(
+                                                        "font-medium",
+                                                        diff === 0
+                                                            ? ""
+                                                            : isGood
+                                                              ? "text-emerald-600"
+                                                              : "text-red-600",
+                                                    )}
+                                                >
+                                                    {changeLabel(
+                                                        current,
+                                                        previous,
+                                                    )}
+                                                </span>
+                                            </p>
+                                        ) : null}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
                     </div>
                 </section>
 
                 <Card className="shadow-none">
                     <CardHeader>
                         <div className="space-y-1">
-                            <CardTitle>What sells most</CardTitle>
+                            <CardTitle>Top 5 selling products</CardTitle>
                             <CardDescription>
-                                Products customers bought the most in this time.
+                                Products customers bought the most in{" "}
+                                {formatMonth(month)}.
                             </CardDescription>
                         </div>
                     </CardHeader>
                     <CardContent>
-                        {dashboard.products.length === 0 ? (
+                        {compare ? (
+                            <ChartContainer
+                                config={{
+                                    current: {
+                                        label: formatMonth(month),
+                                        color: "var(--chart-1)",
+                                    },
+                                    previous: {
+                                        label: formatMonth(compare.month),
+                                        color: "var(--chart-2)",
+                                    },
+                                }}
+                                className="aspect-auto h-80 w-full"
+                            >
+                                <BarChart
+                                    accessibilityLayer
+                                    data={compareProducts}
+                                    margin={{ top: 16, bottom: 8 }}
+                                >
+                                    <CartesianGrid vertical={false} />
+                                    <XAxis
+                                        dataKey="name"
+                                        tickLine={false}
+                                        axisLine={false}
+                                        tickMargin={8}
+                                    />
+                                    <YAxis hide />
+                                    <ChartTooltip
+                                        content={<ChartTooltipContent />}
+                                    />
+                                    <ChartLegend
+                                        content={<ChartLegendContent />}
+                                    />
+                                    <Bar
+                                        dataKey="current"
+                                        fill="var(--color-current)"
+                                        radius={4}
+                                    />
+                                    <Bar
+                                        dataKey="previous"
+                                        fill="var(--color-previous)"
+                                        radius={4}
+                                    />
+                                </BarChart>
+                            </ChartContainer>
+                        ) : dashboard.products.length === 0 ? (
                             <p className="text-muted-foreground text-sm">
-                                No product sales in this period.
+                                No product sales in this month.
                             </p>
                         ) : (
                             <ChartContainer
@@ -424,7 +579,7 @@ export default function PlatformOrderReports({
                         <CardContent className="space-y-4">
                             {branches.length === 0 ? (
                                 <p className="text-muted-foreground text-sm">
-                                    No branch sales in this period.
+                                    No branch sales in this month.
                                 </p>
                             ) : (
                                 <>
@@ -451,7 +606,7 @@ export default function PlatformOrderReports({
                                                                     | undefined;
                                                             const branchName =
                                                                 payload?.name ??
-                                                                'Branch';
+                                                                "Branch";
 
                                                             return (
                                                                 <div className="flex w-full items-center justify-between gap-4">
@@ -462,7 +617,7 @@ export default function PlatformOrderReports({
                                                                     </span>
                                                                     <span className="text-foreground font-medium tabular-nums">
                                                                         {typeof value ===
-                                                                        'number'
+                                                                        "number"
                                                                             ? formatMoney(
                                                                                   value,
                                                                               )
@@ -492,12 +647,12 @@ export default function PlatformOrderReports({
                                                     stroke="none"
                                                     formatter={(value) =>
                                                         typeof value ===
-                                                        'number'
+                                                        "number"
                                                             ? formatCompactMoney(
                                                                   value,
                                                               )
                                                             : String(
-                                                                  value ?? '',
+                                                                  value ?? "",
                                                               )
                                                     }
                                                 />
@@ -546,7 +701,7 @@ export default function PlatformOrderReports({
                         <CardContent className="space-y-4">
                             {drivers.length === 0 ? (
                                 <p className="text-muted-foreground text-sm">
-                                    No driver deliveries in this period.
+                                    No driver deliveries in this month.
                                 </p>
                             ) : (
                                 <>
@@ -616,11 +771,11 @@ export default function PlatformOrderReports({
 
 PlatformOrderReports.layout = {
     breadcrumbs: [
-        { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Reports', href: '/platform/reports/order-reports' },
+        { title: "Dashboard", href: "/platform/dashboard" },
+        { title: "Reports", href: "/platform/reports/order-reports" },
         {
-            title: 'Order Reports',
-            href: '/platform/reports/order-reports',
+            title: "Order Reports",
+            href: "/platform/reports/order-reports",
         },
     ],
 };
