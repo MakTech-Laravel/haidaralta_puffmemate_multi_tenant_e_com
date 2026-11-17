@@ -290,20 +290,23 @@ export default function PlatformOrderReports({
         ...drivers.map((driver) => driver.deliveries),
     );
 
-    const changeFilters = (next: { month: string; compare: string | null }) => {
-        if (next.month === "") {
-            return;
-        }
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const isDefaultView = month === currentMonth && !compare;
+
+    const changeFilters = (next: {
+        month: string | null;
+        compare: string | null;
+    }) => {
+        const filter = {
+            ...(next.month ? { month: next.month } : {}),
+            ...(next.compare ? { compare: next.compare } : {}),
+        };
 
         router.get(
-            OrderReportController.index.url({
-                query: {
-                    filter: {
-                        month: next.month,
-                        ...(next.compare ? { compare: next.compare } : {}),
-                    },
-                },
-            }),
+            OrderReportController.index.url(
+                Object.keys(filter).length > 0 ? { query: { filter } } : {},
+            ),
             {},
             {
                 preserveState: true,
@@ -327,12 +330,13 @@ export default function PlatformOrderReports({
                         <div className="space-y-1.5">
                             <Label htmlFor="report-month">Month</Label>
                             <Input
+                                key={`month-${month}`}
                                 id="report-month"
                                 type="month"
-                                value={month}
+                                defaultValue={month}
                                 onChange={(event) =>
                                     changeFilters({
-                                        month: event.target.value,
+                                        month: event.target.value || null,
                                         compare: compare?.month ?? null,
                                     })
                                 }
@@ -344,14 +348,20 @@ export default function PlatformOrderReports({
                             <Label htmlFor="report-compare">Compare with</Label>
                             <div className="flex items-center gap-2">
                                 <Input
+                                    key={`compare-${compare?.month ?? ""}`}
                                     id="report-compare"
                                     type="month"
-                                    value={compare?.month ?? ""}
+                                    defaultValue={compare?.month ?? ""}
                                     onChange={(event) =>
-                                        changeFilters({
-                                            month,
-                                            compare: event.target.value || null,
-                                        })
+                                        event.target.value
+                                            ? changeFilters({
+                                                  month,
+                                                  compare: event.target.value,
+                                              })
+                                            : changeFilters({
+                                                  month: null,
+                                                  compare: null,
+                                              })
                                     }
                                     className="h-9 w-44"
                                 />
@@ -362,12 +372,27 @@ export default function PlatformOrderReports({
                                         size="sm"
                                         onClick={() =>
                                             changeFilters({
-                                                month,
+                                                month: null,
                                                 compare: null,
                                             })
                                         }
                                     >
                                         Clear
+                                    </Button>
+                                ) : null}
+                                {!isDefaultView && !compare ? (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            changeFilters({
+                                                month: null,
+                                                compare: null,
+                                            })
+                                        }
+                                    >
+                                        Reset
                                     </Button>
                                 ) : null}
                             </div>

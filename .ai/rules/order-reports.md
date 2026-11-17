@@ -85,3 +85,7 @@ Note: `PaymentMarkingService::refund()` sets `Payment.status = Refunded` (refund
 3. Set "Compare with": deltas and % appear; clear it: they disappear.
 4. Export CSV/XLSX: contains month, new metrics, compare columns.
 5. `npm run build` (or `npm run dev`) and check there are no TS errors; `/platform/reports/order-reports` still guarded by `manage-reports`.
+
+## Clearing filters
+
+Clearing Month or Compare resets to the current month (no filter params are sent). Reset button shows when the view is not the default.
