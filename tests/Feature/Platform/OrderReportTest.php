@@ -230,8 +230,8 @@ test('platform admin can export order reports as csv', function () {
         ->toContain('Mint Ice')
         ->toContain('Export Driver')
         ->toContain($sydney->name)
-        ->toContain('Which branches sell most (2026-09)')
-        ->toContain('Which drivers deliver most (2026-09)');
+        ->toContain('Which branches sell most (September 2026)')
+        ->toContain('Which drivers deliver most (September 2026)');
 });
 
 test('branch staff can open the branch order reports page with their drivers', function () {
@@ -320,4 +320,208 @@ test('invalid or identical compare month is ignored and invalid month falls back
         ->assertInertia(fn (Assert $page) => $page
             ->where('dashboard.month', now()->format('Y-m'))
             ->where('dashboard.compare', null));
+});
+
+test('compare product chart counts both months for each of the top five products', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $lastMonth = now()->subMonthNoOverflow()->startOfMonth()->addDays(2);
+
+    $makeItem = function (string $name, int $quantity, bool $inLastMonth) use ($lastMonth): void {
+        $order = Order::factory()->create();
+        $fulfillment = OrderFulfillment::factory()->forOrder($order)->create();
+
+        if ($inLastMonth) {
+            $order->forceFill(['created_at' => $lastMonth])->saveQuietly();
+        }
+
+        OrderItem::query()->create([
+            'order_id' => $order->id,
+            'fulfillment_id' => $fulfillment->id,
+            'product_id' => Product::factory()->create(['name' => $name])->id,
+            'variant_id' => null,
+            'product_name_snapshot' => $name,
+            'sku_snapshot' => strtoupper($name),
+            'product_snapshot' => [],
+            'quantity' => $quantity,
+            'unit_price' => 1,
+            'subtotal' => $quantity,
+        ]);
+    };
+
+    $makeItem('Alpha', 5, false);
+    $makeItem('Alpha', 2, true);
+    $makeItem('Bravo', 3, true);
+
+    foreach (['C1', 'C2', 'C3', 'C4'] as $name) {
+        $makeItem($name, 50, false);
+        $makeItem($name, 50, true);
+    }
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', [
+            'filter' => ['compare' => $lastMonth->format('Y-m')],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('dashboard.compare.product_comparison', 5)
+            ->where('dashboard.compare.product_comparison.0.current', 50)
+            ->where('dashboard.compare.product_comparison.0.previous', 50));
+
+    $comparison = app(OrderReportService::class)
+        ->platformDashboard(now()->format('Y-m'), $lastMonth->format('Y-m'))['compare']['product_comparison'];
+
+    $alpha = collect($comparison)->firstWhere('name', 'Alpha');
+
+    expect($alpha)->toMatchArray(['current' => 5, 'previous' => 2])
+        ->and(collect($comparison)->pluck('name')->all())->not->toContain('Bravo');
+});
+
+test('quick range filter shows a rolling window and wins over the month filter', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    Order::factory()->create();
+
+    $older = Order::factory()->create();
+    $older->forceFill(['created_at' => now()->subDays(10)])->saveQuietly();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', [
+            'filter' => ['range' => '7d', 'month' => '2020-01'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.range', '7d')
+            ->where('dashboard.month', null)
+            ->where('dashboard.label', 'Last 7 days')
+            ->where('dashboard.summary.orders', 1));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', ['filter' => ['range' => '30d']]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.label', 'Last 30 days')
+            ->where('dashboard.summary.orders', 2));
+});
+
+test('range compare uses the previous period of the same length', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    Order::factory()->create();
+
+    $previous = Order::factory()->create();
+    $previous->forceFill(['created_at' => now()->subDays(10)])->saveQuietly();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', [
+            'filter' => ['range' => '7d', 'compare' => 'previous'],
+        ]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.summary.orders', 1)
+            ->where('dashboard.compare.label', 'Previous 7 days')
+            ->where('dashboard.compare.summary.orders', 1)
+            ->has('dashboard.compare.product_comparison'));
+});
+
+test('invalid range falls back to the current month and a month compare is ignored in range mode', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', ['filter' => ['range' => '5d']]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.range', null)
+            ->where('dashboard.month', now()->format('Y-m')));
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', [
+            'filter' => ['range' => '30d', 'compare' => '2026-01'],
+        ]))
+        ->assertInertia(fn (Assert $page) => $page->where('dashboard.compare', null));
+});
+
+test('order reports export names the range period', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $response = $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports.export', [
+            'format' => 'csv',
+            'scope' => 'filters',
+            'filter' => ['range' => '90d', 'compare' => 'previous'],
+        ]));
+
+    $response->assertOk();
+
+    expect(file_get_contents($response->baseResponse->getFile()->getPathname()))
+        ->toContain('Last 90 days')
+        ->toContain('Previous 90 days');
+});
+
+test('summary trend defaults to the previous month and the previous equal window', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    Order::factory()->create();
+
+    $lastMonth = Order::factory()->create();
+    $lastMonth->forceFill(['created_at' => now()->subMonthNoOverflow()->startOfMonth()->addDay()])->saveQuietly();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.compare', null)
+            ->where('dashboard.trend.label', now()->subMonthNoOverflow()->format('F Y'))
+            ->where('dashboard.trend.summary.orders', 1));
+
+    $tenDaysAgo = Order::factory()->create();
+    $tenDaysAgo->forceFill(['created_at' => now()->subDays(10)])->saveQuietly();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', ['filter' => ['range' => '7d']]))
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.trend.label', 'Previous 7 days')
+            ->where('dashboard.trend.summary.orders', 1));
+});
+
+test('summary trend uses the explicit compare period when one is selected', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+    $compareMonth = now()->subMonthsNoOverflow(3)->format('Y-m');
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', ['filter' => ['compare' => $compareMonth]]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.trend.label', now()->subMonthsNoOverflow(3)->format('F Y'))
+            ->where('dashboard.trend.label', fn ($label) => $label === now()->subMonthsNoOverflow(3)->format('F Y')));
+});
+
+test('timeline lists every day of the month with orders and deliveries per day', function () {
+    $this->travelTo('2026-11-17 12:00:00');
+
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $order = Order::factory()->create(['status' => OrderStatus::Delivered]);
+    OrderFulfillment::factory()->forOrder($order)->create(['status' => FulfillmentStatus::Delivered]);
+    Order::factory()->create();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->has('dashboard.timeline', 30)
+            ->where('dashboard.timeline.0.label', 'Nov 1')
+            ->where('dashboard.timeline.0.orders', 0)
+            ->where('dashboard.timeline.16.label', 'Nov 17')
+            ->where('dashboard.timeline.16.orders', 2)
+            ->where('dashboard.timeline.16.delivered', 1));
+});
+
+test('one year range uses monthly timeline buckets and compare adds its own timeline', function () {
+    $admin = User::query()->where('email', UserSeeder::PLATFORM_SUPER_ADMIN)->firstOrFail();
+
+    $this->actingAs($admin, 'platform')
+        ->get(route('platform.reports.order-reports', ['filter' => ['range' => '1y', 'compare' => 'previous']]))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('dashboard.timeline.0.label', now()->subYear()->format('M Y'))
+            ->has('dashboard.compare.timeline')
+            ->where('dashboard.timeline', fn ($timeline) => count($timeline) <= 13));
 });

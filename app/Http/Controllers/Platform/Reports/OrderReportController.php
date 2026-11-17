@@ -41,10 +41,12 @@ class OrderReportController extends Controller
     {
         $month = $request->input('filter.month');
         $compare = $request->input('filter.compare');
+        $range = $request->input('filter.range');
 
         return $this->reports->platformDashboard(
             is_string($month) ? $month : null,
             is_string($compare) ? $compare : null,
+            is_string($range) ? $range : null,
         );
     }
 }
