@@ -20,31 +20,31 @@ class OrderReportController extends Controller
 
     public function index(Request $request): Response
     {
-        $period = $this->reports->resolvePeriod(
-            is_string($request->input('filter.period'))
-                ? $request->input('filter.period')
-                : null,
-        );
-
         return Inertia::render('platform/reports/order-reports', [
-            'dashboard' => $this->reports->platformDashboard($period),
+            'dashboard' => $this->dashboard($request),
         ]);
     }
 
     public function export(ExportSpreadsheetRequest $request): BinaryFileResponse
     {
-        $period = $this->reports->resolvePeriod(
-            is_string($request->input('filter.period'))
-                ? $request->input('filter.period')
-                : null,
-        );
-
-        $dashboard = $this->reports->platformDashboard($period);
-
         return Excel::download(
-            new OrderReportsExport($dashboard),
+            new OrderReportsExport($this->dashboard($request)),
             $request->filename('order-reports'),
             $request->exportFormat()->writerType(),
+        );
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function dashboard(Request $request): array
+    {
+        $month = $request->input('filter.month');
+        $compare = $request->input('filter.compare');
+
+        return $this->reports->platformDashboard(
+            is_string($month) ? $month : null,
+            is_string($compare) ? $compare : null,
         );
     }
 }
