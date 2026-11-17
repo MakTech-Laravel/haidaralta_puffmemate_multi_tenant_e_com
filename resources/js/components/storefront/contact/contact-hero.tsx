@@ -31,9 +31,9 @@ export function ContactHero({ className, data }: ContactHeroProps) {
                 aria-hidden
             />
 
-            <div className="relative container mx-auto flex min-h-[36vh] items-center justify-between gap-8 px-4 py-14 sm:min-h-[42vh] sm:px-6 sm:py-16">
+            <div className="relative container mx-auto flex min-h-0 flex-col items-start justify-center gap-6 px-4 py-8 sm:min-h-[36vh] sm:px-6 sm:py-14 lg:flex-row lg:items-center lg:justify-between">
                 <div className="text-ink-surface-foreground max-w-xl">
-                    <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
+                    <h1 className="text-2xl font-semibold tracking-tight sm:text-4xl lg:text-5xl">
                         {data.title}
                     </h1>
                     <p className="font-inter mt-4 max-w-md text-sm leading-relaxed font-normal opacity-90 sm:text-base">

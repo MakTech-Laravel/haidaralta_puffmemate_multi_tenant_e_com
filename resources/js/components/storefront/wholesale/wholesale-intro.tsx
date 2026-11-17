@@ -11,13 +11,13 @@ type WholesaleIntroProps = {
 
 export function WholesaleIntro({ className, data }: WholesaleIntroProps) {
     return (
-        <section className={cn('bg-background py-12 sm:py-16', className)}>
+        <section className={cn('bg-background py-8 sm:py-14', className)}>
             <div className="container mx-auto px-4 sm:px-6">
                 <div className="max-w-6xl">
                     <h1 className="text-foreground text-2xl font-semibold tracking-tight uppercase">
                         {data.title}
                     </h1>
-                    <p className="text-muted-foreground font-inter mt-4 text-lg leading-relaxed font-normal">
+                    <p className="text-muted-foreground font-inter mt-3 text-base leading-relaxed font-normal sm:mt-4 sm:text-lg">
                         {data.body}
                     </p>
                 </div>

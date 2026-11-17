@@ -122,7 +122,7 @@ export function CheckoutMapDialog({
                     <MapPin className="size-4" />
                 </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Select location</DialogTitle>
                     <DialogDescription>
@@ -136,7 +136,7 @@ export function CheckoutMapDialog({
                     centerKey={`${pinLat},${pinLng}`}
                     markers={pinMarkers}
                     onMapClick={dropPin}
-                    className="h-64 w-full cursor-pointer! overflow-hidden rounded-xl **:cursor-pointer!"
+                    className="h-48 w-full cursor-pointer! overflow-hidden rounded-xl sm:h-64 **:cursor-pointer!"
                 />
                 {locationError ? (
                     <p className="text-destructive text-sm">{locationError}</p>

@@ -19,7 +19,7 @@ export function AccountMobileNav({ className }: AccountMobileNavProps) {
             )}
             aria-label="Account"
         >
-            <ul className="mx-auto flex max-w-lg items-stretch justify-around px-1 py-2">
+            <ul className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1.5 pb-1">
                 {items.map((item) => {
                     const active = Boolean(item.match?.(url));
                     const Icon = item.icon;
@@ -31,14 +31,13 @@ export function AccountMobileNav({ className }: AccountMobileNavProps) {
                                     href={logout()}
                                     as="button"
                                     aria-label={item.label}
-                                    className="text-foreground hover:text-primary flex w-full cursor-pointer flex-col items-center gap-1.5 py-1 transition-colors"
+                                    className="text-foreground hover:text-primary flex w-full cursor-pointer flex-col items-center gap-1 px-0.5 py-1 transition-colors"
                                     data-test="account-mobile-logout"
                                 >
                                     <Icon className="size-5" aria-hidden />
-                                    <span
-                                        className="bg-foreground h-0.5 w-5 rounded-full"
-                                        aria-hidden
-                                    />
+                                    <span className="max-w-full truncate text-[10px] leading-none font-medium">
+                                        {item.shortLabel ?? item.label}
+                                    </span>
                                 </Link>
                             </li>
                         );
@@ -51,7 +50,7 @@ export function AccountMobileNav({ className }: AccountMobileNavProps) {
                                 prefetch
                                 aria-label={item.label}
                                 className={cn(
-                                    'flex w-full flex-col items-center gap-1.5 py-1 transition-colors',
+                                    'flex w-full flex-col items-center gap-1 px-0.5 py-1 transition-colors',
                                     active
                                         ? 'text-primary'
                                         : 'text-foreground hover:text-primary',
@@ -59,13 +58,9 @@ export function AccountMobileNav({ className }: AccountMobileNavProps) {
                                 aria-current={active ? 'page' : undefined}
                             >
                                 <Icon className="size-5" aria-hidden />
-                                <span
-                                    className={cn(
-                                        'h-0.5 w-5 rounded-full',
-                                        active ? 'bg-primary' : 'bg-foreground',
-                                    )}
-                                    aria-hidden
-                                />
+                                <span className="max-w-full truncate text-[10px] leading-none font-medium">
+                                    {item.shortLabel ?? item.label}
+                                </span>
                             </Link>
                         </li>
                     );

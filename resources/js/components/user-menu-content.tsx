@@ -1,5 +1,5 @@
 import { Link, router, usePage } from '@inertiajs/react';
-import { Download, LogOut, Shield, UserRound } from 'lucide-react';
+import { LogOut, Shield, Smartphone, UserRound } from 'lucide-react';
 import {
     DropdownMenuGroup,
     DropdownMenuItem,
@@ -66,11 +66,11 @@ export function UserMenuContent({ user }: Props) {
                         onSelect={(event) => {
                             event.preventDefault();
                             cleanup();
-                            void pwa.install();
+                            pwa.openInstallDialog();
                         }}
                     >
-                        <Download className="mr-2" />
-                        Install app
+                        <Smartphone className="mr-2" />
+                        Get the app
                     </DropdownMenuItem>
                 ) : null}
             </DropdownMenuGroup>

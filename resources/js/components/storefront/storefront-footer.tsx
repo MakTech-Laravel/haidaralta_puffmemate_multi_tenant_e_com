@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { Mail, Phone } from 'lucide-react';
 import { useAppBrand } from '@/hooks/use-app-brand';
 import { useContacts } from '@/hooks/use-contacts';
 import {
@@ -8,6 +9,7 @@ import {
     storefrontFooterShop,
     type StorefrontChromeItem,
 } from '@/lib/storefront-chrome';
+import { cn } from '@/lib/utils';
 import {
     about,
     contact,
@@ -54,7 +56,7 @@ function FooterLink({ item }: { item: StorefrontChromeItem }) {
         <Link
             href={resolveHref(item)}
             prefetch
-            className="text-muted-foreground hover:text-foreground text-sm leading-relaxed font-normal transition-colors"
+            className="text-muted-foreground hover:text-foreground flex items-center py-1.5 text-sm leading-snug font-normal transition-colors"
         >
             {item.label}
         </Link>
@@ -69,11 +71,11 @@ function FooterColumn({
     items: StorefrontChromeItem[];
 }) {
     return (
-        <div className="flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
             <h3 className="text-foreground text-sm font-semibold">
                 {title}
             </h3>
-            <ul className="flex flex-col gap-2">
+            <ul className="grid grid-cols-2 gap-x-3 sm:grid-cols-1">
                 {items.map((item) => (
                     <li key={item.label}>
                         <FooterLink item={item} />
@@ -84,14 +86,14 @@ function FooterColumn({
     );
 }
 
-export function StorefrontFooter() {
+export function StorefrontFooter({ className }: { className?: string }) {
     const brand = useAppBrand();
     const contacts = useContacts();
 
     return (
-        <footer className="border-border bg-muted mt-auto border-t">
-            <div className="container mx-auto grid gap-10 px-4 py-12 sm:px-6 sm:py-16 md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-                <div className="flex flex-col gap-3 md:col-span-2 lg:col-span-1">
+        <footer className={cn('border-border bg-muted border-t', className)}>
+            <div className="container mx-auto flex flex-col gap-5 px-4 py-6 sm:px-6 sm:py-8 lg:grid lg:grid-cols-4 lg:gap-6 lg:py-10">
+                <div className="flex flex-col gap-2">
                     <Link
                         href={home()}
                         prefetch
@@ -100,41 +102,51 @@ export function StorefrontFooter() {
                         <img
                             src={brand.logoUrl}
                             alt={brand.name}
-                            className="h-9 w-auto object-contain sm:h-11"
+                            className="h-8 w-auto max-w-full object-contain sm:h-11"
                         />
                     </Link>
-                    <p className="text-muted-foreground max-w-xs text-sm leading-relaxed font-normal">
+                    <p className="text-muted-foreground max-w-sm text-sm leading-snug font-normal">
                         {brand.description || storefrontFooterBlurb}
                     </p>
-                    <div className="text-muted-foreground flex flex-col gap-1 text-sm">
+                    <div className="text-muted-foreground mt-1 flex flex-col text-sm">
                         {contacts.phone ? (
                             <a
                                 href={`tel:${contacts.phone.replace(/\s+/g, '')}`}
-                                className="hover:text-foreground transition-colors"
+                                className="hover:text-foreground flex items-center gap-2 py-1.5 break-words transition-colors"
                             >
+                                <Phone
+                                    className="text-foreground size-4 shrink-0"
+                                    aria-hidden
+                                />
                                 {contacts.phone}
                             </a>
                         ) : null}
                         {contacts.email ? (
                             <a
                                 href={`mailto:${contacts.email}`}
-                                className="hover:text-foreground transition-colors"
+                                className="hover:text-foreground flex items-center gap-2 py-1.5 break-all transition-colors"
                             >
+                                <Mail
+                                    className="text-foreground size-4 shrink-0"
+                                    aria-hidden
+                                />
                                 {contacts.email}
                             </a>
                         ) : null}
                     </div>
                 </div>
 
-                <FooterColumn title="Shop" items={storefrontFooterShop} />
-                <FooterColumn
-                    title="Customer"
-                    items={storefrontFooterCustomer}
-                />
-                <FooterColumn
-                    title={brand.shortName}
-                    items={storefrontFooterBrand}
-                />
+                <div className="border-border flex flex-col gap-4 border-t pt-4 sm:grid sm:grid-cols-3 sm:gap-6 sm:border-0 sm:pt-0 lg:contents">
+                    <FooterColumn title="Shop" items={storefrontFooterShop} />
+                    <FooterColumn
+                        title="Customer"
+                        items={storefrontFooterCustomer}
+                    />
+                    <FooterColumn
+                        title={brand.shortName}
+                        items={storefrontFooterBrand}
+                    />
+                </div>
             </div>
         </footer>
     );

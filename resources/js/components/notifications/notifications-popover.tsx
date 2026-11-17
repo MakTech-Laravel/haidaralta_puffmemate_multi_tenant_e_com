@@ -45,14 +45,14 @@ export function NotificationsPopover({
                     variant="ghost"
                     size="icon"
                     className={cn(
-                        'text-foreground relative size-10',
+                        'text-foreground relative size-11',
                         triggerClassName,
                     )}
                     aria-label="Notifications"
                     aria-expanded={open}
                     data-test="notifications-bell"
                 >
-                    <Bell className="size-6 md:size-8" strokeWidth={1.75} />
+                    <Bell className="size-6" strokeWidth={1.75} />
                     {unreadCount > 0 ? (
                         <span className="bg-primary absolute top-1.5 right-1.5 size-2 rounded-full" />
                     ) : null}

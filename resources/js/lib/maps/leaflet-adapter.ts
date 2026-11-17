@@ -126,6 +126,9 @@ export async function createLeafletAdapter(
                 maxZoom: 16,
             });
         },
+        invalidateSize() {
+            map.invalidateSize();
+        },
         onClick(handler) {
             map.on('click', (event: LeafletNamespace.LeafletMouseEvent) =>
                 handler(event.latlng.lat, event.latlng.lng),

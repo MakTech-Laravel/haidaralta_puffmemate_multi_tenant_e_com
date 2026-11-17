@@ -4,11 +4,15 @@ import { useState } from 'react';
 import { CartSheet } from '@/components/storefront/cart/cart-sheet';
 import { NotificationsPopover } from '@/components/notifications/notifications-popover';
 import type { NotificationItem } from '@/components/notifications/types';
-import { PwaInstallMenuItem } from '@/components/pwa/pwa-install-menu-item';
+import { usePwaInstall } from '@/components/pwa/pwa-install-provider';
+import {
+    PwaInstallHeaderButton,
+    PwaInstallMenuItem,
+} from '@/components/pwa/pwa-install-menu-item';
+import { StorefrontSheetContent } from '@/components/storefront/storefront-sheet';
 import { Button } from '@/components/ui/button';
 import {
     Sheet,
-    SheetContent,
     SheetHeader,
     SheetTitle,
     SheetTrigger,
@@ -160,6 +164,7 @@ export function StorefrontHeader() {
     const name = brand.name;
     const url = page.url;
     const [mobileOpen, setMobileOpen] = useState(false);
+    const pwa = usePwaInstall();
     const accountHref = auth.user
         ? (auth.dashboardUrl ?? dashboard())
         : login();
@@ -175,22 +180,22 @@ export function StorefrontHeader() {
     return (
         <div className="sticky top-0 z-40">
             <div className="bg-ink-surface text-ink-surface-foreground">
-                <p className="px-4 py-2 text-center text-[11px] leading-snug font-medium tracking-wide uppercase sm:text-xs">
+                <p className="px-3 py-1.5 text-center text-[11px] leading-snug font-medium tracking-wide break-words uppercase sm:px-4 sm:py-2 sm:text-xs">
                     {storefrontAnnouncement}
                 </p>
             </div>
 
             <header className="border-border/60 bg-background/85 supports-[backdrop-filter]:bg-background/75 border-b backdrop-blur-xl">
-                <div className="container mx-auto flex h-14 items-center gap-4 px-4 sm:h-16 sm:px-6">
+                <div className="container mx-auto flex h-14 items-center gap-1.5 px-3 sm:h-16 sm:gap-4 sm:px-6">
                     <Link
                         href={home()}
                         prefetch
-                        className="flex shrink-0 items-center"
+                        className="flex min-w-0 shrink items-center"
                     >
                         <img
                             src={brand.logoUrl}
                             alt={name}
-                            className="h-8 w-auto object-contain sm:h-10"
+                            className="h-7 w-auto max-w-[6.5rem] object-contain object-left sm:h-10 sm:max-w-none"
                         />
                     </Link>
 
@@ -204,7 +209,8 @@ export function StorefrontHeader() {
                         ))}
                     </nav>
 
-                    <div className="ml-auto flex items-center gap-1 sm:gap-2">
+                    <div className="ml-auto flex shrink-0 items-center">
+                        <PwaInstallHeaderButton />
                         <CartSheet
                             cart={
                                 storefront?.cart ?? {
@@ -215,6 +221,7 @@ export function StorefrontHeader() {
                                 }
                             }
                             active={cartActive}
+                            triggerClassName="hidden lg:inline-flex"
                         />
 
                         {auth.user ? (
@@ -231,7 +238,7 @@ export function StorefrontHeader() {
                             href={accountHref}
                             prefetch
                             className={cn(
-                                'relative inline-flex size-10 items-center justify-center rounded-full transition-colors',
+                                'relative hidden size-11 items-center justify-center rounded-full transition-colors lg:inline-flex',
                                 accountActive
                                     ? 'bg-muted text-foreground'
                                     : 'text-foreground hover:bg-muted/70',
@@ -247,7 +254,7 @@ export function StorefrontHeader() {
                                 />
                             ) : (
                                 <User
-                                    className="size-5 md:size-[22px]"
+                                    className="size-6"
                                     strokeWidth={1.75}
                                 />
                             )}
@@ -258,20 +265,17 @@ export function StorefrontHeader() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="text-foreground size-10 lg:hidden"
+                                    className="text-foreground size-11 lg:hidden"
                                     aria-label="Open menu"
                                 >
-                                    <Menu className="size-5" />
+                                    <Menu className="size-6" strokeWidth={1.75} />
                                 </Button>
                             </SheetTrigger>
-                            <SheetContent
-                                side="right"
-                                className="w-[min(100%,20rem)]"
-                            >
+                            <StorefrontSheetContent side="right">
                                 <SheetHeader>
                                     <SheetTitle>Menu</SheetTitle>
                                 </SheetHeader>
-                                <nav className="mt-4 flex flex-col gap-1 px-3">
+                                <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto px-3">
                                     {items.map((item) => (
                                         <NavLabel
                                             key={`${item.label}-${item.categorySlug ?? item.route}`}
@@ -283,14 +287,18 @@ export function StorefrontHeader() {
                                             }
                                         />
                                     ))}
-                                    <PwaInstallMenuItem
-                                        className="text-foreground/70 rounded-xl px-3 py-2.5 text-base font-medium"
-                                        onInstalledNavigate={() =>
-                                            setMobileOpen(false)
-                                        }
-                                    />
                                 </nav>
-                            </SheetContent>
+                                {pwa?.showMenuItem ? (
+                                    <div className="shrink-0 px-3 pt-3 pb-4">
+                                        <PwaInstallMenuItem
+                                            variant="primary"
+                                            onInstalledNavigate={() =>
+                                                setMobileOpen(false)
+                                            }
+                                        />
+                                    </div>
+                                ) : null}
+                            </StorefrontSheetContent>
                         </Sheet>
                     </div>
                 </div>
