@@ -85,7 +85,7 @@ export default function StorefrontProduct({
         <>
             <Head title={product.name} />
 
-            <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-10">
+            <div className="container mx-auto px-4 py-6 pb-[calc(9.75rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-10 lg:pb-10">
                 <Link
                     href={backHref}
                     prefetch
@@ -95,7 +95,7 @@ export default function StorefrontProduct({
                     Back to products
                 </Link>
 
-                <div className="grid min-w-0 gap-8 lg:grid-cols-2 lg:gap-12">
+                <div className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,22rem)_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
                     <ProductGallery
                         className="min-w-0"
                         images={product.images}

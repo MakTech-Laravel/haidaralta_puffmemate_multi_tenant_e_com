@@ -314,6 +314,21 @@
     }
 }
 
+@keyframes cart-float {
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+@utility animate-cart-float {
+    animation: cart-float 3.2s ease-in-out infinite;
+}
+
 @keyframes navigation-lane {
     to {
         transform: translateX(-60px);

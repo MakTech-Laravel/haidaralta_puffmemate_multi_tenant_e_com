@@ -15,7 +15,7 @@ export function HomeDealsBanner({ className }: HomeDealsBannerProps) {
         <div
             id="home-deals"
             className={cn(
-                'bg-ink-surface flex scroll-mt-24 flex-col items-center gap-10 overflow-hidden rounded-4xl px-8 py-10 sm:scroll-mt-28 sm:px-12 sm:py-12 md:flex-row md:items-center md:justify-between md:gap-12 md:px-14 md:py-14',
+                'bg-ink-surface flex scroll-mt-24 flex-col items-center gap-6 overflow-hidden rounded-3xl px-5 py-8 sm:scroll-mt-28 sm:gap-8 sm:rounded-4xl sm:px-12 sm:py-12 md:flex-row md:items-center md:justify-between md:px-14',
                 className,
             )}
         >
@@ -23,7 +23,7 @@ export function HomeDealsBanner({ className }: HomeDealsBannerProps) {
                 <p className="text-ink-surface-foreground/70 font-inter text-xs font-semibold tracking-[0.16em] uppercase sm:text-sm">
                     {brand.shortName} Deals
                 </p>
-                <h2 className="text-ink-surface-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
+                <h2 className="text-ink-surface-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-4xl">
                     Bigger brands.
                     <br />
                     Better deals.
@@ -49,7 +49,7 @@ export function HomeDealsBanner({ className }: HomeDealsBannerProps) {
                     className="bg-ink-surface-foreground text-ink-surface flex size-40 rotate-12 items-center justify-center rounded-3xl text-center transition duration-300 hover:rotate-14 sm:size-48 md:size-52"
                     aria-hidden
                 >
-                    <p className="text-2xl leading-tight font-semibold tracking-tight uppercase sm:text-3xl md:text-4xl">
+                    <p className="text-xl leading-tight font-semibold tracking-tight uppercase sm:text-3xl">
                         Save
                         <br />
                         More

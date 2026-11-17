@@ -21,13 +21,13 @@ export function AboutWhoWeAre({ data, className }: AboutWhoWeAreProps) {
     const body = data.body.replaceAll('{name}', brand.name);
 
     return (
-        <section className={cn('bg-background py-16 sm:py-20', className)}>
+        <section className={cn('bg-background py-10 sm:py-16', className)}>
             <div className="container mx-auto grid items-center gap-10 px-4 sm:px-6 lg:grid-cols-2 lg:gap-14">
                 <div>
                     <p className="text-primary text-xs font-semibold tracking-[0.14em] uppercase">
                         {data.eyebrow}
                     </p>
-                    <h2 className="text-foreground mt-3 text-3xl font-semibold tracking-tight sm:text-5xl">
+                    <h2 className="text-foreground mt-3 text-2xl font-semibold tracking-tight sm:text-4xl">
                         {data.heading}
                     </h2>
                     <p className="text-muted-foreground font-inter mt-4 max-w-xl text-sm leading-relaxed font-normal sm:text-base">

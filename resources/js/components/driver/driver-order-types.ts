@@ -215,6 +215,47 @@ export function driverMapsQuery(place: string): string {
     return `${place}, NSW, Australia`;
 }
 
+type DriverMapsPoint = { lat: number; lng: number };
+
+/**
+ * Google Maps directions link (driving). Prefer lat/lng pins; fall back to an
+ * address query. When origin is omitted, Maps uses the device location if it can.
+ */
+export function driverMapsDirectionsUrl(options: {
+    origin?: DriverMapsPoint | null;
+    destination:
+        | DriverMapsPoint
+        | {
+              query: string;
+          };
+}): string {
+    const params = new URLSearchParams({
+        api: '1',
+        travelmode: 'driving',
+    });
+
+    if (options.origin) {
+        params.set(
+            'origin',
+            `${options.origin.lat},${options.origin.lng}`,
+        );
+    }
+
+    if ('lat' in options.destination) {
+        params.set(
+            'destination',
+            `${options.destination.lat},${options.destination.lng}`,
+        );
+    } else {
+        params.set(
+            'destination',
+            driverMapsQuery(options.destination.query),
+        );
+    }
+
+    return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
 export type DriverDashboardHub = {
     online: boolean;
     etaNext: string;

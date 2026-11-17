@@ -20,6 +20,8 @@ import { index as wholesaleRequestsIndex } from '@/routes/customer/wholesale-req
 
 export type AccountNavItem = {
     label: string;
+    /** Short label for the phone tab bar. */
+    shortLabel?: string;
     icon: LucideIcon;
     href?: string;
     match?: (url: string) => boolean;
@@ -31,6 +33,7 @@ export type AccountNavItem = {
 export const accountNavItems: AccountNavItem[] = [
     {
         label: 'Dashboard',
+        shortLabel: 'Home',
         icon: LayoutGrid,
         href: '/dashboard',
         match: (url) => url === '/dashboard' || url.startsWith('/dashboard?'),
@@ -56,6 +59,7 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Product to review',
+        shortLabel: 'Reviews',
         icon: Star,
         href: productToReview.url(),
         match: (url) =>
@@ -65,6 +69,7 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Notification',
+        shortLabel: 'Alerts',
         icon: Bell,
         href: notificationsIndex.url(),
         match: (url) =>
@@ -90,6 +95,7 @@ export const accountNavItems: AccountNavItem[] = [
     },
     {
         label: 'Log Out',
+        shortLabel: 'Log out',
         icon: LogOut,
         logout: true,
     },
@@ -98,6 +104,59 @@ export const accountNavItems: AccountNavItem[] = [
 type AccountSidebarProps = {
     className?: string;
 };
+
+export function AccountSectionNav({ className }: AccountSidebarProps) {
+    const { url } = usePage();
+
+    return (
+        <nav
+            aria-label="Account sections"
+            className={cn('border-border border-b lg:hidden', className)}
+        >
+            <ul className="scrollbar-none flex gap-2 overflow-x-auto px-4 py-3">
+                {accountNavItems.map((item) => {
+                    const active = Boolean(item.match?.(url));
+                    const Icon = item.icon;
+
+                    if (item.logout) {
+                        return (
+                            <li key={item.label} className="shrink-0">
+                                <Link
+                                    href={logout()}
+                                    as="button"
+                                    className="text-foreground hover:bg-muted flex h-11 cursor-pointer items-center gap-2 rounded-full px-3 text-sm font-medium"
+                                    data-test="account-logout-mobile"
+                                >
+                                    <Icon className="size-4 shrink-0" aria-hidden />
+                                    {item.label}
+                                </Link>
+                            </li>
+                        );
+                    }
+
+                    return (
+                        <li key={item.label} className="shrink-0">
+                            <Link
+                                href={item.href!}
+                                prefetch
+                                aria-current={active ? 'page' : undefined}
+                                className={cn(
+                                    'flex h-11 items-center gap-2 rounded-full px-3 text-sm font-medium',
+                                    active
+                                        ? 'bg-muted text-foreground'
+                                        : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+                                )}
+                            >
+                                <Icon className="size-4 shrink-0" aria-hidden />
+                                {item.label}
+                            </Link>
+                        </li>
+                    );
+                })}
+            </ul>
+        </nav>
+    );
+}
 
 export function AccountSidebar({ className }: AccountSidebarProps) {
     const { url } = usePage();

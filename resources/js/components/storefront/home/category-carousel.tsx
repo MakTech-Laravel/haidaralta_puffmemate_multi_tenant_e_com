@@ -18,12 +18,16 @@ type CategoryCarouselProps = {
 
 const AUTOPLAY_MS = 4000;
 
-/** Matches Tailwind `lg` — carousel only below this width. */
+/** Matches Tailwind `lg` — slider only below this width. */
 const LG_BREAKPOINT = 1024;
 
 const navButtonClass =
     'border-border bg-background text-foreground hover:bg-muted size-8 rounded-full border shadow-sm disabled:opacity-40 sm:size-9';
 
+/**
+ * Small and medium screens: slider showing 2 cards (mobile) or 3 cards (medium).
+ * Large screens: static grid of 6 cards per row.
+ */
 export function CategoryCarousel({
     categories,
     className,
@@ -35,17 +39,13 @@ export function CategoryCarousel({
             return;
         }
 
-        const mql = window.matchMedia(
-            `(max-width: ${LG_BREAKPOINT - 1}px)`,
-        );
+        const mql = window.matchMedia(`(max-width: ${LG_BREAKPOINT - 1}px)`);
 
-        const tick = () => {
+        const id = window.setInterval(() => {
             if (mql.matches) {
                 api.scrollNext();
             }
-        };
-
-        const id = window.setInterval(tick, AUTOPLAY_MS);
+        }, AUTOPLAY_MS);
 
         return () => {
             window.clearInterval(id);

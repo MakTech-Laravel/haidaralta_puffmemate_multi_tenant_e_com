@@ -11,17 +11,19 @@ import {
     type CheckoutDetails,
 } from '@/components/storefront/checkout/checkout-form';
 import { CheckoutOrderSummary } from '@/components/storefront/checkout/checkout-order-summary';
+import { Button } from '@/components/ui/button';
 import {
     filterUpcomingDeliverySlots,
     SAME_DAY_METHOD_ID,
     sameDayOutOfRadiusMessage,
 } from '@/lib/delivery-shift-availability';
 import { cart } from '@/routes';
-import type {
-    StorefrontCartItem,
-    StorefrontDeliveryMethod,
-    StorefrontPaymentMethod,
-    StorefrontSavedAddress,
+import {
+    formatStorefrontMoney,
+    type StorefrontCartItem,
+    type StorefrontDeliveryMethod,
+    type StorefrontPaymentMethod,
+    type StorefrontSavedAddress,
 } from '@/types/storefront';
 
 type AppliedCoupon = {
@@ -603,6 +605,13 @@ export default function StorefrontCheckout({
         selectedDeliveryMethod?.id === SAME_DAY_METHOD_ID &&
         usableSlots(selectedDeliveryMethod).length === 0;
 
+    const payableTotal = Math.max(
+        subtotal -
+            (couponsAllowed ? (appliedCoupon?.discount ?? 0) : 0) +
+            (quotedMatchesPin ? (quote?.fee ?? 0) : 0),
+        0,
+    );
+
     const canPlaceOrder = checkoutCanPlaceOrder(
         details,
         deliveryMethods,
@@ -619,9 +628,9 @@ export default function StorefrontCheckout({
 
             <div className="flex-1">
                 <div className="bg-muted">
-                    <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-12">
+                    <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
                         <div className="max-w-2xl">
-                            <h1 className="text-foreground text-4xl font-semibold tracking-tight sm:text-5xl">
+                            <h1 className="text-foreground text-2xl font-semibold tracking-tight sm:text-4xl">
                                 Complete your order.
                             </h1>
                             <p className="text-muted-foreground mt-2 text-base font-normal sm:text-lg">
@@ -633,7 +642,7 @@ export default function StorefrontCheckout({
 
                 <div className="container mx-auto px-4 py-6 sm:px-6 sm:py-10">
                     <form
-                        className="grid items-start gap-6 lg:grid-cols-[1fr_24rem] lg:gap-8"
+                        className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-8"
                         onSubmit={(event) => {
                             event.preventDefault();
 
@@ -776,6 +785,29 @@ export default function StorefrontCheckout({
                                 form.setData('terms', accepted);
                             }}
                         />
+                        <div className="fixed inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] z-40 md:bottom-[calc(5.75rem+env(safe-area-inset-bottom))] lg:hidden">
+                            <div className="border-border bg-background/80 supports-[backdrop-filter]:bg-background/70 mx-auto flex max-w-md items-center md:max-w-2xl gap-3 rounded-full border py-1.5 pr-1.5 pl-4 shadow-xl backdrop-blur-xl">
+                                <div className="min-w-0">
+                                    <p className="text-muted-foreground text-[11px] leading-none font-medium">
+                                        {canPlaceOrder
+                                            ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`
+                                            : 'Finish the form'}
+                                    </p>
+                                    <p className="text-foreground text-base font-semibold">
+                                        {formatStorefrontMoney(payableTotal)}
+                                    </p>
+                                </div>
+                                <Button
+                                    type="submit"
+                                    className="h-11 min-w-0 flex-1 rounded-full"
+                                    disabled={form.processing || !canPlaceOrder}
+                                >
+                                    {form.processing
+                                        ? 'Placing…'
+                                        : 'Place order'}
+                                </Button>
+                            </div>
+                        </div>
                     </form>
                 </div>
             </div>
