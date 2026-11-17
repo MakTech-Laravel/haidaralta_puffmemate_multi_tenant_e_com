@@ -1,5 +1,5 @@
-import { Head, router } from '@inertiajs/react';
-import { useMemo } from 'react';
+import { Head, router } from "@inertiajs/react";
+import { useMemo } from "react";
 import {
     Bar,
     BarChart,
@@ -12,27 +12,27 @@ import {
     RadialBarChart,
     XAxis,
     YAxis,
-} from 'recharts';
-import OrderReportController from '@/actions/App/Http/Controllers/Platform/Reports/OrderReportController';
-import { ExportDropdown } from '@/components/export/export-dropdown';
-import Heading from '@/components/heading';
+} from "recharts";
+import OrderReportController from "@/actions/App/Http/Controllers/Platform/Reports/OrderReportController";
+import { ExportDropdown } from "@/components/export/export-dropdown";
+import Heading from "@/components/heading";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from '@/components/ui/card';
+} from "@/components/ui/card";
 import {
     type ChartConfig,
     ChartContainer,
     ChartTooltip,
     ChartTooltipContent,
-} from '@/components/ui/chart';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { cn } from '@/lib/utils';
-
-type Period = '7d' | '30d' | '90d' | '1y';
+} from "@/components/ui/chart";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
 type ProductRow = {
     name: string;
@@ -53,40 +53,64 @@ type DriverRow = {
     deliveries: number;
 };
 
-type Dashboard = {
-    period: Period;
-    summary: {
-        orders: number;
-        delivered: number;
-        waiting: number;
-        failed: number;
-        sales: number;
-        cod_collected: number;
-    };
+type Summary = {
+    orders: number;
+    delivered: number;
+    waiting: number;
+    failed: number;
+    cancelled: number;
+    refunded: number;
+    refunded_amount: number;
+    sales: number;
+    payments_collected: number;
+    cod_collected: number;
+};
+
+type MonthReport = {
+    month: string;
+    summary: Summary;
     products: ProductRow[];
     branches: BranchRow[];
     drivers: DriverRow[];
 };
 
-const PERIODS: Array<{ value: Period; label: string }> = [
-    { value: '7d', label: 'Last 7 days' },
-    { value: '30d', label: 'Last 30 days' },
-    { value: '90d', label: 'Last 90 days' },
-    { value: '1y', label: 'Last 1 year' },
-];
+type Dashboard = MonthReport & {
+    compare: MonthReport | null;
+};
+
+function formatMonth(value: string): string {
+    const [year, month] = value.split("-").map(Number);
+
+    return new Date(year, month - 1, 1).toLocaleDateString(undefined, {
+        month: "long",
+        year: "numeric",
+    });
+}
+
+function changeLabel(current: number, previous: number): string {
+    const diff = current - previous;
+
+    if (previous === 0) {
+        return diff === 0 ? "No change" : "New vs. 0";
+    }
+
+    const percent = Math.round((diff / previous) * 1000) / 10;
+
+    return `${diff > 0 ? "+" : ""}${percent}%`;
+}
 
 const CHART_COLORS = [
-    'var(--chart-1)',
-    'var(--chart-2)',
-    'var(--chart-3)',
-    'var(--chart-4)',
-    'var(--chart-5)',
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
 ] as const;
 
 const productChartConfig = {
     sold: {
-        label: 'Units sold',
-        color: 'var(--chart-1)',
+        label: "Units sold",
+        color: "var(--chart-1)",
     },
 } satisfies ChartConfig;
 
@@ -96,27 +120,27 @@ function formatMoney(value: number): string {
 
 function formatCompactMoney(value: number): string {
     const abs = Math.abs(value);
-    const sign = value < 0 ? '-' : '';
+    const sign = value < 0 ? "-" : "";
 
     const withSuffix = (scaled: number, suffix: string): string => {
         const rounded = Math.round(scaled * 10) / 10;
         const text = Number.isInteger(rounded)
             ? String(rounded)
-            : rounded.toFixed(1).replace(/\.0$/, '');
+            : rounded.toFixed(1).replace(/\.0$/, "");
 
         return `${sign}$${text}${suffix}`;
     };
 
     if (abs >= 1_000_000_000) {
-        return withSuffix(abs / 1_000_000_000, 'B');
+        return withSuffix(abs / 1_000_000_000, "B");
     }
 
     if (abs >= 1_000_000) {
-        return withSuffix(abs / 1_000_000, 'm');
+        return withSuffix(abs / 1_000_000, "m");
     }
 
     if (abs >= 1_000) {
-        return withSuffix(abs / 1_000, 'k');
+        return withSuffix(abs / 1_000, "k");
     }
 
     return formatMoney(value);
@@ -144,67 +168,152 @@ function buildNamedChartConfig(
 function chartColor(
     config: ChartConfig,
     key: string,
-    fallback = 'var(--chart-1)',
+    fallback = "var(--chart-1)",
 ): string {
     const entry = config[key];
 
-    return entry && 'color' in entry && entry.color ? entry.color : fallback;
+    return entry && "color" in entry && entry.color ? entry.color : fallback;
 }
 
-export default function PlatformOrderReports({
-    dashboard,
+/**
+ * Shared tooltip body: what the item is, which month, and the metric with its unit.
+ */
+function ReportTooltipBody({
+    name,
+    month,
+    label,
+    value,
 }: {
-    dashboard: Dashboard;
+    name: string;
+    month: string;
+    label: string;
+    value: string;
 }) {
-    const period = dashboard.period;
-    const summaryCards = [
-        {
-            label: 'Total orders',
-            value: formatCount(dashboard.summary.orders),
-        },
-        {
-            label: 'Delivered',
-            value: formatCount(dashboard.summary.delivered),
-        },
-        {
-            label: 'Waiting to deliver',
-            value: formatCount(dashboard.summary.waiting),
-        },
-        {
-            label: 'Could not deliver',
-            value: formatCount(dashboard.summary.failed),
-        },
-        {
-            label: 'Money from sales',
-            value: formatMoney(dashboard.summary.sales),
-        },
-        {
-            label: 'Cash collected on delivery',
-            value: formatMoney(dashboard.summary.cod_collected),
-        },
-    ];
+    return (
+        <div className="grid min-w-40 gap-1">
+            <p className="text-foreground font-semibold">{name}</p>
+            <p className="text-muted-foreground text-xs">
+                {formatMonth(month)}
+            </p>
+            <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="text-foreground font-medium tabular-nums">
+                    {value}
+                </span>
+            </div>
+        </div>
+    );
+}
 
+function ProductsChartCard({
+    month,
+    products,
+}: {
+    month: string;
+    products: ProductRow[];
+}) {
+    return (
+        <Card className="shadow-none">
+            <CardHeader>
+                <div className="space-y-1">
+                    <CardTitle>Top 5 selling products</CardTitle>
+                    <CardDescription>
+                        Products customers bought the most in{" "}
+                        {formatMonth(month)}.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent>
+                {products.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                        No product sales in this month.
+                    </p>
+                ) : (
+                    <ChartContainer
+                        config={productChartConfig}
+                        className="aspect-auto h-70 w-full"
+                    >
+                        <BarChart
+                            accessibilityLayer
+                            data={products}
+                            layout="vertical"
+                            margin={{
+                                left: 8,
+                                right: 48,
+                                top: 8,
+                                bottom: 8,
+                            }}
+                        >
+                            <CartesianGrid horizontal={false} />
+                            <XAxis type="number" hide />
+                            <YAxis
+                                dataKey="name"
+                                type="category"
+                                tickLine={false}
+                                axisLine={false}
+                                width={120}
+                                tickMargin={8}
+                            />
+                            <ChartTooltip
+                                cursor={false}
+                                content={
+                                    <ChartTooltipContent
+                                        hideLabel
+                                        hideIndicator
+                                        formatter={(value, _name, item) => (
+                                            <ReportTooltipBody
+                                                name={String(
+                                                    (
+                                                        item.payload as
+                                                            | { name?: string }
+                                                            | undefined
+                                                    )?.name ?? "Product",
+                                                )}
+                                                month={month}
+                                                label="Units sold"
+                                                value={`${formatCount(Number(value) || 0)} units`}
+                                            />
+                                        )}
+                                    />
+                                }
+                            />
+                            <Bar
+                                dataKey="sold"
+                                fill="var(--color-sold)"
+                                radius={4}
+                            >
+                                <LabelList
+                                    dataKey="sold"
+                                    position="right"
+                                    offset={8}
+                                    className="fill-foreground text-xs"
+                                />
+                            </Bar>
+                        </BarChart>
+                    </ChartContainer>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function BranchesChartCard({
+    month,
+    rows,
+}: {
+    month: string;
+    rows: BranchRow[];
+}) {
     const branches = useMemo(
         () =>
-            dashboard.branches.map((branch, index) => ({
+            rows.map((branch) => ({
                 ...branch,
                 fill: `var(--color-${branch.branch})`,
-                color: CHART_COLORS[index % CHART_COLORS.length],
             })),
-        [dashboard.branches],
+        [rows],
     );
 
-    const drivers = useMemo(
-        () =>
-            dashboard.drivers.map((driver, index) => ({
-                ...driver,
-                fill: `var(--color-${driver.driver})`,
-                color: CHART_COLORS[index % CHART_COLORS.length],
-            })),
-        [dashboard.drivers],
-    );
-
-    const branchChartConfig = useMemo(
+    const chartConfig = useMemo(
         () =>
             buildNamedChartConfig(
                 branches.map((branch) => ({
@@ -215,7 +324,121 @@ export default function PlatformOrderReports({
         [branches],
     );
 
-    const driverChartConfig = useMemo(
+    return (
+        <Card className="shadow-none">
+            <CardHeader>
+                <div className="space-y-1">
+                    <CardTitle>Which branches sell most</CardTitle>
+                    <CardDescription>
+                        Branches with the highest sales in {formatMonth(month)}.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {branches.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                        No branch sales in this month.
+                    </p>
+                ) : (
+                    <>
+                        <ChartContainer
+                            config={chartConfig}
+                            className="mx-auto aspect-square max-h-72"
+                        >
+                            <PieChart>
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            nameKey="branch"
+                                            hideLabel
+                                            hideIndicator
+                                            formatter={(value, _name, item) => (
+                                                <ReportTooltipBody
+                                                    name={
+                                                        (
+                                                            item.payload as
+                                                                | {
+                                                                      name?: string;
+                                                                  }
+                                                                | undefined
+                                                        )?.name ?? "Branch"
+                                                    }
+                                                    month={month}
+                                                    label="Sales"
+                                                    value={formatMoney(
+                                                        Number(value) || 0,
+                                                    )}
+                                                />
+                                            )}
+                                        />
+                                    }
+                                />
+                                <Pie
+                                    data={branches}
+                                    dataKey="sales"
+                                    nameKey="branch"
+                                    innerRadius={55}
+                                    strokeWidth={2}
+                                >
+                                    <LabelList
+                                        dataKey="sales"
+                                        className="fill-white text-xs"
+                                        stroke="none"
+                                        formatter={(value) =>
+                                            typeof value === "number"
+                                                ? formatCompactMoney(value)
+                                                : String(value ?? "")
+                                        }
+                                    />
+                                </Pie>
+                            </PieChart>
+                        </ChartContainer>
+
+                        <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-2">
+                            {branches.map((branch) => (
+                                <div
+                                    key={branch.branch}
+                                    className="flex min-w-0 items-center gap-1.5 text-sm"
+                                >
+                                    <span
+                                        className="size-2.5 shrink-0 rounded-[2px]"
+                                        style={{
+                                            backgroundColor: chartColor(
+                                                chartConfig,
+                                                branch.branch,
+                                            ),
+                                        }}
+                                    />
+                                    <span className="truncate">
+                                        {branch.name}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function DriversChartCard({
+    month,
+    rows,
+}: {
+    month: string;
+    rows: DriverRow[];
+}) {
+    const drivers = useMemo(
+        () =>
+            rows.map((driver) => ({
+                ...driver,
+                fill: `var(--color-${driver.driver})`,
+            })),
+        [rows],
+    );
+
+    const chartConfig = useMemo(
         () =>
             buildNamedChartConfig(
                 drivers.map((driver) => ({
@@ -226,24 +449,189 @@ export default function PlatformOrderReports({
         [drivers],
     );
 
-    const driverDeliveryMax = Math.max(
+    const deliveryMax = Math.max(
         1,
         ...drivers.map((driver) => driver.deliveries),
     );
 
-    const changePeriod = (next: Period) => {
-        if (next === period) {
-            return;
-        }
+    return (
+        <Card className="shadow-none">
+            <CardHeader>
+                <div className="space-y-1">
+                    <CardTitle>Which drivers deliver most</CardTitle>
+                    <CardDescription>
+                        Drivers who completed the most deliveries in{" "}
+                        {formatMonth(month)}.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {drivers.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                        No driver deliveries in this month.
+                    </p>
+                ) : (
+                    <>
+                        <ChartContainer
+                            config={chartConfig}
+                            className="mx-auto aspect-square max-h-72"
+                        >
+                            <RadialBarChart
+                                data={drivers}
+                                startAngle={90}
+                                endAngle={-270}
+                                innerRadius={24}
+                                outerRadius={110}
+                            >
+                                <PolarAngleAxis
+                                    type="number"
+                                    domain={[0, deliveryMax]}
+                                    tick={false}
+                                />
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            nameKey="driver"
+                                            hideLabel
+                                            hideIndicator
+                                            formatter={(value, _name, item) => (
+                                                <ReportTooltipBody
+                                                    name={
+                                                        (
+                                                            item.payload as
+                                                                | {
+                                                                      name?: string;
+                                                                  }
+                                                                | undefined
+                                                        )?.name ?? "Driver"
+                                                    }
+                                                    month={month}
+                                                    label="Deliveries"
+                                                    value={`${formatCount(Number(value) || 0)} deliveries`}
+                                                />
+                                            )}
+                                        />
+                                    }
+                                />
+                                <RadialBar
+                                    dataKey="deliveries"
+                                    background
+                                    cornerRadius={4}
+                                />
+                            </RadialBarChart>
+                        </ChartContainer>
+
+                        <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-2">
+                            {drivers.map((driver) => (
+                                <div
+                                    key={driver.driver}
+                                    className="flex min-w-0 items-center gap-1.5 text-sm"
+                                >
+                                    <span
+                                        className="size-2.5 shrink-0 rounded-[2px]"
+                                        style={{
+                                            backgroundColor: chartColor(
+                                                chartConfig,
+                                                driver.driver,
+                                            ),
+                                        }}
+                                    />
+                                    <span className="truncate">
+                                        {driver.name}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+/**
+ * Renders the product, branch and driver charts for one month. Used for the
+ * selected month and, identically, for the compare month.
+ */
+function MonthCharts({ report }: { report: MonthReport }) {
+    return (
+        <div className="space-y-4">
+            <ProductsChartCard
+                month={report.month}
+                products={report.products}
+            />
+            <div className="grid gap-4 lg:grid-cols-2">
+                <BranchesChartCard
+                    month={report.month}
+                    rows={report.branches}
+                />
+                <DriversChartCard month={report.month} rows={report.drivers} />
+            </div>
+        </div>
+    );
+}
+
+export default function PlatformOrderReports({
+    dashboard,
+}: {
+    dashboard: Dashboard;
+}) {
+    const month = dashboard.month;
+    const compare = dashboard.compare;
+    const summary = dashboard.summary;
+
+    const summaryCards: Array<{
+        label: string;
+        key: keyof Summary;
+        money?: boolean;
+        // Higher is worse (cancelled / refunded / failed): flips delta color.
+        inverse?: boolean;
+    }> = [
+        { label: "Total orders", key: "orders" },
+        {
+            label: "Total payment collected",
+            key: "payments_collected",
+            money: true,
+        },
+        { label: "Cancelled orders", key: "cancelled", inverse: true },
+        { label: "Refunded orders", key: "refunded", inverse: true },
+        {
+            label: "Refunded amount",
+            key: "refunded_amount",
+            money: true,
+            inverse: true,
+        },
+        { label: "Delivered", key: "delivered" },
+        { label: "Waiting to deliver", key: "waiting" },
+        { label: "Could not deliver", key: "failed", inverse: true },
+        { label: "Money from sales", key: "sales", money: true },
+        {
+            label: "Cash collected on delivery",
+            key: "cod_collected",
+            money: true,
+        },
+    ];
+
+    const formatValue = (value: number, money?: boolean): string =>
+        money ? formatMoney(value) : formatCount(value);
+
+    const now = new Date();
+    const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    const isDefaultView = month === currentMonth && !compare;
+
+    const changeFilters = (next: {
+        month: string | null;
+        compare: string | null;
+    }) => {
+        const filter = {
+            ...(next.month ? { month: next.month } : {}),
+            ...(next.compare ? { compare: next.compare } : {}),
+        };
 
         router.get(
-            OrderReportController.index.url({
-                query: {
-                    filter: {
-                        period: next,
-                    },
-                },
-            }),
+            OrderReportController.index.url(
+                Object.keys(filter).length > 0 ? { query: { filter } } : {},
+            ),
             {},
             {
                 preserveState: true,
@@ -265,47 +653,84 @@ export default function PlatformOrderReports({
 
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-end">
                         <div className="space-y-1.5">
-                            <p className="text-sm font-medium">
-                                Show results for
-                            </p>
-                            <ToggleGroup
-                                type="single"
-                                value={period}
-                                onValueChange={(value) => {
-                                    if (
-                                        value === '7d' ||
-                                        value === '30d' ||
-                                        value === '90d' ||
-                                        value === '1y'
-                                    ) {
-                                        changePeriod(value);
+                            <Label htmlFor="report-month">Month</Label>
+                            <Input
+                                key={`month-${month}`}
+                                id="report-month"
+                                type="month"
+                                defaultValue={month}
+                                onChange={(event) =>
+                                    changeFilters({
+                                        month: event.target.value || null,
+                                        compare: compare?.month ?? null,
+                                    })
+                                }
+                                className="h-9 w-44"
+                            />
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label htmlFor="report-compare">Compare with</Label>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    key={`compare-${compare?.month ?? ""}`}
+                                    id="report-compare"
+                                    type="month"
+                                    defaultValue={compare?.month ?? ""}
+                                    onChange={(event) =>
+                                        event.target.value
+                                            ? changeFilters({
+                                                  month,
+                                                  compare: event.target.value,
+                                              })
+                                            : changeFilters({
+                                                  month: null,
+                                                  compare: null,
+                                              })
                                     }
-                                }}
-                                variant="outline"
-                                size="sm"
-                                className="flex flex-wrap justify-start gap-2"
-                            >
-                                {PERIODS.map((item) => (
-                                    <ToggleGroupItem
-                                        key={item.value}
-                                        value={item.value}
-                                        aria-label={item.label}
-                                        className={cn(
-                                            'h-9 min-w-28 flex-none rounded-md border px-3 first:rounded-md last:rounded-md data-[variant=outline]:border-l',
-                                            'data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90',
-                                        )}
+                                    className="h-9 w-44"
+                                />
+                                {compare ? (
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() =>
+                                            changeFilters({
+                                                month: null,
+                                                compare: null,
+                                            })
+                                        }
                                     >
-                                        {item.label}
-                                    </ToggleGroupItem>
-                                ))}
-                            </ToggleGroup>
+                                        Clear
+                                    </Button>
+                                ) : null}
+                                {!isDefaultView && !compare ? (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                            changeFilters({
+                                                month: null,
+                                                compare: null,
+                                            })
+                                        }
+                                    >
+                                        Reset
+                                    </Button>
+                                ) : null}
+                            </div>
                         </div>
 
                         <ExportDropdown
                             url={OrderReportController.export.url()}
                             query={{
                                 filter: {
-                                    period,
+                                    month,
+                                    ...(compare
+                                        ? { compare: compare.month }
+                                        : {}),
                                 },
                                 sort: null,
                                 per_page: 15,
@@ -322,293 +747,94 @@ export default function PlatformOrderReports({
                             At a glance
                         </h2>
                         <p className="text-muted-foreground mt-0.5 text-sm">
-                            The main numbers for the time you selected.
+                            {compare
+                                ? `${formatMonth(month)} compared with ${formatMonth(compare.month)}.`
+                                : `The main numbers for ${formatMonth(month)}.`}
                         </p>
                     </div>
 
                     <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                        {summaryCards.map((item) => (
-                            <Card
-                                key={item.label}
-                                className="gap-3 py-4 shadow-none"
-                            >
-                                <CardHeader className="px-4">
-                                    <CardDescription>
-                                        {item.label}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="px-4">
-                                    <p className="text-2xl font-semibold tracking-tight tabular-nums">
-                                        {item.value}
-                                    </p>
-                                </CardContent>
-                            </Card>
-                        ))}
+                        {summaryCards.map((item) => {
+                            const current = summary[item.key];
+                            const previous = compare?.summary[item.key] ?? 0;
+                            const diff = current - previous;
+                            const isGood = item.inverse ? diff < 0 : diff > 0;
+
+                            return (
+                                <Card
+                                    key={item.label}
+                                    className="gap-3 py-4 shadow-none"
+                                >
+                                    <CardHeader className="px-4">
+                                        <CardDescription>
+                                            {item.label}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="space-y-1 px-4">
+                                        <p className="text-2xl font-semibold tracking-tight tabular-nums">
+                                            {formatValue(current, item.money)}
+                                        </p>
+                                        {compare ? (
+                                            <p className="text-muted-foreground text-xs tabular-nums">
+                                                {formatMonth(compare.month)}:{" "}
+                                                {formatValue(
+                                                    previous,
+                                                    item.money,
+                                                )}
+                                                {" · "}
+                                                <span
+                                                    className={cn(
+                                                        "font-medium",
+                                                        diff === 0
+                                                            ? ""
+                                                            : isGood
+                                                              ? "text-emerald-600"
+                                                              : "text-red-600",
+                                                    )}
+                                                >
+                                                    {changeLabel(
+                                                        current,
+                                                        previous,
+                                                    )}
+                                                </span>
+                                            </p>
+                                        ) : null}
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
                     </div>
                 </section>
 
-                <Card className="shadow-none">
-                    <CardHeader>
-                        <div className="space-y-1">
-                            <CardTitle>What sells most</CardTitle>
-                            <CardDescription>
-                                Products customers bought the most in this time.
-                            </CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {dashboard.products.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No product sales in this period.
-                            </p>
-                        ) : (
-                            <ChartContainer
-                                config={productChartConfig}
-                                className="aspect-auto h-70 w-full"
-                            >
-                                <BarChart
-                                    accessibilityLayer
-                                    data={dashboard.products}
-                                    layout="vertical"
-                                    margin={{
-                                        left: 8,
-                                        right: 48,
-                                        top: 8,
-                                        bottom: 8,
-                                    }}
-                                >
-                                    <CartesianGrid horizontal={false} />
-                                    <XAxis type="number" hide />
-                                    <YAxis
-                                        dataKey="name"
-                                        type="category"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        width={120}
-                                        tickMargin={8}
-                                    />
-                                    <ChartTooltip
-                                        cursor={false}
-                                        content={
-                                            <ChartTooltipContent hideLabel />
-                                        }
-                                    />
-                                    <Bar
-                                        dataKey="sold"
-                                        fill="var(--color-sold)"
-                                        radius={4}
-                                    >
-                                        <LabelList
-                                            dataKey="sold"
-                                            position="right"
-                                            offset={8}
-                                            className="fill-foreground text-xs"
-                                        />
-                                    </Bar>
-                                </BarChart>
-                            </ChartContainer>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <Card className="shadow-none">
-                        <CardHeader>
-                            <div className="space-y-1">
-                                <CardTitle>Which branches sell most</CardTitle>
-                                <CardDescription>
-                                    Branches with the highest sales.
-                                </CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {branches.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">
-                                    No branch sales in this period.
+                {compare ? (
+                    <div className="space-y-8">
+                        <section className="space-y-3">
+                            <div>
+                                <h2 className="text-lg font-semibold tracking-tight">
+                                    {formatMonth(month)}
+                                </h2>
+                                <p className="text-muted-foreground mt-0.5 text-sm">
+                                    Selected month
                                 </p>
-                            ) : (
-                                <>
-                                    <ChartContainer
-                                        config={branchChartConfig}
-                                        className="mx-auto aspect-square max-h-72"
-                                    >
-                                        <PieChart>
-                                            <ChartTooltip
-                                                content={
-                                                    <ChartTooltipContent
-                                                        nameKey="branch"
-                                                        formatter={(
-                                                            value,
-                                                            _name,
-                                                            item,
-                                                        ) => {
-                                                            const payload =
-                                                                item.payload as
-                                                                    | {
-                                                                          branch?: string;
-                                                                          name?: string;
-                                                                      }
-                                                                    | undefined;
-                                                            const branchName =
-                                                                payload?.name ??
-                                                                'Branch';
-
-                                                            return (
-                                                                <div className="flex w-full items-center justify-between gap-4">
-                                                                    <span className="text-muted-foreground">
-                                                                        {
-                                                                            branchName
-                                                                        }
-                                                                    </span>
-                                                                    <span className="text-foreground font-medium tabular-nums">
-                                                                        {typeof value ===
-                                                                        'number'
-                                                                            ? formatMoney(
-                                                                                  value,
-                                                                              )
-                                                                            : formatMoney(
-                                                                                  Number(
-                                                                                      value,
-                                                                                  ) ||
-                                                                                      0,
-                                                                              )}
-                                                                    </span>
-                                                                </div>
-                                                            );
-                                                        }}
-                                                    />
-                                                }
-                                            />
-                                            <Pie
-                                                data={branches}
-                                                dataKey="sales"
-                                                nameKey="branch"
-                                                innerRadius={55}
-                                                strokeWidth={2}
-                                            >
-                                                <LabelList
-                                                    dataKey="sales"
-                                                    className="fill-white text-xs"
-                                                    stroke="none"
-                                                    formatter={(value) =>
-                                                        typeof value ===
-                                                        'number'
-                                                            ? formatCompactMoney(
-                                                                  value,
-                                                              )
-                                                            : String(
-                                                                  value ?? '',
-                                                              )
-                                                    }
-                                                />
-                                            </Pie>
-                                        </PieChart>
-                                    </ChartContainer>
-
-                                    <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-2">
-                                        {branches.map((branch) => (
-                                            <div
-                                                key={branch.branch}
-                                                className="flex min-w-0 items-center gap-1.5 text-sm"
-                                            >
-                                                <span
-                                                    className="size-2.5 shrink-0 rounded-[2px]"
-                                                    style={{
-                                                        backgroundColor:
-                                                            chartColor(
-                                                                branchChartConfig,
-                                                                branch.branch,
-                                                            ),
-                                                    }}
-                                                />
-                                                <span className="truncate">
-                                                    {branch.name}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="shadow-none">
-                        <CardHeader>
-                            <div className="space-y-1">
-                                <CardTitle>
-                                    Which drivers deliver most
-                                </CardTitle>
-                                <CardDescription>
-                                    Drivers who completed the most deliveries.
-                                </CardDescription>
                             </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {drivers.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">
-                                    No driver deliveries in this period.
-                                </p>
-                            ) : (
-                                <>
-                                    <ChartContainer
-                                        config={driverChartConfig}
-                                        className="mx-auto aspect-square max-h-72"
-                                    >
-                                        <RadialBarChart
-                                            data={drivers}
-                                            startAngle={90}
-                                            endAngle={-270}
-                                            innerRadius={24}
-                                            outerRadius={110}
-                                        >
-                                            <PolarAngleAxis
-                                                type="number"
-                                                domain={[0, driverDeliveryMax]}
-                                                tick={false}
-                                            />
-                                            <ChartTooltip
-                                                content={
-                                                    <ChartTooltipContent
-                                                        nameKey="driver"
-                                                        hideLabel
-                                                    />
-                                                }
-                                            />
-                                            <RadialBar
-                                                dataKey="deliveries"
-                                                background
-                                                cornerRadius={4}
-                                            />
-                                        </RadialBarChart>
-                                    </ChartContainer>
+                            <MonthCharts report={dashboard} />
+                        </section>
 
-                                    <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-2">
-                                        {drivers.map((driver) => (
-                                            <div
-                                                key={driver.driver}
-                                                className="flex min-w-0 items-center gap-1.5 text-sm"
-                                            >
-                                                <span
-                                                    className="size-2.5 shrink-0 rounded-[2px]"
-                                                    style={{
-                                                        backgroundColor:
-                                                            chartColor(
-                                                                driverChartConfig,
-                                                                driver.driver,
-                                                            ),
-                                                    }}
-                                                />
-                                                <span className="truncate">
-                                                    {driver.name}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                        <section className="space-y-3">
+                            <div>
+                                <h2 className="text-lg font-semibold tracking-tight">
+                                    {formatMonth(compare.month)}
+                                </h2>
+                                <p className="text-muted-foreground mt-0.5 text-sm">
+                                    Compared month
+                                </p>
+                            </div>
+                            <MonthCharts report={compare} />
+                        </section>
+                    </div>
+                ) : (
+                    <MonthCharts report={dashboard} />
+                )}
             </div>
         </>
     );
@@ -616,11 +842,11 @@ export default function PlatformOrderReports({
 
 PlatformOrderReports.layout = {
     breadcrumbs: [
-        { title: 'Dashboard', href: '/platform/dashboard' },
-        { title: 'Reports', href: '/platform/reports/order-reports' },
+        { title: "Dashboard", href: "/platform/dashboard" },
+        { title: "Reports", href: "/platform/reports/order-reports" },
         {
-            title: 'Order Reports',
-            href: '/platform/reports/order-reports',
+            title: "Order Reports",
+            href: "/platform/reports/order-reports",
         },
     ],
 };
