@@ -90,6 +90,24 @@ Note: `PaymentMarkingService::refund()` sets `Payment.status = Refunded` (refund
 
 Clearing Month or Compare resets to the current month (no filter params are sent). Reset button shows when the view is not the default.
 
-Compare mode renders the same MonthCharts layout for both months: the compare month is stacked below the selected month (products full width, branches + drivers side by side), never in a right-hand column. The compare payload has the same shape as the main month.
+Compare mode keeps the single layout; each section shows the comparison inside its own card (products = shadcn Bar Chart - Multiple with month legend; branches and drivers = the same chart for both months side by side inside the card). No duplicated month sections.
 
 Chart tooltips (products, branches, drivers) use ReportTooltipBody: item name, month, and the metric with its unit.
+
+Compare products come from compare.product_comparison (top 5 by combined units, both months counted for every product); never union two separate top-5 lists. Zero bars render no stub and show a 0 label.
+
+## Quick ranges
+
+filter[range]=7d|30d|90d|1y adds a rolling window ending today next to the month filters. A valid range wins over filter[month] (month becomes null in the payload). In range mode filter[compare]=previous compares against the preceding window of equal length ("Previous 30 days"); a month compare value is ignored. Period text in the UI, tooltips and export comes from the server `label` (e.g. "November 2026", "Last 30 days"), never from client-side month formatting. Reset and clearing compare in month mode return to the current month.
+
+## Summary trend
+
+Summary cards always show an arrow plus red/green delta against `dashboard.trend` (the explicit compare period when set, otherwise the automatic previous month or previous equal-length window). Cancelled, refunded, refunded amount and could-not-deliver are inverse: an increase is red.
+
+## Period filter popover
+
+Period filters live in one popover (resources/js/components/platform/order-report-filters.tsx): quick range, month and compare are drafted together and applied once with a single request. Do not scatter them back across the header. Reset returns to the current month with no compare.
+
+## Orders and deliveries timeline
+
+The "Orders and deliveries" section (order-report-timeline.tsx, shadcn Line Chart - Multiple) uses `timeline` from the service: daily buckets up to 92 days, monthly buckets for 1y, zero-filled. Compare draws dashed lines for the compare period aligned by position. Orders use created_at on orders, delivered uses Delivered fulfillments created in the window (same as the summary cards). Group by the DATE() alias only (Postgres).
