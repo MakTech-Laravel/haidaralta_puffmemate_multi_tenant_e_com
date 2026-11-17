@@ -229,7 +229,9 @@ test('platform admin can export order reports as csv', function () {
         ->toContain('Order Reports')
         ->toContain('Mint Ice')
         ->toContain('Export Driver')
-        ->toContain($sydney->name);
+        ->toContain($sydney->name)
+        ->toContain('Which branches sell most (2026-09)')
+        ->toContain('Which drivers deliver most (2026-09)');
 });
 
 test('branch staff can open the branch order reports page with their drivers', function () {
@@ -301,7 +303,10 @@ test('order reports count cancelled, refunded and collected payments per month a
             ->where('dashboard.summary.payments_collected', 70)
             ->where('dashboard.compare.month', $lastMonth->format('Y-m'))
             ->where('dashboard.compare.summary.cancelled', 1)
-            ->where('dashboard.compare.summary.orders', 1));
+            ->where('dashboard.compare.summary.orders', 1)
+            ->has('dashboard.compare.products')
+            ->has('dashboard.compare.branches')
+            ->has('dashboard.compare.drivers'));
 });
 
 test('invalid or identical compare month is ignored and invalid month falls back to the current month', function () {

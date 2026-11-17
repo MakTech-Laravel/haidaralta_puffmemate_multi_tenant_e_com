@@ -71,7 +71,7 @@ class OrderReportService
      *     products: list<array{name: string, sold: int}>,
      *     branches: list<array{id: int, branch: string, name: string, sales: float}>,
      *     drivers: list<array{id: int, driver: string, name: string, deliveries: int}>,
-     *     compare: array{month: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>}|null
+     *     compare: array{month: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>, branches: list<array{id: int, branch: string, name: string, sales: float}>, drivers: list<array{id: int, driver: string, name: string, deliveries: int}>}|null
      * }
      */
     public function platformDashboard(?string $month = null, ?string $compare = null): array
@@ -88,6 +88,8 @@ class OrderReportService
                 'month' => $compare,
                 'summary' => $this->platformSummary($compareFrom, $compareTo),
                 'products' => $this->topProducts($compareFrom, $compareTo),
+                'branches' => $this->topBranches($compareFrom, $compareTo),
+                'drivers' => $this->topDrivers($compareFrom, $compareTo),
             ];
         }
 

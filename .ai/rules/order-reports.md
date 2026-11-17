@@ -89,3 +89,7 @@ Note: `PaymentMarkingService::refund()` sets `Payment.status = Refunded` (refund
 ## Clearing filters
 
 Clearing Month or Compare resets to the current month (no filter params are sent). Reset button shows when the view is not the default.
+
+Compare mode renders the same MonthCharts layout for both months: the compare month is stacked below the selected month (products full width, branches + drivers side by side), never in a right-hand column. The compare payload has the same shape as the main month.
+
+Chart tooltips (products, branches, drivers) use ReportTooltipBody: item name, month, and the metric with its unit.

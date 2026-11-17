@@ -32,7 +32,7 @@ class OrderReportsExport implements FromArray
      *     products: list<array{name: string, sold: int}>,
      *     branches: list<array{id: int, branch: string, name: string, sales: float}>,
      *     drivers: list<array{id: int, driver: string, name: string, deliveries: int}>,
-     *     compare: array{month: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>}|null
+     *     compare: array{month: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>, branches: list<array{id: int, branch: string, name: string, sales: float}>, drivers: list<array{id: int, driver: string, name: string, deliveries: int}>}|null
      * }  $dashboard
      */
     public function __construct(
@@ -110,6 +110,24 @@ class OrderReportsExport implements FromArray
 
         foreach ($this->dashboard['drivers'] as $driver) {
             $rows[] = [$driver['name'], $driver['deliveries']];
+        }
+
+        if ($compare !== null) {
+            $rows[] = [];
+            $rows[] = ['Which branches sell most ('.$compare['month'].')'];
+            $rows[] = ['Branch', 'Sales'];
+
+            foreach ($compare['branches'] as $branch) {
+                $rows[] = [$branch['name'], $branch['sales']];
+            }
+
+            $rows[] = [];
+            $rows[] = ['Which drivers deliver most ('.$compare['month'].')'];
+            $rows[] = ['Driver', 'Deliveries'];
+
+            foreach ($compare['drivers'] as $driver) {
+                $rows[] = [$driver['name'], $driver['deliveries']];
+            }
         }
 
         return $rows;

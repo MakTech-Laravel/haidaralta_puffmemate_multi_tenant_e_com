@@ -16,6 +16,7 @@ import {
 import OrderReportController from "@/actions/App/Http/Controllers/Platform/Reports/OrderReportController";
 import { ExportDropdown } from "@/components/export/export-dropdown";
 import Heading from "@/components/heading";
+import { Button } from "@/components/ui/button";
 import {
     Card,
     CardContent,
@@ -26,12 +27,9 @@ import {
 import {
     type ChartConfig,
     ChartContainer,
-    ChartLegend,
-    ChartLegendContent,
     ChartTooltip,
     ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -68,17 +66,16 @@ type Summary = {
     cod_collected: number;
 };
 
-type Dashboard = {
+type MonthReport = {
     month: string;
     summary: Summary;
     products: ProductRow[];
     branches: BranchRow[];
     drivers: DriverRow[];
-    compare: {
-        month: string;
-        summary: Summary;
-        products: ProductRow[];
-    } | null;
+};
+
+type Dashboard = MonthReport & {
+    compare: MonthReport | null;
 };
 
 function formatMonth(value: string): string {
@@ -178,6 +175,402 @@ function chartColor(
     return entry && "color" in entry && entry.color ? entry.color : fallback;
 }
 
+/**
+ * Shared tooltip body: what the item is, which month, and the metric with its unit.
+ */
+function ReportTooltipBody({
+    name,
+    month,
+    label,
+    value,
+}: {
+    name: string;
+    month: string;
+    label: string;
+    value: string;
+}) {
+    return (
+        <div className="grid min-w-40 gap-1">
+            <p className="text-foreground font-semibold">{name}</p>
+            <p className="text-muted-foreground text-xs">
+                {formatMonth(month)}
+            </p>
+            <div className="flex items-center justify-between gap-4">
+                <span className="text-muted-foreground">{label}</span>
+                <span className="text-foreground font-medium tabular-nums">
+                    {value}
+                </span>
+            </div>
+        </div>
+    );
+}
+
+function ProductsChartCard({
+    month,
+    products,
+}: {
+    month: string;
+    products: ProductRow[];
+}) {
+    return (
+        <Card className="shadow-none">
+            <CardHeader>
+                <div className="space-y-1">
+                    <CardTitle>Top 5 selling products</CardTitle>
+                    <CardDescription>
+                        Products customers bought the most in{" "}
+                        {formatMonth(month)}.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent>
+                {products.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                        No product sales in this month.
+                    </p>
+                ) : (
+                    <ChartContainer
+                        config={productChartConfig}
+                        className="aspect-auto h-70 w-full"
+                    >
+                        <BarChart
+                            accessibilityLayer
+                            data={products}
+                            layout="vertical"
+                            margin={{
+                                left: 8,
+                                right: 48,
+                                top: 8,
+                                bottom: 8,
+                            }}
+                        >
+                            <CartesianGrid horizontal={false} />
+                            <XAxis type="number" hide />
+                            <YAxis
+                                dataKey="name"
+                                type="category"
+                                tickLine={false}
+                                axisLine={false}
+                                width={120}
+                                tickMargin={8}
+                            />
+                            <ChartTooltip
+                                cursor={false}
+                                content={
+                                    <ChartTooltipContent
+                                        hideLabel
+                                        hideIndicator
+                                        formatter={(value, _name, item) => (
+                                            <ReportTooltipBody
+                                                name={String(
+                                                    (
+                                                        item.payload as
+                                                            | { name?: string }
+                                                            | undefined
+                                                    )?.name ?? "Product",
+                                                )}
+                                                month={month}
+                                                label="Units sold"
+                                                value={`${formatCount(Number(value) || 0)} units`}
+                                            />
+                                        )}
+                                    />
+                                }
+                            />
+                            <Bar
+                                dataKey="sold"
+                                fill="var(--color-sold)"
+                                radius={4}
+                            >
+                                <LabelList
+                                    dataKey="sold"
+                                    position="right"
+                                    offset={8}
+                                    className="fill-foreground text-xs"
+                                />
+                            </Bar>
+                        </BarChart>
+                    </ChartContainer>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function BranchesChartCard({
+    month,
+    rows,
+}: {
+    month: string;
+    rows: BranchRow[];
+}) {
+    const branches = useMemo(
+        () =>
+            rows.map((branch) => ({
+                ...branch,
+                fill: `var(--color-${branch.branch})`,
+            })),
+        [rows],
+    );
+
+    const chartConfig = useMemo(
+        () =>
+            buildNamedChartConfig(
+                branches.map((branch) => ({
+                    key: branch.branch,
+                    label: branch.name,
+                })),
+            ),
+        [branches],
+    );
+
+    return (
+        <Card className="shadow-none">
+            <CardHeader>
+                <div className="space-y-1">
+                    <CardTitle>Which branches sell most</CardTitle>
+                    <CardDescription>
+                        Branches with the highest sales in {formatMonth(month)}.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {branches.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                        No branch sales in this month.
+                    </p>
+                ) : (
+                    <>
+                        <ChartContainer
+                            config={chartConfig}
+                            className="mx-auto aspect-square max-h-72"
+                        >
+                            <PieChart>
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            nameKey="branch"
+                                            hideLabel
+                                            hideIndicator
+                                            formatter={(value, _name, item) => (
+                                                <ReportTooltipBody
+                                                    name={
+                                                        (
+                                                            item.payload as
+                                                                | {
+                                                                      name?: string;
+                                                                  }
+                                                                | undefined
+                                                        )?.name ?? "Branch"
+                                                    }
+                                                    month={month}
+                                                    label="Sales"
+                                                    value={formatMoney(
+                                                        Number(value) || 0,
+                                                    )}
+                                                />
+                                            )}
+                                        />
+                                    }
+                                />
+                                <Pie
+                                    data={branches}
+                                    dataKey="sales"
+                                    nameKey="branch"
+                                    innerRadius={55}
+                                    strokeWidth={2}
+                                >
+                                    <LabelList
+                                        dataKey="sales"
+                                        className="fill-white text-xs"
+                                        stroke="none"
+                                        formatter={(value) =>
+                                            typeof value === "number"
+                                                ? formatCompactMoney(value)
+                                                : String(value ?? "")
+                                        }
+                                    />
+                                </Pie>
+                            </PieChart>
+                        </ChartContainer>
+
+                        <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-2">
+                            {branches.map((branch) => (
+                                <div
+                                    key={branch.branch}
+                                    className="flex min-w-0 items-center gap-1.5 text-sm"
+                                >
+                                    <span
+                                        className="size-2.5 shrink-0 rounded-[2px]"
+                                        style={{
+                                            backgroundColor: chartColor(
+                                                chartConfig,
+                                                branch.branch,
+                                            ),
+                                        }}
+                                    />
+                                    <span className="truncate">
+                                        {branch.name}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+function DriversChartCard({
+    month,
+    rows,
+}: {
+    month: string;
+    rows: DriverRow[];
+}) {
+    const drivers = useMemo(
+        () =>
+            rows.map((driver) => ({
+                ...driver,
+                fill: `var(--color-${driver.driver})`,
+            })),
+        [rows],
+    );
+
+    const chartConfig = useMemo(
+        () =>
+            buildNamedChartConfig(
+                drivers.map((driver) => ({
+                    key: driver.driver,
+                    label: driver.name,
+                })),
+            ),
+        [drivers],
+    );
+
+    const deliveryMax = Math.max(
+        1,
+        ...drivers.map((driver) => driver.deliveries),
+    );
+
+    return (
+        <Card className="shadow-none">
+            <CardHeader>
+                <div className="space-y-1">
+                    <CardTitle>Which drivers deliver most</CardTitle>
+                    <CardDescription>
+                        Drivers who completed the most deliveries in{" "}
+                        {formatMonth(month)}.
+                    </CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {drivers.length === 0 ? (
+                    <p className="text-muted-foreground text-sm">
+                        No driver deliveries in this month.
+                    </p>
+                ) : (
+                    <>
+                        <ChartContainer
+                            config={chartConfig}
+                            className="mx-auto aspect-square max-h-72"
+                        >
+                            <RadialBarChart
+                                data={drivers}
+                                startAngle={90}
+                                endAngle={-270}
+                                innerRadius={24}
+                                outerRadius={110}
+                            >
+                                <PolarAngleAxis
+                                    type="number"
+                                    domain={[0, deliveryMax]}
+                                    tick={false}
+                                />
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            nameKey="driver"
+                                            hideLabel
+                                            hideIndicator
+                                            formatter={(value, _name, item) => (
+                                                <ReportTooltipBody
+                                                    name={
+                                                        (
+                                                            item.payload as
+                                                                | {
+                                                                      name?: string;
+                                                                  }
+                                                                | undefined
+                                                        )?.name ?? "Driver"
+                                                    }
+                                                    month={month}
+                                                    label="Deliveries"
+                                                    value={`${formatCount(Number(value) || 0)} deliveries`}
+                                                />
+                                            )}
+                                        />
+                                    }
+                                />
+                                <RadialBar
+                                    dataKey="deliveries"
+                                    background
+                                    cornerRadius={4}
+                                />
+                            </RadialBarChart>
+                        </ChartContainer>
+
+                        <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-2">
+                            {drivers.map((driver) => (
+                                <div
+                                    key={driver.driver}
+                                    className="flex min-w-0 items-center gap-1.5 text-sm"
+                                >
+                                    <span
+                                        className="size-2.5 shrink-0 rounded-[2px]"
+                                        style={{
+                                            backgroundColor: chartColor(
+                                                chartConfig,
+                                                driver.driver,
+                                            ),
+                                        }}
+                                    />
+                                    <span className="truncate">
+                                        {driver.name}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </CardContent>
+        </Card>
+    );
+}
+
+/**
+ * Renders the product, branch and driver charts for one month. Used for the
+ * selected month and, identically, for the compare month.
+ */
+function MonthCharts({ report }: { report: MonthReport }) {
+    return (
+        <div className="space-y-4">
+            <ProductsChartCard
+                month={report.month}
+                products={report.products}
+            />
+            <div className="grid gap-4 lg:grid-cols-2">
+                <BranchesChartCard
+                    month={report.month}
+                    rows={report.branches}
+                />
+                <DriversChartCard month={report.month} rows={report.drivers} />
+            </div>
+        </div>
+    );
+}
+
 export default function PlatformOrderReports({
     dashboard,
 }: {
@@ -221,74 +614,6 @@ export default function PlatformOrderReports({
 
     const formatValue = (value: number, money?: boolean): string =>
         money ? formatMoney(value) : formatCount(value);
-
-    const compareProducts = useMemo(() => {
-        if (!compare) {
-            return [];
-        }
-
-        const names = Array.from(
-            new Set([
-                ...dashboard.products.map((row) => row.name),
-                ...compare.products.map((row) => row.name),
-            ]),
-        );
-
-        return names.map((name) => ({
-            name,
-            current:
-                dashboard.products.find((row) => row.name === name)?.sold ?? 0,
-            previous:
-                compare.products.find((row) => row.name === name)?.sold ?? 0,
-        }));
-    }, [dashboard.products, compare]);
-
-    const branches = useMemo(
-        () =>
-            dashboard.branches.map((branch, index) => ({
-                ...branch,
-                fill: `var(--color-${branch.branch})`,
-                color: CHART_COLORS[index % CHART_COLORS.length],
-            })),
-        [dashboard.branches],
-    );
-
-    const drivers = useMemo(
-        () =>
-            dashboard.drivers.map((driver, index) => ({
-                ...driver,
-                fill: `var(--color-${driver.driver})`,
-                color: CHART_COLORS[index % CHART_COLORS.length],
-            })),
-        [dashboard.drivers],
-    );
-
-    const branchChartConfig = useMemo(
-        () =>
-            buildNamedChartConfig(
-                branches.map((branch) => ({
-                    key: branch.branch,
-                    label: branch.name,
-                })),
-            ),
-        [branches],
-    );
-
-    const driverChartConfig = useMemo(
-        () =>
-            buildNamedChartConfig(
-                drivers.map((driver) => ({
-                    key: driver.driver,
-                    label: driver.name,
-                })),
-            ),
-        [drivers],
-    );
-
-    const driverDeliveryMax = Math.max(
-        1,
-        ...drivers.map((driver) => driver.deliveries),
-    );
 
     const now = new Date();
     const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
@@ -481,314 +806,35 @@ export default function PlatformOrderReports({
                     </div>
                 </section>
 
-                <Card className="shadow-none">
-                    <CardHeader>
-                        <div className="space-y-1">
-                            <CardTitle>Top 5 selling products</CardTitle>
-                            <CardDescription>
-                                Products customers bought the most in{" "}
-                                {formatMonth(month)}.
-                            </CardDescription>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        {compare ? (
-                            <ChartContainer
-                                config={{
-                                    current: {
-                                        label: formatMonth(month),
-                                        color: "var(--chart-1)",
-                                    },
-                                    previous: {
-                                        label: formatMonth(compare.month),
-                                        color: "var(--chart-2)",
-                                    },
-                                }}
-                                className="aspect-auto h-80 w-full"
-                            >
-                                <BarChart
-                                    accessibilityLayer
-                                    data={compareProducts}
-                                    margin={{ top: 16, bottom: 8 }}
-                                >
-                                    <CartesianGrid vertical={false} />
-                                    <XAxis
-                                        dataKey="name"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        tickMargin={8}
-                                    />
-                                    <YAxis hide />
-                                    <ChartTooltip
-                                        content={<ChartTooltipContent />}
-                                    />
-                                    <ChartLegend
-                                        content={<ChartLegendContent />}
-                                    />
-                                    <Bar
-                                        dataKey="current"
-                                        fill="var(--color-current)"
-                                        radius={4}
-                                    />
-                                    <Bar
-                                        dataKey="previous"
-                                        fill="var(--color-previous)"
-                                        radius={4}
-                                    />
-                                </BarChart>
-                            </ChartContainer>
-                        ) : dashboard.products.length === 0 ? (
-                            <p className="text-muted-foreground text-sm">
-                                No product sales in this month.
-                            </p>
-                        ) : (
-                            <ChartContainer
-                                config={productChartConfig}
-                                className="aspect-auto h-70 w-full"
-                            >
-                                <BarChart
-                                    accessibilityLayer
-                                    data={dashboard.products}
-                                    layout="vertical"
-                                    margin={{
-                                        left: 8,
-                                        right: 48,
-                                        top: 8,
-                                        bottom: 8,
-                                    }}
-                                >
-                                    <CartesianGrid horizontal={false} />
-                                    <XAxis type="number" hide />
-                                    <YAxis
-                                        dataKey="name"
-                                        type="category"
-                                        tickLine={false}
-                                        axisLine={false}
-                                        width={120}
-                                        tickMargin={8}
-                                    />
-                                    <ChartTooltip
-                                        cursor={false}
-                                        content={
-                                            <ChartTooltipContent hideLabel />
-                                        }
-                                    />
-                                    <Bar
-                                        dataKey="sold"
-                                        fill="var(--color-sold)"
-                                        radius={4}
-                                    >
-                                        <LabelList
-                                            dataKey="sold"
-                                            position="right"
-                                            offset={8}
-                                            className="fill-foreground text-xs"
-                                        />
-                                    </Bar>
-                                </BarChart>
-                            </ChartContainer>
-                        )}
-                    </CardContent>
-                </Card>
-
-                <div className="grid gap-4 lg:grid-cols-2">
-                    <Card className="shadow-none">
-                        <CardHeader>
-                            <div className="space-y-1">
-                                <CardTitle>Which branches sell most</CardTitle>
-                                <CardDescription>
-                                    Branches with the highest sales.
-                                </CardDescription>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {branches.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">
-                                    No branch sales in this month.
+                {compare ? (
+                    <div className="space-y-8">
+                        <section className="space-y-3">
+                            <div>
+                                <h2 className="text-lg font-semibold tracking-tight">
+                                    {formatMonth(month)}
+                                </h2>
+                                <p className="text-muted-foreground mt-0.5 text-sm">
+                                    Selected month
                                 </p>
-                            ) : (
-                                <>
-                                    <ChartContainer
-                                        config={branchChartConfig}
-                                        className="mx-auto aspect-square max-h-72"
-                                    >
-                                        <PieChart>
-                                            <ChartTooltip
-                                                content={
-                                                    <ChartTooltipContent
-                                                        nameKey="branch"
-                                                        formatter={(
-                                                            value,
-                                                            _name,
-                                                            item,
-                                                        ) => {
-                                                            const payload =
-                                                                item.payload as
-                                                                    | {
-                                                                          branch?: string;
-                                                                          name?: string;
-                                                                      }
-                                                                    | undefined;
-                                                            const branchName =
-                                                                payload?.name ??
-                                                                "Branch";
-
-                                                            return (
-                                                                <div className="flex w-full items-center justify-between gap-4">
-                                                                    <span className="text-muted-foreground">
-                                                                        {
-                                                                            branchName
-                                                                        }
-                                                                    </span>
-                                                                    <span className="text-foreground font-medium tabular-nums">
-                                                                        {typeof value ===
-                                                                        "number"
-                                                                            ? formatMoney(
-                                                                                  value,
-                                                                              )
-                                                                            : formatMoney(
-                                                                                  Number(
-                                                                                      value,
-                                                                                  ) ||
-                                                                                      0,
-                                                                              )}
-                                                                    </span>
-                                                                </div>
-                                                            );
-                                                        }}
-                                                    />
-                                                }
-                                            />
-                                            <Pie
-                                                data={branches}
-                                                dataKey="sales"
-                                                nameKey="branch"
-                                                innerRadius={55}
-                                                strokeWidth={2}
-                                            >
-                                                <LabelList
-                                                    dataKey="sales"
-                                                    className="fill-white text-xs"
-                                                    stroke="none"
-                                                    formatter={(value) =>
-                                                        typeof value ===
-                                                        "number"
-                                                            ? formatCompactMoney(
-                                                                  value,
-                                                              )
-                                                            : String(
-                                                                  value ?? "",
-                                                              )
-                                                    }
-                                                />
-                                            </Pie>
-                                        </PieChart>
-                                    </ChartContainer>
-
-                                    <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-2">
-                                        {branches.map((branch) => (
-                                            <div
-                                                key={branch.branch}
-                                                className="flex min-w-0 items-center gap-1.5 text-sm"
-                                            >
-                                                <span
-                                                    className="size-2.5 shrink-0 rounded-[2px]"
-                                                    style={{
-                                                        backgroundColor:
-                                                            chartColor(
-                                                                branchChartConfig,
-                                                                branch.branch,
-                                                            ),
-                                                    }}
-                                                />
-                                                <span className="truncate">
-                                                    {branch.name}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-
-                    <Card className="shadow-none">
-                        <CardHeader>
-                            <div className="space-y-1">
-                                <CardTitle>
-                                    Which drivers deliver most
-                                </CardTitle>
-                                <CardDescription>
-                                    Drivers who completed the most deliveries.
-                                </CardDescription>
                             </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {drivers.length === 0 ? (
-                                <p className="text-muted-foreground text-sm">
-                                    No driver deliveries in this month.
-                                </p>
-                            ) : (
-                                <>
-                                    <ChartContainer
-                                        config={driverChartConfig}
-                                        className="mx-auto aspect-square max-h-72"
-                                    >
-                                        <RadialBarChart
-                                            data={drivers}
-                                            startAngle={90}
-                                            endAngle={-270}
-                                            innerRadius={24}
-                                            outerRadius={110}
-                                        >
-                                            <PolarAngleAxis
-                                                type="number"
-                                                domain={[0, driverDeliveryMax]}
-                                                tick={false}
-                                            />
-                                            <ChartTooltip
-                                                content={
-                                                    <ChartTooltipContent
-                                                        nameKey="driver"
-                                                        hideLabel
-                                                    />
-                                                }
-                                            />
-                                            <RadialBar
-                                                dataKey="deliveries"
-                                                background
-                                                cornerRadius={4}
-                                            />
-                                        </RadialBarChart>
-                                    </ChartContainer>
+                            <MonthCharts report={dashboard} />
+                        </section>
 
-                                    <div className="flex w-full flex-wrap justify-center gap-x-4 gap-y-2">
-                                        {drivers.map((driver) => (
-                                            <div
-                                                key={driver.driver}
-                                                className="flex min-w-0 items-center gap-1.5 text-sm"
-                                            >
-                                                <span
-                                                    className="size-2.5 shrink-0 rounded-[2px]"
-                                                    style={{
-                                                        backgroundColor:
-                                                            chartColor(
-                                                                driverChartConfig,
-                                                                driver.driver,
-                                                            ),
-                                                    }}
-                                                />
-                                                <span className="truncate">
-                                                    {driver.name}
-                                                </span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            )}
-                        </CardContent>
-                    </Card>
-                </div>
+                        <section className="space-y-3">
+                            <div>
+                                <h2 className="text-lg font-semibold tracking-tight">
+                                    {formatMonth(compare.month)}
+                                </h2>
+                                <p className="text-muted-foreground mt-0.5 text-sm">
+                                    Compared month
+                                </p>
+                            </div>
+                            <MonthCharts report={compare} />
+                        </section>
+                    </div>
+                ) : (
+                    <MonthCharts report={dashboard} />
+                )}
             </div>
         </>
     );
