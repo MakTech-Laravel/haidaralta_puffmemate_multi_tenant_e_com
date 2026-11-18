@@ -54,8 +54,56 @@ class OrderReportService
     }
 
     /**
+     * @return list<string>
+     */
+    public static function ranges(): array
+    {
+        return ['7d', '30d', '90d', '1y'];
+    }
+
+    public function resolveRange(?string $range): ?string
+    {
+        $range = is_string($range) ? trim($range) : '';
+
+        return in_array($range, self::ranges(), true) ? $range : null;
+    }
+
+    /**
+     * Rolling window ending today, plus the equally long window right before it.
+     *
+     * @return array{label: string, previous_label: string, from: Carbon, to: Carbon, previous_from: Carbon, previous_to: Carbon}
+     */
+    private function rangeWindow(string $range): array
+    {
+        $to = now()->endOfDay();
+
+        [$from, $previousFrom, $label] = match ($range) {
+            '7d' => [now()->subDays(7)->startOfDay(), now()->subDays(14)->startOfDay(), '7 days'],
+            '90d' => [now()->subDays(90)->startOfDay(), now()->subDays(180)->startOfDay(), '90 days'],
+            '1y' => [now()->subYear()->startOfDay(), now()->subYears(2)->startOfDay(), '1 year'],
+            default => [now()->subDays(30)->startOfDay(), now()->subDays(60)->startOfDay(), '30 days'],
+        };
+
+        return [
+            'label' => 'Last '.$label,
+            'previous_label' => 'Previous '.$label,
+            'from' => $from,
+            'to' => $to,
+            'previous_from' => $previousFrom,
+            'previous_to' => $from->copy()->subSecond(),
+        ];
+    }
+
+    private function monthLabel(string $month): string
+    {
+        return Carbon::createFromFormat('!Y-m', $month)->format('F Y');
+    }
+
+    /**
      * @return array{
-     *     month: string,
+     *     month: string|null,
+     *     range: string|null,
+     *     label: string,
      *     summary: array{
      *         orders: int,
      *         delivered: int,
@@ -71,35 +119,97 @@ class OrderReportService
      *     products: list<array{name: string, sold: int}>,
      *     branches: list<array{id: int, branch: string, name: string, sales: float}>,
      *     drivers: list<array{id: int, driver: string, name: string, deliveries: int}>,
-     *     compare: array{month: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>, branches: list<array{id: int, branch: string, name: string, sales: float}>, drivers: list<array{id: int, driver: string, name: string, deliveries: int}>}|null
+     *     timeline: list<array{label: string, date: string, orders: int, delivered: int}>,
+     *     compare: array{month: string|null, range: string|null, label: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>, branches: list<array{id: int, branch: string, name: string, sales: float}>, drivers: list<array{id: int, driver: string, name: string, deliveries: int}>, product_comparison: list<array{name: string, current: int, previous: int}>, timeline: list<array{label: string, date: string, orders: int, delivered: int}>}|null,
+     *     trend: array{label: string, summary: array<string, int|float>}
      * }
      */
-    public function platformDashboard(?string $month = null, ?string $compare = null): array
+    public function platformDashboard(?string $month = null, ?string $compare = null, ?string $range = null): array
     {
-        $month = $this->resolveMonth($month);
-        $compare = $this->resolveCompareMonth($compare, $month);
-        [$from, $to] = $this->monthRange($month);
-
+        $range = $this->resolveRange($range);
+        $compare = is_string($compare) ? trim($compare) : null;
         $comparison = null;
+        $baseline = null;
 
-        if ($compare !== null) {
-            [$compareFrom, $compareTo] = $this->monthRange($compare);
-            $comparison = [
-                'month' => $compare,
-                'summary' => $this->platformSummary($compareFrom, $compareTo),
-                'products' => $this->topProducts($compareFrom, $compareTo),
-                'branches' => $this->topBranches($compareFrom, $compareTo),
-                'drivers' => $this->topDrivers($compareFrom, $compareTo),
+        if ($range !== null) {
+            $window = $this->rangeWindow($range);
+            $month = null;
+            $from = $window['from'];
+            $to = $window['to'];
+            $label = $window['label'];
+            $baseline = [
+                'label' => $window['previous_label'],
+                'from' => $window['previous_from'],
+                'to' => $window['previous_to'],
+            ];
+
+            if ($compare === 'previous') {
+                $comparison = [
+                    'month' => null,
+                    'range' => $range,
+                    'label' => $window['previous_label'],
+                    'from' => $window['previous_from'],
+                    'to' => $window['previous_to'],
+                ];
+            }
+        } else {
+            $month = $this->resolveMonth($month);
+            [$from, $to] = $this->monthRange($month);
+            $label = $this->monthLabel($month);
+            $previousMonth = Carbon::createFromFormat('!Y-m', $month)->subMonthNoOverflow()->format('Y-m');
+            [$previousFrom, $previousTo] = $this->monthRange($previousMonth);
+            $baseline = [
+                'label' => $this->monthLabel($previousMonth),
+                'from' => $previousFrom,
+                'to' => $previousTo,
+            ];
+            $compareMonth = $this->resolveCompareMonth($compare, $month);
+
+            if ($compareMonth !== null) {
+                [$compareFrom, $compareTo] = $this->monthRange($compareMonth);
+                $comparison = [
+                    'month' => $compareMonth,
+                    'range' => null,
+                    'label' => $this->monthLabel($compareMonth),
+                    'from' => $compareFrom,
+                    'to' => $compareTo,
+                ];
+            }
+        }
+
+        $compareBlock = null;
+
+        if ($comparison !== null) {
+            $compareBlock = [
+                'month' => $comparison['month'],
+                'range' => $comparison['range'],
+                'label' => $comparison['label'],
+                'summary' => $this->platformSummary($comparison['from'], $comparison['to']),
+                'products' => $this->topProducts($comparison['from'], $comparison['to']),
+                'branches' => $this->topBranches($comparison['from'], $comparison['to']),
+                'drivers' => $this->topDrivers($comparison['from'], $comparison['to']),
+                'product_comparison' => $this->topProductsComparison($from, $to, $comparison['from'], $comparison['to']),
+                'timeline' => $this->ordersTimeline($comparison['from'], $comparison['to']),
             ];
         }
 
+        // Trend baseline for the summary cards: the explicit compare period, else the previous period.
+        $trend = [
+            'label' => $compareBlock['label'] ?? $baseline['label'],
+            'summary' => $compareBlock['summary'] ?? $this->platformSummary($baseline['from'], $baseline['to']),
+        ];
+
         return [
             'month' => $month,
+            'range' => $range,
+            'label' => $label,
             'summary' => $this->platformSummary($from, $to),
             'products' => $this->topProducts($from, $to),
             'branches' => $this->topBranches($from, $to),
             'drivers' => $this->topDrivers($from, $to),
-            'compare' => $comparison,
+            'timeline' => $this->ordersTimeline($from, $to),
+            'compare' => $compareBlock,
+            'trend' => $trend,
         ];
     }
 
@@ -228,6 +338,91 @@ class OrderReportService
                 ->whereIn('status', [PaymentStatus::Collected, PaymentStatus::Verified])
                 ->sum('amount'),
         ];
+    }
+
+    /**
+     * Orders and deliveries per day (per calendar month for windows longer
+     * than 92 days), zero-filled so a line chart stays continuous.
+     *
+     * Orders use the same definition as the "Total orders" card and delivered
+     * the same as the "Delivered" card (fulfillment created in the window).
+     *
+     * @return list<array{label: string, date: string, orders: int, delivered: int}>
+     */
+    private function ordersTimeline(CarbonInterface $from, CarbonInterface $to): array
+    {
+        $orders = Order::query()
+            ->whereBetween('created_at', [$from, $to])
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $delivered = OrderFulfillment::query()
+            ->whereBetween('created_at', [$from, $to])
+            ->where('status', FulfillmentStatus::Delivered)
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->pluck('total', 'day');
+
+        $monthly = $from->diffInDays($to) > 92;
+        $buckets = [];
+
+        for ($day = Carbon::instance($from)->startOfDay(); $day->lte($to); $day->addDay()) {
+            $key = $monthly ? $day->format('Y-m') : $day->format('Y-m-d');
+            $dayKey = $day->format('Y-m-d');
+
+            $buckets[$key] ??= [
+                'label' => $monthly ? $day->format('M Y') : $day->format('M j'),
+                'date' => $monthly ? $day->copy()->startOfMonth()->toDateString() : $dayKey,
+                'orders' => 0,
+                'delivered' => 0,
+            ];
+
+            $buckets[$key]['orders'] += (int) ($orders[$dayKey] ?? 0);
+            $buckets[$key]['delivered'] += (int) ($delivered[$dayKey] ?? 0);
+        }
+
+        return array_values($buckets);
+    }
+
+    /**
+     * Top 5 products by combined units across both months, each carrying its
+     * units for the selected month and for the compare month.
+     *
+     * @return list<array{name: string, current: int, previous: int}>
+     */
+    private function topProductsComparison(
+        CarbonInterface $from,
+        CarbonInterface $to,
+        CarbonInterface $compareFrom,
+        CarbonInterface $compareTo,
+    ): array {
+        $unitsIn = 'SUM(CASE WHEN orders.created_at BETWEEN ? AND ? THEN order_items.quantity ELSE 0 END)';
+        $bindings = [$from, $to, $compareFrom, $compareTo];
+
+        return OrderItem::query()
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where(function ($query) use ($from, $to, $compareFrom, $compareTo): void {
+                $query->whereBetween('orders.created_at', [$from, $to])
+                    ->orWhereBetween('orders.created_at', [$compareFrom, $compareTo]);
+            })
+            ->selectRaw(
+                "order_items.product_name_snapshot as name, {$unitsIn} as current_units, {$unitsIn} as previous_units",
+                $bindings,
+            )
+            ->groupBy('order_items.product_name_snapshot')
+            // Repeat the aggregates: PostgreSQL cannot use select aliases inside an ORDER BY expression.
+            ->orderByRaw("({$unitsIn} + {$unitsIn}) desc", $bindings)
+            ->orderBy('name')
+            ->limit(5)
+            ->get()
+            ->map(fn ($row): array => [
+                'name' => filled($row->name) ? (string) $row->name : 'Product',
+                'current' => (int) $row->current_units,
+                'previous' => (int) $row->previous_units,
+            ])
+            ->values()
+            ->all();
     }
 
     /**
