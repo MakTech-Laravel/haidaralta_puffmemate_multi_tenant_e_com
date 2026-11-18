@@ -27,12 +27,14 @@ class OrderReportsExport implements FromArray
 
     /**
      * @param  array{
-     *     month: string,
+     *     month: string|null,
+     *     range: string|null,
+     *     label: string,
      *     summary: array<string, int|float>,
      *     products: list<array{name: string, sold: int}>,
      *     branches: list<array{id: int, branch: string, name: string, sales: float}>,
      *     drivers: list<array{id: int, driver: string, name: string, deliveries: int}>,
-     *     compare: array{month: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>, branches: list<array{id: int, branch: string, name: string, sales: float}>, drivers: list<array{id: int, driver: string, name: string, deliveries: int}>}|null
+     *     compare: array{month: string|null, range: string|null, label: string, summary: array<string, int|float>, products: list<array{name: string, sold: int}>, branches: list<array{id: int, branch: string, name: string, sales: float}>, drivers: list<array{id: int, driver: string, name: string, deliveries: int}>, product_comparison: list<array{name: string, current: int, previous: int}>}|null
      * }  $dashboard
      */
     public function __construct(
@@ -49,18 +51,18 @@ class OrderReportsExport implements FromArray
 
         $rows = [
             ['Order Reports'],
-            ['Month', $this->dashboard['month']],
+            ['Period', $this->dashboard['label']],
         ];
 
         if ($compare !== null) {
-            $rows[] = ['Compare month', $compare['month']];
+            $rows[] = ['Compare period', $compare['label']];
         }
 
         $rows[] = [];
         $rows[] = ['Summary'];
         $rows[] = $compare === null
             ? ['Metric', 'Value']
-            : ['Metric', $this->dashboard['month'], $compare['month'], 'Change', 'Change %'];
+            : ['Metric', $this->dashboard['label'], $compare['label'], 'Change', 'Change %'];
 
         foreach (self::METRICS as $key => $label) {
             $value = $summary[$key] ?? 0;
@@ -80,19 +82,18 @@ class OrderReportsExport implements FromArray
 
         $rows[] = [];
         $rows[] = ['What sells most'];
-        $rows[] = ['Product', 'Units sold'];
 
-        foreach ($this->dashboard['products'] as $product) {
-            $rows[] = [$product['name'], $product['sold']];
-        }
-
-        if ($compare !== null) {
-            $rows[] = [];
-            $rows[] = ['What sells most ('.$compare['month'].')'];
+        if ($compare === null) {
             $rows[] = ['Product', 'Units sold'];
 
-            foreach ($compare['products'] as $product) {
+            foreach ($this->dashboard['products'] as $product) {
                 $rows[] = [$product['name'], $product['sold']];
+            }
+        } else {
+            $rows[] = ['Product', $this->dashboard['label'], $compare['label']];
+
+            foreach ($compare['product_comparison'] as $product) {
+                $rows[] = [$product['name'], $product['current'], $product['previous']];
             }
         }
 
@@ -114,7 +115,7 @@ class OrderReportsExport implements FromArray
 
         if ($compare !== null) {
             $rows[] = [];
-            $rows[] = ['Which branches sell most ('.$compare['month'].')'];
+            $rows[] = ['Which branches sell most ('.$compare['label'].')'];
             $rows[] = ['Branch', 'Sales'];
 
             foreach ($compare['branches'] as $branch) {
@@ -122,7 +123,7 @@ class OrderReportsExport implements FromArray
             }
 
             $rows[] = [];
-            $rows[] = ['Which drivers deliver most ('.$compare['month'].')'];
+            $rows[] = ['Which drivers deliver most ('.$compare['label'].')'];
             $rows[] = ['Driver', 'Deliveries'];
 
             foreach ($compare['drivers'] as $driver) {
